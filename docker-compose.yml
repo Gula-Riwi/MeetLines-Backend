@@ -1,0 +1,52 @@
+version: "3.8"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: MySaaSAgent.API/Dockerfile
+    container_name: mysaasagent_api
+    restart: unless-stopped
+    ports:
+      - "5000:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__Default=Host=db;Port=5432;Database=mysaas;Username=postgres;Password=postgres
+    depends_on:
+      - db
+
+  db:
+    image: postgres:13-alpine
+    container_name: mysaasagent_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: mysaas
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  wiki:
+    image: requarks/wiki:2
+    container_name: mysaasagent_wiki
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./wiki:/wiki-data
+    environment:
+      DB_TYPE: sqlite
+      WIKI_TITLE: "MySaaSAgent Wiki"
+      WIKI_LANG: "es"
+
+  adminer:
+    image: adminer
+    container_name: mysaasagent_adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+
+volumes:
+  db_data:

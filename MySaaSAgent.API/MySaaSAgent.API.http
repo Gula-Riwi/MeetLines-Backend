@@ -1,0 +1,6 @@
+@MySaaSAgent.API_HostAddress = http://localhost:5117
+
+GET {{MySaaSAgent.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
