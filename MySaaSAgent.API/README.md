@@ -13,35 +13,6 @@ Este proyecto es el punto de entrada de la aplicación a través de una **Web AP
 - `appsettings.json` y `appsettings.Development.json` – Archivo(s) de configuración. Aquí se definen cadenas de conexión, URLs de servicios externos, banderas de características y cualquier otro valor que la aplicación necesite en tiempo de ejecución.
 
 **Ejemplo de controlador**
-
-```csharp
-using Microsoft.AspNetCore.Mvc;
-using MySaaSAgent.Application.UseCases;
-using MySaaSAgent.Application.DTOs;
-
-namespace MySaaSAgent.API.Controllers;
-
-[ApiController]
-[Route("api/[controller]")]
-public class CustomersController : ControllerBase
-{
-    private readonly ICreateCustomerUseCase _createCustomer;
-
-    public CustomersController(ICreateCustomerUseCase createCustomer)
-    {
-        _createCustomer = createCustomer;
-    }
-
-    [HttpPost]
-    public async Task<ActionResult<CustomerDto>> Create([FromBody] CreateCustomerRequest request)
-    {
-        var result = await _createCustomer.ExecuteAsync(request);
-        return CreatedAtAction(nameof(GetById), new { id = result.Id }, result);
-    }
-
-    [HttpGet("{id}")]
-    public async Task<ActionResult<CustomerDto>> GetById(Guid id)
-    {
         // Aquí se llamaría a un caso de uso GetCustomerUseCase (no implementado aún)
         return Ok();
     }

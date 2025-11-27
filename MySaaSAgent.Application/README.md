@@ -12,29 +12,6 @@ Esta capa constituye la **capa de aplicación** o **capa de casos de uso**. Su r
 - `Mappers/` o `Extensions/` – Código que convierte entre DTOs y entidades del dominio (y viceversa). Mantiene la capa de aplicación libre de lógica de dominio.
 
 **Ejemplo de caso de uso (CreateCustomerUseCase)**
-
-```csharp
-using MySaaSAgent.Domain.Entities;
-using MySaaSAgent.Application.DTOs;
-using MySaaSAgent.Application.Interfaces;
-
-namespace MySaaSAgent.Application.UseCases;
-
-public class CreateCustomerUseCase : ICreateCustomerUseCase
-{
-    private readonly ICustomerRepository _repository;
-    private readonly IEmailSender _emailSender;
-
-    public CreateCustomerUseCase(ICustomerRepository repository, IEmailSender emailSender)
-    {
-        _repository = repository;
-        _emailSender = emailSender;
-    }
-
-    public async Task<CustomerDto> ExecuteAsync(CreateCustomerRequest request)
-    {
-        // Convertir el DTO a entidad del dominio
-        var customer = new Customer(request.Name, request.Email);
         // Aplicar reglas de negocio del dominio (por ejemplo, validar email)
         customer.Validate();
         // Persistir usando el repositorio
