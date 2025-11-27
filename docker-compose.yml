@@ -1,11 +1,10 @@
-version: "3.8"
-
-services:
+﻿services:
   api:
     build:
       context: .
-      dockerfile: MySaaSAgent.API/Dockerfile
-    container_name: mysaasagent_api
+      dockerfile: MeetLines.API/Dockerfile
+    image: meetlines-api
+    container_name: MeetLines_api
     restart: unless-stopped
     ports:
       - "5000:80"
@@ -17,7 +16,7 @@ services:
 
   db:
     image: postgres:13-alpine
-    container_name: mysaasagent_db
+    container_name: MeetLines_db
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -28,7 +27,7 @@ services:
 
   wiki:
     image: requarks/wiki:2
-    container_name: mysaasagent_wiki
+    container_name: MeetLines_wiki
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -36,12 +35,12 @@ services:
       - ./wiki:/wiki-data
     environment:
       DB_TYPE: sqlite
-      WIKI_TITLE: "MySaaSAgent Wiki"
+      WIKI_TITLE: "MeetLines Wiki"
       WIKI_LANG: "es"
 
   adminer:
     image: adminer
-    container_name: mysaasagent_adminer
+    container_name: MeetLines_adminer
     restart: unless-stopped
     ports:
       - "8080:8080"

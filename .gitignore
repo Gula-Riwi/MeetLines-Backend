@@ -1,5 +1,5 @@
-# ----------------------------
-# .gitignore for MySaaSAgent
+﻿# ----------------------------
+# .gitignore for MeetLines
 # ----------------------------
 
 ### IDE / Editor
@@ -129,7 +129,7 @@ wwwroot/lib/
 #**/*Migrations.cs
 
 # Explicit keep: if you add folders with the intended files you want to keep (e.g. db scripts), add an allow list
-#!/MySaaSAgent.Infrastructure/Migrations/*.sql
+#!/MeetLines.Infrastructure/Migrations/*.sql
 # Visual Studio / Visual Studio Code / Rider
 .vs/
 .vscode/
