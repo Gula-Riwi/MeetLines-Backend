@@ -6,7 +6,7 @@ namespace MeetLines.Domain.Entities
     {
         public Guid Id { get; private set; }
         public Guid UserId { get; private set; }
-        public string TokenHash { get; private set; }
+        public string TokenHash { get; private set; } = null!;
         public string? DeviceInfo { get; private set; }
         public string? IpAddress { get; private set; }
         public DateTimeOffset? ExpiresAt { get; private set; }

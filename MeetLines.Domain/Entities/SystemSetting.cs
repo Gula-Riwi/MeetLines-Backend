@@ -5,7 +5,7 @@ namespace MeetLines.Domain.Entities
     public class SystemSetting
     {
         public Guid Id { get; private set; }
-        public string Key { get; private set; }
+        public string Key { get; private set; } = null!;
         public string? Value { get; private set; } // jsonb
         public DateTimeOffset UpdatedAt { get; private set; }
 
