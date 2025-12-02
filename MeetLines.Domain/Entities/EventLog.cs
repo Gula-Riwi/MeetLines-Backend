@@ -7,7 +7,7 @@ namespace MeetLines.Domain.Entities
         public Guid Id { get; private set; }
         public Guid? ProjectId { get; private set; }
         public Guid? LeadId { get; private set; }
-        public string EventType { get; private set; }
+        public string EventType { get; private set; } = null!;
         public string? Payload { get; private set; } // jsonb
         public bool Processed { get; private set; }
         public DateTimeOffset CreatedAt { get; private set; }

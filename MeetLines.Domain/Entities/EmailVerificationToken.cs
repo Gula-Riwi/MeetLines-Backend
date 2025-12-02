@@ -10,7 +10,7 @@ namespace MeetLines.Domain.Entities
     {
         public Guid Id { get; private set; }
         public Guid UserId { get; private set; }
-        public string Token { get; private set; }
+        public string Token { get; private set; } = null!;
         public DateTimeOffset ExpiresAt { get; private set; }
         public EmailVerificationStatus Status { get; private set; }
         public DateTimeOffset? VerifiedAt { get; private set; }

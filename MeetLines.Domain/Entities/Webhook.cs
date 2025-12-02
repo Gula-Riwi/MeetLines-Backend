@@ -6,8 +6,8 @@ namespace MeetLines.Domain.Entities
     {
         public Guid Id { get; private set; }
         public Guid ProjectId { get; private set; }
-        public string Event { get; private set; }
-        public string TargetUrl { get; private set; }
+        public string Event { get; private set; } = null!;
+        public string TargetUrl { get; private set; } = null!;
         public bool Active { get; private set; }
         public DateTimeOffset CreatedAt { get; private set; }
 
