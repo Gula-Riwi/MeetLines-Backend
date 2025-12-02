@@ -1,0 +1,12 @@
+      PID    PPID    PGID     WINPID   TTY         UID    STIME COMMAND
+     2048       1    2048       8172  cons2     197609 16:41:34 /usr/bin/bash
+     2119       1    2119      12056  cons3     197609 16:42:05 /usr/bin/bash
+     3292    3035    3292      18452  cons7     197609 17:07:18 /usr/bin/PS
+     2460       1    2460      20412  cons6     197609 16:50:06 /usr/bin/bash
+     1893       1    1893      17684  cons0     197609 16:36:24 /usr/bin/bash
+     3138    3035    3138       3160  cons7     197609 17:01:25 /usr/bin/bash
+     1938       1    1938       8500  cons1     197609 16:36:26 /usr/bin/bash
+     3139    3138    3138      13252  cons7     197609 17:01:25 /c/Program Files/dotnet/dotnet
+     3035       1    3035      15524  cons7     197609 17:00:01 /usr/bin/bash
+     2256       1    2256       4004  cons5     197609 16:42:17 /usr/bin/bash
+     2179       1    2179      15940  cons4     197609 16:42:09 /usr/bin/bash

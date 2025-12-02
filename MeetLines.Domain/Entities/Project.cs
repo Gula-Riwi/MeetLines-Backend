@@ -15,7 +15,7 @@ namespace MeetLines.Domain.Entities
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset UpdatedAt { get; private set; }
 
-        private Project() { } // EF Core
+        private Project() { Name = null!; Status = null!; } // EF Core
 
         public Project(Guid userId, string name, string? industry = null, string? description = null)
         {

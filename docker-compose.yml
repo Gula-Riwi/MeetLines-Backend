@@ -1,51 +1,38 @@
-﻿services:
-  api:
+services:
+  backend:
+    container_name: meetlines-backend
     build:
       context: .
       dockerfile: MeetLines.API/Dockerfile
-    image: meetlines-api
-    container_name: MeetLines_api
-    restart: unless-stopped
-    ports:
-      - "5000:80"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__Default=Host=db;Port=5432;Database=mysaas;Username=postgres;Password=postgres
-    depends_on:
-      - db
-
-  db:
-    image: postgres:13-alpine
-    container_name: MeetLines_db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mysaas
-    volumes:
-      - db_data:/var/lib/postgresql/data
-
-  wiki:
-    image: requarks/wiki:2
-    container_name: MeetLines_wiki
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    volumes:
-      - ./wiki:/wiki-data
-    environment:
-      DB_TYPE: sqlite
-      WIKI_TITLE: "MeetLines Wiki"
-      WIKI_LANG: "es"
-
-  adminer:
-    image: adminer
-    container_name: MeetLines_adminer
     restart: unless-stopped
     ports:
       - "8080:8080"
-    depends_on:
-      - db
+    env_file:
+      - .env
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Mapping environment variables to .NET Configuration keys
+      # This ensures the app uses the values from .env even if appsettings.json has placeholders
+      - ConnectionStrings__DefaultConnection=Host=${DB_HOST};Port=${DB_PORT};Database=${DB_DATABASE};Username=${DB_USERNAME};Password=${DB_PASSWORD}
+      - Jwt__SecretKey=${JWT_SECRET}
+      - Email__SmtpUser=${EMAIL_SMTP_USER}
+      - Email__SmtpPassword=${EMAIL_SMTP_PASSWORD}
+      - Email__FromEmail=${EMAIL_FROM}
+      - Authentication__Google__ClientId=${GOOGLE_CLIENT_ID}
+      - Authentication__Google__ClientSecret=${GOOGLE_CLIENT_SECRET}
+      - Authentication__Facebook__AppId=${FB_APP_ID}
+      - Authentication__Facebook__AppSecret=${FB_APP_SECRET}
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+        reservations:
+          cpus: '0.10'
+          memory: 128M
+    networks:
+      - meetlines-net
 
-volumes:
-  db_data:
+networks:
+  meetlines-net:
+    driver: bridge
