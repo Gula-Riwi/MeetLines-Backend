@@ -4,6 +4,8 @@ using MeetLines.Application.Services;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.Application.Validators;
 using MeetLines.Application.UseCases.Auth;
+using MeetLines.Application.UseCases.HealthCheck;
+
 
 namespace MeetLines.Application.IoC
 {
@@ -29,6 +31,7 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IResetPasswordUseCase, ResetPasswordUseCase>();
             services.AddScoped<IResendVerificationEmailUseCase, ResendVerificationEmailUseCase>();
             services.AddScoped<ILogoutUseCase, LogoutUseCase>();
+            services.AddScoped<IHealthCheckUseCase, HealthCheckUseCase>();
 
             // Registrar validadores de FluentValidation
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
