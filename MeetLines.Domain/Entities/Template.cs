@@ -7,8 +7,8 @@ namespace MeetLines.Domain.Entities
         public Guid Id { get; private set; }
         public Guid? ProjectId { get; private set; }
         public string? Industry { get; private set; }
-        public string Type { get; private set; }
-        public string Content { get; private set; }
+        public string Type { get; private set; } = null!;
+        public string Content { get; private set; } = null!;
         public string? Variables { get; private set; } // jsonb
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset UpdatedAt { get; private set; }

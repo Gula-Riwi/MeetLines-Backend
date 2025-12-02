@@ -6,7 +6,7 @@ namespace MeetLines.Domain.Entities
     {
         public Guid Id { get; private set; }
         public Guid ProjectId { get; private set; }
-        public string TagName { get; private set; }
+        public string TagName { get; private set; } = null!;
         public DateTimeOffset CreatedAt { get; private set; }
 
         private Tag() { } // EF Core

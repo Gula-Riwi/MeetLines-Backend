@@ -10,7 +10,7 @@ namespace MeetLines.Domain.Entities
         public DateTimeOffset StartTime { get; private set; }
         public DateTimeOffset? EndTime { get; private set; }
         public string? MeetingLink { get; private set; }
-        public string Status { get; private set; }
+        public string Status { get; private set; } = null!;
         public string? Notes { get; private set; }
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset UpdatedAt { get; private set; }

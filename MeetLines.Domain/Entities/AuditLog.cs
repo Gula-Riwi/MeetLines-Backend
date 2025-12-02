@@ -6,7 +6,7 @@ namespace MeetLines.Domain.Entities
     {
         public Guid Id { get; private set; }
         public Guid? UserId { get; private set; }
-        public string Action { get; private set; }
+        public string Action { get; private set; } = null!;
         public string? Details { get; private set; } // jsonb
         public string? Ip { get; private set; }
         public DateTimeOffset CreatedAt { get; private set; }

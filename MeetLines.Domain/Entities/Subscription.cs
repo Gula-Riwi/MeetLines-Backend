@@ -6,10 +6,10 @@ namespace MeetLines.Domain.Entities
     {
         public Guid Id { get; private set; }
         public Guid UserId { get; private set; }
-        public string Plan { get; private set; }
-        public string Cycle { get; private set; }
+        public string Plan { get; private set; } = null!;
+        public string Cycle { get; private set; } = null!;
         public decimal Price { get; private set; }
-        public string Status { get; private set; }
+        public string Status { get; private set; } = null!;
         public DateTime? RenewalDate { get; private set; }
         public DateTimeOffset CreatedAt { get; private set; }
 
