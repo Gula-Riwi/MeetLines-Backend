@@ -45,5 +45,15 @@ namespace MeetLines.Domain.Repositories
         /// Verifica si un usuario tiene permiso sobre un proyecto
         /// </summary>
         Task<bool> IsUserProjectOwnerAsync(Guid userId, Guid projectId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Obtiene un proyecto por su subdominio
+        /// </summary>
+        Task<Project?> GetBySubdomainAsync(string subdomain, CancellationToken ct = default);
+
+        /// <summary>
+        /// Verifica si existe un subdominio (para validación de unicidad)
+        /// </summary>
+        Task<bool> ExistsSubdomainAsync(string subdomain, CancellationToken ct = default);
     }
 }

@@ -60,10 +60,12 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
                 b.Property(x => x.WorkingHours).HasColumnType("jsonb");
                 b.Property(x => x.Config).HasColumnType("jsonb");
+                b.Property(x => x.Subdomain).IsRequired().HasMaxLength(63);
                 b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
                 b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
                 b.HasOne<SaasUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.UserId).HasDatabaseName("idx_projects_user");
+                b.HasIndex(x => x.Subdomain).IsUnique().HasDatabaseName("idx_projects_subdomain");
             });
 
             // Channels

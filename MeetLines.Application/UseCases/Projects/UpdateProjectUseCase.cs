@@ -44,6 +44,22 @@ namespace MeetLines.Application.UseCases.Projects
                 if (!isOwner)
                     return Result<ProjectResponse>.Fail("You do not have permission to update this project");
 
+                // Si se solicita cambiar subdominio, validarlo y verificar unicidad
+                if (!string.IsNullOrWhiteSpace(request.Subdomain) && request.Subdomain != project.Subdomain)
+                {
+                    // Validación de formato
+                    if (!MeetLines.Domain.ValueObjects.SubdomainValidator.IsValid(request.Subdomain, out var validationError))
+                        return Result<ProjectResponse>.Fail($"Invalid subdomain: {validationError}");
+
+                    // Verificar unicidad
+                    if (await _projectRepository.ExistsSubdomainAsync(request.Subdomain, ct))
+                    {
+                        return Result<ProjectResponse>.Fail($"Subdomain '{request.Subdomain}' is already taken.");
+                    }
+
+                    project.UpdateSubdomain(request.Subdomain);
+                }
+
                 project.UpdateDetails(request.Name, request.Industry, request.Description);
                 await _projectRepository.UpdateAsync(project, ct);
 
@@ -63,6 +79,7 @@ namespace MeetLines.Application.UseCases.Projects
         {
             Id = project.Id,
             Name = project.Name,
+            Subdomain = project.Subdomain,
             Industry = project.Industry,
             Description = project.Description,
             Status = project.Status,

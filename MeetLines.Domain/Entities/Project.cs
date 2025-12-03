@@ -11,20 +11,25 @@ namespace MeetLines.Domain.Entities
         public string? Description { get; private set; }
         public string? WorkingHours { get; private set; } // jsonb
         public string? Config { get; private set; } // jsonb
+        public string Subdomain { get; private set; }
         public string Status { get; private set; }
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset UpdatedAt { get; private set; }
 
-        private Project() { Name = null!; Status = null!; } // EF Core
+        private Project() { Name = null!; Status = null!; Subdomain = null!; } // EF Core
 
-        public Project(Guid userId, string name, string? industry = null, string? description = null)
+        public Project(Guid userId, string name, string subdomain, string? industry = null, string? description = null)
         {
             if (userId == Guid.Empty) throw new ArgumentException("UserId cannot be empty", nameof(userId));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name cannot be empty", nameof(name));
+            
+            if (!ValueObjects.SubdomainValidator.IsValid(subdomain, out var error))
+                throw new ArgumentException(error, nameof(subdomain));
 
             Id = Guid.NewGuid();
             UserId = userId;
             Name = name;
+            Subdomain = subdomain;
             Industry = industry;
             Description = description;
             Status = "active";
@@ -38,6 +43,15 @@ namespace MeetLines.Domain.Entities
             Name = name;
             Industry = industry;
             Description = description;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void UpdateSubdomain(string newSubdomain)
+        {
+            if (!ValueObjects.SubdomainValidator.IsValid(newSubdomain, out var error))
+                throw new ArgumentException(error, nameof(newSubdomain));
+            
+            Subdomain = newSubdomain;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
