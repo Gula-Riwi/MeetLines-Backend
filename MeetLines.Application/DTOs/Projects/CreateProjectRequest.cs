@@ -5,7 +5,8 @@ namespace MeetLines.Application.DTOs.Projects
     /// </summary>
     public class CreateProjectRequest
     {
-        public string Name { get; set; } = null!;
+        public string Name { get; set; } = string.Empty;
+        public string? Subdomain { get; set; }
         public string? Industry { get; set; }
         public string? Description { get; set; }
     }
