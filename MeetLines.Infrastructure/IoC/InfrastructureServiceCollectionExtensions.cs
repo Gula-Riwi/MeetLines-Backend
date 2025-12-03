@@ -59,6 +59,8 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<IEmailVerificationTokenRepository, EmailVerificationTokenRepository>();
             services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
             services.AddScoped<ILoginSessionRepository, LoginSessionRepository>();
+            services.AddScoped<IProjectRepository, ProjectRepository>();
+            services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
 
             return services;
         }
@@ -69,6 +71,12 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IEmailService, EmailService>();
+
+            // Memory cache (used by GeoIP service)
+            services.AddMemoryCache();
+
+            // GeoIP service (MaxMind DB) - implementation bound to Application interface
+            services.AddSingleton<MeetLines.Application.Services.Interfaces.IGeoIpService, MeetLines.Infrastructure.Services.GeoIpService>();
 
             return services;
         }
@@ -119,6 +127,9 @@ namespace MeetLines.Infrastructure.IoC
 
         public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
         {
+            // Bind GeoIp options from configuration
+            services.Configure<MeetLines.Infrastructure.Services.GeoIpOptions>(configuration.GetSection("GeoIp"));
+
             services.AddInfrastructureDatabase(configuration);
             services.AddInfrastructureRepositories();
             services.AddInfrastructureServices();

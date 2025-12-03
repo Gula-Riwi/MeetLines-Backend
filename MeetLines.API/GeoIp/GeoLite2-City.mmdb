@@ -1,0 +1,7 @@
+This is a placeholder file for GeoLite2-City.mmdb.
+
+IMPORTANT: Replace this file with the real GeoLite2/GeoIP2 database file downloaded from MaxMind and licensed appropriately.
+
+Instructions:
+1. Download GeoLite2-City.mmdb from MaxMind (requires agreeing to license and possibly an account).
+2. Replace this placeholder file with the downloaded binary file at the same path.

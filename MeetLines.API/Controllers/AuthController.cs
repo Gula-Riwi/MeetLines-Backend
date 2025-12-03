@@ -21,6 +21,44 @@ namespace MeetLines.API.Controllers
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         }
 
+        // Helper: try to read client IP respecting X-Forwarded-For
+        private string? GetClientIp()
+        {
+            var headers = Request.Headers;
+            if (headers.ContainsKey("X-Forwarded-For"))
+            {
+                var xff = headers["X-Forwarded-For"].ToString();
+                if (!string.IsNullOrWhiteSpace(xff))
+                {
+                    var first = xff.Split(',')[0].Trim();
+                    if (!string.IsNullOrEmpty(first)) return first;
+                }
+            }
+
+            var remoteIp = HttpContext.Connection.RemoteIpAddress;
+            return remoteIp?.ToString();
+        }
+
+        // Helper: read User-Agent header
+        private string? GetUserAgent()
+        {
+            if (Request.Headers.TryGetValue("User-Agent", out var ua))
+                return ua.ToString();
+            return null;
+        }
+
+        // Helper: try common timezone headers
+        private string? GetTimezoneFromHeaders()
+        {
+            var headers = Request.Headers;
+            string? tz = null;
+            if (headers.ContainsKey("Timezone")) tz = headers["Timezone"].ToString();
+            if (string.IsNullOrWhiteSpace(tz) && headers.ContainsKey("Time-Zone")) tz = headers["Time-Zone"].ToString();
+            if (string.IsNullOrWhiteSpace(tz) && headers.ContainsKey("X-Timezone")) tz = headers["X-Timezone"].ToString();
+            if (string.IsNullOrWhiteSpace(tz) && headers.ContainsKey("X-Time-Zone")) tz = headers["X-Time-Zone"].ToString();
+            return string.IsNullOrWhiteSpace(tz) ? null : tz;
+        }
+
         /// <summary>
         /// Registra un nuevo usuario con email y contraseña.
         /// POST: api/auth/register
@@ -33,13 +71,18 @@ namespace MeetLines.API.Controllers
         {
             try
             {
+                // Auto-populate timezone, ip and device info when possible
+                request.Timezone = GetTimezoneFromHeaders() ?? request.Timezone;
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
+
                 // FluentValidation se ejecutará automáticamente por el middleware
                 // Ejecutar caso de uso
                 var result = await _authService.RegisterAsync(request, ct);
-                
+
                 if (!result.IsSuccess)
                     return BadRequest(ApiResponse<RegisterResponse>.Fail(result.Error ?? "Error en registro"));
-                
+
                 return Ok(ApiResponse<RegisterResponse>.Ok(
                     result.Value!,
                     "Registro exitoso. Por favor verifica tu email."
@@ -63,12 +106,16 @@ namespace MeetLines.API.Controllers
         {
             try
             {
+                // Auto-populate ip/device when missing
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
+
                 // Ejecutar caso de uso
                 var result = await _authService.LoginAsync(request, ct);
-                
+
                 if (!result.IsSuccess)
                     return BadRequest(ApiResponse<LoginResponse>.Fail(result.Error ?? "Error en login"));
-                
+
                 return Ok(ApiResponse<LoginResponse>.Ok(result.Value ?? new LoginResponse()));
             }
             catch (Exception ex)
@@ -89,12 +136,16 @@ namespace MeetLines.API.Controllers
         {
             try
             {
+                // Auto-populate ip/device when missing
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
+
                 // Ejecutar caso de uso
                 var result = await _authService.OAuthLoginAsync(request, ct);
-                
+
                 if (!result.IsSuccess)
                     return BadRequest(ApiResponse<LoginResponse>.Fail(result.Error ?? "Error en OAuth login"));
-                
+
                 return Ok(ApiResponse<LoginResponse>.Ok(result.Value ?? new LoginResponse()));
             }
             catch (Exception ex)
@@ -115,11 +166,15 @@ namespace MeetLines.API.Controllers
         {
             try
             {
+                // Auto-populate ip/device when missing
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
+
                 var result = await _authService.RefreshTokenAsync(request, ct);
-                
+
                 if (!result.IsSuccess)
                     return BadRequest(ApiResponse<LoginResponse>.Fail(result.Error ?? "Error al refrescar token"));
-                
+
                 return Ok(ApiResponse<LoginResponse>.Ok(result.Value ?? new LoginResponse()));
             }
             catch (Exception ex)
@@ -165,11 +220,14 @@ namespace MeetLines.API.Controllers
         {
             try
             {
+                // Auto-populate ip when missing
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+
                 var result = await _authService.ForgotPasswordAsync(request, ct);
-                
+
                 if (!result.IsSuccess)
                     return BadRequest(ApiResponse.Fail(result.Error ?? "Error al solicitar recuperación"));
-                
+
                 return Ok(ApiResponse.Ok("Se ha enviado un email de recuperación a tu correo"));
             }
             catch (Exception ex)
