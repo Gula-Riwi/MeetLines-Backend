@@ -48,6 +48,7 @@ namespace MeetLines.Infrastructure.IoC
                 Console.WriteLine($"📊 Conectando a BD local/configurable");
             }
 
+            Console.WriteLine($"🔗 Cadena de conexión final: {conn}");
             services.AddDbContext<MeetLinesPgDbContext>(o => o.UseNpgsql(conn));
             return services;
         }
@@ -77,6 +78,12 @@ namespace MeetLines.Infrastructure.IoC
 
             // GeoIP service (MaxMind DB) - implementation bound to Application interface
             services.AddSingleton<MeetLines.Application.Services.Interfaces.IGeoIpService, MeetLines.Infrastructure.Services.GeoIpService>();
+
+            // HTTP Context accessor for accessing HTTP context from services
+            services.AddHttpContextAccessor();
+            
+            // HTTP Context Info Service - automatically captures IP, DeviceInfo, Timezone
+            services.AddScoped<MeetLines.Application.Services.Interfaces.IHttpContextInfoService, MeetLines.Infrastructure.Services.HttpContextInfoService>();
 
             return services;
         }
