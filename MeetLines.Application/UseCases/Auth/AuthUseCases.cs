@@ -16,17 +16,20 @@ namespace MeetLines.Application.UseCases.Auth
         private readonly IEmailVerificationTokenRepository _emailVerificationTokenRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly IEmailService _emailService;
+        private readonly IGeoIpService _geoIpService;
 
         public RegisterUserUseCase(
             ISaasUserRepository userRepository,
             IEmailVerificationTokenRepository emailVerificationTokenRepository,
             IPasswordHasher passwordHasher,
-            IEmailService emailService)
+            IEmailService emailService,
+            IGeoIpService geoIpService)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _emailVerificationTokenRepository = emailVerificationTokenRepository ?? throw new ArgumentNullException(nameof(emailVerificationTokenRepository));
             _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _geoIpService = geoIpService ?? throw new ArgumentNullException(nameof(geoIpService));
         }
 
         public async Task<Result<RegisterResponse>> ExecuteAsync(RegisterRequest request, CancellationToken ct = default)
@@ -40,13 +43,30 @@ namespace MeetLines.Application.UseCases.Auth
                     return Result<RegisterResponse>.Fail("El email ya está registrado");
                 }
 
+                // Determinar timezone: usar la provista, si no, intentar inferir por GeoIP, si todo falla usar UTC
+                var timezone = request.Timezone;
+                if (string.IsNullOrEmpty(timezone) && !string.IsNullOrEmpty(request.IpAddress))
+                {
+                    try
+                    {
+                        var inferred = await _geoIpService.GetTimezoneAsync(request.IpAddress);
+                        if (!string.IsNullOrEmpty(inferred)) timezone = inferred;
+                    }
+                    catch
+                    {
+                        // Silenciar errores del servicio GeoIP y seguir con fallback
+                    }
+                }
+
+                if (string.IsNullOrEmpty(timezone)) timezone = "UTC";
+
                 // Crear el usuario
                 var passwordHash = _passwordHasher.HashPassword(request.Password);
-                var user = SaasUser.CreateLocalUser(request.Name, request.Email, passwordHash, request.Timezone);
-                
+                var user = SaasUser.CreateLocalUser(request.Name, request.Email, passwordHash, timezone);
+
                 if (!string.IsNullOrEmpty(request.Phone))
                 {
-                    user.UpdateProfile(request.Name, request.Phone, request.Timezone);
+                    user.UpdateProfile(request.Name, request.Phone, timezone);
                 }
 
                 await _userRepository.AddAsync(user, ct);

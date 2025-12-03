@@ -5,6 +5,7 @@ using MeetLines.Application.Services.Interfaces;
 using MeetLines.Application.Validators;
 using MeetLines.Application.UseCases.Auth;
 using MeetLines.Application.UseCases.HealthCheck;
+using MeetLines.Application.UseCases.Projects;
 
 
 namespace MeetLines.Application.IoC
@@ -21,7 +22,7 @@ namespace MeetLines.Application.IoC
             // Registrar servicio de aplicación (mantener por compatibilidad hacia atrás)
             services.AddScoped<IAuthService, AuthService>();
 
-            // Registrar casos de uso (puertos de entrada / adaptadores primarios)
+            // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
             services.AddScoped<ILoginUserUseCase, LoginUserUseCase>();
             services.AddScoped<IOAuthLoginUseCase, OAuthLoginUseCase>();
@@ -32,6 +33,13 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IResendVerificationEmailUseCase, ResendVerificationEmailUseCase>();
             services.AddScoped<ILogoutUseCase, LogoutUseCase>();
             services.AddScoped<IHealthCheckUseCase, HealthCheckUseCase>();
+
+            // Registrar casos de uso de proyectos
+            services.AddScoped<ICreateProjectUseCase, CreateProjectUseCase>();
+            services.AddScoped<IGetUserProjectsUseCase, GetUserProjectsUseCase>();
+            services.AddScoped<IGetProjectByIdUseCase, GetProjectByIdUseCase>();
+            services.AddScoped<IUpdateProjectUseCase, UpdateProjectUseCase>();
+            services.AddScoped<IDeleteProjectUseCase, DeleteProjectUseCase>();
 
             // Registrar validadores de FluentValidation
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
