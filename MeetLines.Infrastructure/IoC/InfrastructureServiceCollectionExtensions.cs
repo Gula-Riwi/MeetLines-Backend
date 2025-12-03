@@ -48,6 +48,7 @@ namespace MeetLines.Infrastructure.IoC
                 Console.WriteLine($"📊 Conectando a BD local/configurable");
             }
 
+            Console.WriteLine($"🔗 Cadena de conexión final: {conn}");
             services.AddDbContext<MeetLinesPgDbContext>(o => o.UseNpgsql(conn));
             return services;
         }
