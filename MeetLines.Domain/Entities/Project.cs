@@ -47,5 +47,14 @@ namespace MeetLines.Domain.Entities
             Config = config;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
+
+        /// <summary>
+        /// Cambia el estado del proyecto a deshabilitado (borrado lógico)
+        /// </summary>
+        public void Disable()
+        {
+            Status = "disabled";
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
     }
 }
