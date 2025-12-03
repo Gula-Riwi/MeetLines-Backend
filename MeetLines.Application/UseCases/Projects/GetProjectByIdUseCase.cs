@@ -52,6 +52,7 @@ namespace MeetLines.Application.UseCases.Projects
         {
             Id = project.Id,
             Name = project.Name,
+            Subdomain = project.Subdomain,
             Industry = project.Industry,
             Description = project.Description,
             Status = project.Status,

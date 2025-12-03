@@ -6,6 +6,7 @@ namespace MeetLines.Application.DTOs.Projects
     public class UpdateProjectRequest
     {
         public string Name { get; set; } = null!;
+        public string? Subdomain { get; set; }
         public string? Industry { get; set; }
         public string? Description { get; set; }
     }
