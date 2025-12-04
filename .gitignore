@@ -65,6 +65,7 @@ Secrets.json
 local.settings.json
 appsettings.*.Local.json
 credentials.json
+appsettings.Development.json
 
 ### OS files
 .DS_Store
