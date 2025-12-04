@@ -1,0 +1,75 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using MeetLines.Application.Services;
+using MeetLines.Domain.Repositories;
+using MeetLines.Domain.ValueObjects;
+
+namespace MeetLines.API.Middleware
+{
+    public class TenantResolutionMiddleware
+    {
+        private readonly RequestDelegate _next;
+        private readonly IConfiguration _configuration;
+
+        public TenantResolutionMiddleware(RequestDelegate next, IConfiguration configuration)
+        {
+            _next = next;
+            _configuration = configuration;
+        }
+
+        public async Task InvokeAsync(HttpContext context)
+        {
+            var host = context.Request.Host.Host;
+            // Lee del appsettings.json que obtiene valores del .env
+            var baseDomain = _configuration["Multitenancy:BaseDomain"] ?? "meet-lines.com";
+
+            // Si el host no termina con el dominio base, o es igual al dominio base, no hay subdominio
+            if (!host.EndsWith(baseDomain, StringComparison.OrdinalIgnoreCase) || 
+                host.Equals(baseDomain, StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(context);
+                return;
+            }
+
+            // Extraer subdominio
+            // host: subdomain.meet-lines.com
+            // base: meet-lines.com
+            // length diff: subdomain. (includes dot)
+            var subdomainPart = host.Substring(0, host.Length - baseDomain.Length - 1);
+            
+            // Validar si es un subdominio reservado o inválido
+            if (!SubdomainValidator.IsValid(subdomainPart, out _))
+            {
+                // Si es inválido, simplemente continuamos sin tenant (o podríamos retornar 404)
+                await _next(context);
+                return;
+            }
+
+            // Resolver tenant desde base de datos
+            // Usamos IServiceProvider para crear un scope porque el repositorio es Scoped
+            var tenantService = context.RequestServices.GetRequiredService<ITenantService>();
+            var projectRepository = context.RequestServices.GetRequiredService<IProjectRepository>();
+
+            var project = await projectRepository.GetBySubdomainAsync(subdomainPart);
+
+            if (project != null && project.Status == "active")
+            {
+                tenantService.SetTenant(project.Id, project.Subdomain);
+            }
+            else
+            {
+                // Si el subdominio existe pero no encontramos proyecto, retornamos 404 Not Found
+                // Opcionalmente podríamos redirigir al home
+                context.Response.StatusCode = 404;
+                await context.Response.WriteAsync("Tenant not found");
+                return;
+            }
+
+            await _next(context);
+        }
+    }
+}

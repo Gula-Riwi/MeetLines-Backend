@@ -69,5 +69,17 @@ namespace MeetLines.Infrastructure.Repositories
             return await _context.Projects
                 .AnyAsync(p => p.Id == projectId && p.UserId == userId, ct);
         }
+
+        public async Task<Project?> GetBySubdomainAsync(string subdomain, CancellationToken ct = default)
+        {
+            return await _context.Projects
+                .FirstOrDefaultAsync(p => p.Subdomain == subdomain, ct);
+        }
+
+        public async Task<bool> ExistsSubdomainAsync(string subdomain, CancellationToken ct = default)
+        {
+            return await _context.Projects
+                .AnyAsync(p => p.Subdomain == subdomain, ct);
+        }
     }
 }

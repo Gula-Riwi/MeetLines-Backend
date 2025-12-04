@@ -8,10 +8,12 @@ namespace MeetLines.Application.DTOs.Projects
     public class ProjectResponse
     {
         public Guid Id { get; set; }
-        public string Name { get; set; } = null!;
+        public string Name { get; set; } = string.Empty;
+        public string Subdomain { get; set; } = string.Empty;
+        public string FullUrl { get; set; } = string.Empty;
         public string? Industry { get; set; }
         public string? Description { get; set; }
-        public string Status { get; set; } = null!;
+        public string Status { get; set; } = string.Empty;
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
     }

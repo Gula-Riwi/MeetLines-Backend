@@ -90,15 +90,14 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API de autenticación con Clean Architecture"
     });
     
-    // Añadir definición de seguridad Bearer para permitir enviar el token JWT en el header
+    // ApiKey para permitir control total sobre el header "Authorization"
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Ingrese el token JWT como: 'Bearer {token}'\n\nEjemplo: Bearer eyJhbGciOi...",
+        Description = "Autenticación JWT usando el esquema Bearer.\r\n\r\nIngrese la palabra 'Bearer' seguida de un espacio y su token.\r\n\r\nEjemplo: \"Bearer eyJhbGciOi...\"",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.Http,
-        Scheme = "bearer",
-        BearerFormat = "JWT"
+        Type = SecuritySchemeType.ApiKey, 
+        Scheme = "Bearer"
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -110,14 +109,23 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                }
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
             },
-            new string[] { }
+            new List<string>()
         }
     });
 });
 
 var app = builder.Build();
+
+app.UseCors(builder => builder
+    .WithOrigins("http://localhost:5173") 
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .AllowCredentials());
 
 // Middleware pipeline
 if (app.Environment.IsDevelopment())
@@ -130,7 +138,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseAuthentication();
+
+app.UseAuthentication(); 
 app.UseAuthorization();
 
 // Map controllers

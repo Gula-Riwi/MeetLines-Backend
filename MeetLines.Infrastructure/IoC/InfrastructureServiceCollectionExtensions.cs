@@ -48,7 +48,6 @@ namespace MeetLines.Infrastructure.IoC
                 Console.WriteLine($"📊 Conectando a BD local/configurable");
             }
 
-            Console.WriteLine($"🔗 Cadena de conexión final: {conn}");
             services.AddDbContext<MeetLinesPgDbContext>(o => o.UseNpgsql(conn));
             return services;
         }
@@ -72,6 +71,11 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IEmailService, EmailService>();
+
+            // Servicios Multitenancy
+            services.AddHttpContextAccessor();
+            services.AddScoped<MeetLines.Application.Services.ITenantService, TenantService>();
+            services.AddScoped<MeetLines.Application.Services.ITenantQueryFilter, TenantQueryFilter>();
 
             // Memory cache (used by GeoIP service)
             services.AddMemoryCache();
