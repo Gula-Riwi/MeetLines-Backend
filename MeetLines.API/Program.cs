@@ -25,16 +25,33 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+<<<<<<< HEAD
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "MeetLines API", 
+        Version = "v1",
+        Description = "API de autenticación con Clean Architecture"
+    });
+    
+    // ApiKey para permitir control total sobre el header "Authorization"
+=======
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "MeetLines API", Version = "v1" });
     // Añadir definición de seguridad Bearer para permitir enviar el token JWT en el header
+>>>>>>> aaffe6840ed5454e820fbc480d8b1d28a0b1d287
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Ingrese el token JWT como: 'Bearer {token}'\n\nEjemplo: Bearer eyJhbGciOi...",
+        Description = "Autenticación JWT usando el esquema Bearer.\r\n\r\nIngrese la palabra 'Bearer' seguida de un espacio y su token.\r\n\r\nEjemplo: \"Bearer eyJhbGciOi...\"",
         Name = "Authorization",
+<<<<<<< HEAD
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey, 
+        Scheme = "Bearer"
+=======
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT"
+>>>>>>> aaffe6840ed5454e820fbc480d8b1d28a0b1d287
     });
 
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -46,14 +63,23 @@ builder.Services.AddSwaggerGen(c =>
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
-                }
+                },
+                Scheme = "oauth2",
+                Name = "Bearer",
+                In = ParameterLocation.Header,
             },
-            new string[] { }
+            new List<string>()
         }
     });
 });
 
 var app = builder.Build();
+
+app.UseCors(builder => builder
+    .WithOrigins("http://localhost:5173") 
+    .AllowAnyMethod()
+    .AllowAnyHeader()
+    .AllowCredentials());
 
 // Middleware pipeline
 if (app.Environment.IsDevelopment())
@@ -64,10 +90,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+<<<<<<< HEAD
+app.UseAuthentication(); 
+=======
 // Add Tenant Resolution Middleware BEFORE authentication
 app.UseMiddleware<TenantResolutionMiddleware>();
 
 app.UseAuthentication();
+>>>>>>> aaffe6840ed5454e820fbc480d8b1d28a0b1d287
 app.UseAuthorization();
 
 // Map controllers
