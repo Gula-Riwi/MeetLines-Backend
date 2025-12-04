@@ -90,14 +90,14 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API de autenticación con Clean Architecture"
     });
     
-    // --- CORRECCIÓN AQUÍ ---
-    // Cambiado a ApiKey para permitir control total sobre el header "Authorization"
+    
+    // ApiKey para permitir control total sobre el header "Authorization"
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Autenticación JWT usando el esquema Bearer.\r\n\r\nIngrese la palabra 'Bearer' seguida de un espacio y su token.\r\n\r\nEjemplo: \"Bearer eyJhbGciOi...\"",
         Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey, // IMPORTANTE: Cambiado de Http a ApiKey
+        Type = SecuritySchemeType.ApiKey,
         Scheme = "Bearer"
     });
 
@@ -140,7 +140,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// El orden aquí es CRÍTICO: Authentication antes que Authorization
+
 app.UseAuthentication(); 
 app.UseAuthorization();
 
