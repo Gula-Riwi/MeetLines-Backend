@@ -19,8 +19,9 @@ namespace MeetLines.Application.IoC
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
-            // Registrar servicio de aplicación (mantener por compatibilidad hacia atrás)
+            // Registrar servicios de aplicación
             services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IProfileService, ProfileService>(); // ← NUEVO
 
             // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
