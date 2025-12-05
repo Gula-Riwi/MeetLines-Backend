@@ -18,6 +18,7 @@ namespace MeetLines.Application.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IEmailService _emailService;
+        private readonly ISubscriptionRepository _subscriptionRepository;
 
         public AuthService(
             ISaasUserRepository userRepository,
@@ -26,7 +27,8 @@ namespace MeetLines.Application.Services
             ILoginSessionRepository loginSessionRepository,
             IPasswordHasher passwordHasher,
             IJwtTokenService jwtTokenService,
-            IEmailService emailService)
+            IEmailService emailService,
+            ISubscriptionRepository subscriptionRepository)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _emailVerificationTokenRepository = emailVerificationTokenRepository ?? throw new ArgumentNullException(nameof(emailVerificationTokenRepository));
@@ -35,6 +37,7 @@ namespace MeetLines.Application.Services
             _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
             _jwtTokenService = jwtTokenService ?? throw new ArgumentNullException(nameof(jwtTokenService));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
         }
 
         public async Task<Result<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
@@ -58,6 +61,15 @@ namespace MeetLines.Application.Services
                 }
 
                 await _userRepository.AddAsync(user, ct);
+                
+                // ===== CREAR SUSCRIPCIÓN GRATUITA =====
+                var freeSubscription = new Subscription(
+                    userId: user.Id,
+                    plan: "beginner",
+                    cycle: "monthly",
+                    price: 0m
+                );
+                await _subscriptionRepository.AddAsync(freeSubscription, ct);
 
                 // Crear token de verificación de email
                 var verificationToken = Guid.NewGuid().ToString("N");
@@ -71,7 +83,8 @@ namespace MeetLines.Application.Services
                 {
                     UserId = user.Id,
                     Email = user.Email,
-                    Message = "Registro exitoso. Por favor verifica tu email."
+                    Message = "Registro exitoso. Por favor verifica tu email.",
+                    Plan = "beginner"
                 });
             }
             catch (Exception ex)
@@ -168,6 +181,16 @@ namespace MeetLines.Application.Services
                         request.ProfilePictureUrl
                     );
                     await _userRepository.AddAsync(user, ct);
+                    
+                    // ===== CREAR SUSCRIPCIÓN GRATUITA PARA OAUTH
+                    
+                    var freeSubscription = new Subscription(
+                        userId: user.Id,
+                        plan: "beginner",
+                        cycle: "monthly",
+                        price: 0m
+                    );
+                    await _subscriptionRepository.AddAsync(freeSubscription, ct);
                     
                     // Enviar email de bienvenida
                     await _emailService.SendWelcomeEmailAsync(user.Email, user.Name);
