@@ -22,6 +22,8 @@ namespace MeetLines.Infrastructure.Data
         public DbSet<SystemSetting> SystemSettings { get; set; }
         public DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<TransferToken> TransferTokens { get; set; }
+        public DbSet<Employee> Employees { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -88,11 +90,33 @@ namespace MeetLines.Infrastructure.Data
             {
                 b.ToTable("appointments");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.Id).ValueGeneratedOnAdd(); // Serial
+                
+                b.Property(x => x.ProjectId).HasColumnName("project_id");
+                b.Property(x => x.LeadId).HasColumnName("lead_id"); // Restored
+                b.Property(x => x.AppUserId).HasColumnName("app_users_id"); 
+                b.Property(x => x.ServiceId).HasColumnName("service_id");
+                b.Property(x => x.EmployeeId).HasColumnName("employee_id");
+                
+                b.Property(x => x.StartTime).HasColumnName("start_time");
+                b.Property(x => x.EndTime).HasColumnName("end_time");
+                b.Property(x => x.Status).HasColumnName("status").HasMaxLength(20).HasDefaultValue("pending");
+                
+                b.Property(x => x.PriceSnapshot).HasColumnName("price_snapshot").HasColumnType("numeric(15,2)");
+                b.Property(x => x.CurrencySnapshot).HasColumnName("currency_snapshot").HasMaxLength(3).HasDefaultValue("COP");
+                b.Property(x => x.MeetingLink).HasColumnName("meeting_link");
+                b.Property(x => x.UserNotes).HasColumnName("user_notes");
+                b.Property(x => x.AdminNotes).HasColumnName("admin_notes");
+
+                b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+                b.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+
                 b.HasOne<Project>().WithMany().HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                b.HasOne<Employee>().WithMany().HasForeignKey(a => a.EmployeeId).OnDelete(DeleteBehavior.SetNull); // Set Null if employee deleted
+
                 b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_appointments_project");
+                b.HasIndex(x => x.AppUserId).HasDatabaseName("idx_appointments_appuser");
+                b.HasIndex(x => x.EmployeeId).HasDatabaseName("idx_appointments_employee");
             });
 
             // Webhooks
@@ -199,6 +223,34 @@ namespace MeetLines.Infrastructure.Data
                 b.HasOne<SaasUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.UserId).HasDatabaseName("idx_passreset_user");
                 b.HasIndex(x => x.Token).IsUnique().HasDatabaseName("idx_passreset_token");
+            });
+
+            modelBuilder.Entity<TransferToken>(b =>
+            {
+                b.ToTable("transfer_tokens");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.Token).IsRequired().HasMaxLength(512);
+                b.Property(x => x.Tenant).IsRequired().HasMaxLength(128);
+                b.Property(x => x.ExpiresAt).IsRequired();
+                b.Property(x => x.Used).HasDefaultValue(false);
+                b.HasIndex(x => x.Token).IsUnique().HasDatabaseName("idx_transfertoken_token");
+                b.HasIndex(x => x.UserId).HasDatabaseName("idx_transfertoken_user");
+            });
+
+            // Employees
+            modelBuilder.Entity<Employee>(b =>
+            {
+                b.ToTable("employees");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+                b.HasOne<Project>().WithMany().HasForeignKey(e => e.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_employees_project");
+                b.HasIndex(x => x.Username).IsUnique().HasDatabaseName("idx_employees_username");
+                b.HasIndex(x => x.Email).IsUnique().HasDatabaseName("idx_employees_email"); // Ensure unique email
+                b.HasIndex(x => x.Area).HasDatabaseName("idx_employees_area"); // Index for Area lookups
             });
         }
     }

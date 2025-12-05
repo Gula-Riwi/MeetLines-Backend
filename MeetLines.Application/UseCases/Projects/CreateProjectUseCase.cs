@@ -20,15 +20,21 @@ namespace MeetLines.Application.UseCases.Projects
         private readonly IProjectRepository _projectRepository;
         private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IConfiguration _configuration;
+        private readonly MeetLines.Application.Services.Interfaces.IEmailService _emailService;
+        private readonly ISaasUserRepository _userRepository;
 
         public CreateProjectUseCase(
             IProjectRepository projectRepository,
             ISubscriptionRepository subscriptionRepository,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            MeetLines.Application.Services.Interfaces.IEmailService emailService,
+            ISaasUserRepository userRepository)
         {
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         }
 
         public async Task<Result<ProjectResponse>> ExecuteAsync(
@@ -111,6 +117,15 @@ namespace MeetLines.Application.UseCases.Projects
                     request.Description);
 
                 await _projectRepository.AddAsync(project, ct);
+
+
+
+                // Fetch user to get email
+                var user = await _userRepository.GetByIdAsync(userId, ct);
+                if (user != null)
+                {
+                    await _emailService.SendProjectCreatedNotificationAsync(user.Email, user.Name, project.Name);
+                }
 
                 return Result<ProjectResponse>.Ok(MapToResponse(project));
             }
