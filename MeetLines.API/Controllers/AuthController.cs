@@ -3,6 +3,10 @@ using MeetLines.Application.DTOs.Auth;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.API.DTOs;
 using FluentValidation;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text.Json;
+using System.Text;
 
 namespace MeetLines.API.Controllers
 {
@@ -19,6 +23,147 @@ namespace MeetLines.API.Controllers
         public AuthController(IAuthService authService)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+        }
+
+        /// <summary>
+        /// Exchange a Discord authorization code for user info and perform OAuth login server-side.
+        /// POST: api/auth/oauth/discord
+        /// Body: { code: string, redirectUri?: string }
+        /// </summary>
+        [HttpPost("oauth/discord")]
+        [ProducesResponseType(typeof(ApiResponse<LoginResponse>), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 400)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> DiscordOAuthExchange([FromBody] DiscordExchangeRequest request, CancellationToken ct)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Code))
+                    return BadRequest(ApiResponse.Fail("Code is required"));
+
+                var clientId = Environment.GetEnvironmentVariable("DISCORD_CLIENT_ID");
+                var clientSecret = Environment.GetEnvironmentVariable("DISCORD_CLIENT_SECRET");
+                if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(clientSecret))
+                    return StatusCode(500, ApiResponse.Fail("Discord OAuth is not configured on the server"));
+
+                // Exchange code for access token
+                using var http = new HttpClient();
+                var form = new Dictionary<string, string>
+                {
+                    ["client_id"] = clientId,
+                    ["client_secret"] = clientSecret,
+                    ["grant_type"] = "authorization_code",
+                    ["code"] = request.Code,
+                    ["redirect_uri"] = request.RedirectUri ?? ""
+                };
+
+                var tokenResp = await http.PostAsync("https://discord.com/api/oauth2/token", new FormUrlEncodedContent(form), ct);
+                if (!tokenResp.IsSuccessStatusCode)
+                {
+                    var err = await tokenResp.Content.ReadAsStringAsync(ct);
+                    return BadRequest(ApiResponse.Fail($"Discord token exchange failed: {err}"));
+                }
+
+                var tokenJson = await tokenResp.Content.ReadAsStringAsync(ct);
+                using var tokenDoc = JsonDocument.Parse(tokenJson);
+                var root = tokenDoc.RootElement;
+                if (!root.TryGetProperty("access_token", out var accessTokenProp))
+                    return BadRequest(ApiResponse.Fail("Discord token response did not contain access_token"));
+
+                var accessToken = accessTokenProp.GetString();
+
+                // Get user info
+                var req = new HttpRequestMessage(HttpMethod.Get, "https://discord.com/api/users/@me");
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                var userResp = await http.SendAsync(req, ct);
+                if (!userResp.IsSuccessStatusCode)
+                {
+                    var err = await userResp.Content.ReadAsStringAsync(ct);
+                    return BadRequest(ApiResponse.Fail($"Discord user info failed: {err}"));
+                }
+
+                var userJson = await userResp.Content.ReadAsStringAsync(ct);
+                using var userDoc = JsonDocument.Parse(userJson);
+                var u = userDoc.RootElement;
+
+                var externalId = u.GetProperty("id").GetString() ?? string.Empty;
+                var username = u.GetProperty("username").GetString() ?? string.Empty;
+                string email = string.Empty;
+                if (u.TryGetProperty("email", out var emailProp) && emailProp.ValueKind == JsonValueKind.String)
+                    email = emailProp.GetString() ?? string.Empty;
+
+                var oauthRequest = new OAuthLoginRequest
+                {
+                    ExternalProviderId = externalId,
+                    Email = email,
+                    Name = username,
+                    Provider = MeetLines.Domain.Enums.AuthProvider.Discord,
+                    DeviceInfo = GetUserAgent(),
+                    IpAddress = GetClientIp()
+                };
+
+                var result = await _authService.OAuthLoginAsync(oauthRequest, ct);
+                if (!result.IsSuccess)
+                    return BadRequest(ApiResponse<LoginResponse>.Fail(result.Error ?? "OAuth login failed"));
+
+                return Ok(ApiResponse<LoginResponse>.Ok(result.Value ?? new LoginResponse()));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Internal error: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Create a transfer token bound to the authenticated user and a tenant.
+        /// POST: api/auth/create-transfer
+        /// Body: { tenant: string }
+        /// Requires Authorization: Bearer <accessToken>
+        /// </summary>
+        [HttpPost("create-transfer")]
+        public async Task<IActionResult> CreateTransfer([FromBody] MeetLines.Application.DTOs.Auth.CreateTransferRequest request, CancellationToken ct)
+        {
+            try
+            {
+                // Ensure user is authenticated
+                if (!User.Identity?.IsAuthenticated ?? true)
+                    return Unauthorized(ApiResponse.Fail("Unauthorized"));
+
+                var userId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId)) return Unauthorized(ApiResponse.Fail("User id not found in token"));
+
+                var result = await _authService.CreateTransferAsync(request, userId, ct);
+                if (!result.IsSuccess) return BadRequest(ApiResponse.Fail(result.Error ?? "Error creating transfer"));
+
+                return Ok(ApiResponse<string>.Ok(result.Value ?? string.Empty));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Internal error: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Accept a transfer token (used by tenant subdomain) and returns LoginResponse tokens.
+        /// POST: api/auth/accept-transfer
+        /// Body: { transferToken: string }
+        /// </summary>
+        [HttpPost("accept-transfer")]
+        public async Task<IActionResult> AcceptTransfer([FromBody] MeetLines.Application.DTOs.Auth.AcceptTransferRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var result = await _authService.AcceptTransferAsync(request, ct);
+                if (!result.IsSuccess) return BadRequest(ApiResponse.Fail(result.Error ?? "Error accepting transfer"));
+
+                return Ok(ApiResponse<LoginResponse>.Ok(result.Value ?? new LoginResponse()));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Internal error: {ex.Message}"));
+            }
         }
 
         // Helper: try to read client IP respecting X-Forwarded-For
@@ -115,6 +260,35 @@ namespace MeetLines.API.Controllers
 
                 if (!result.IsSuccess)
                     return BadRequest(ApiResponse<LoginResponse>.Fail(result.Error ?? "Error en login"));
+
+                return Ok(ApiResponse<LoginResponse>.Ok(result.Value ?? new LoginResponse()));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Error interno: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Inicia sesión para empleados de un proyecto.
+        /// POST: api/auth/employee-login
+        /// </summary>
+        [HttpPost("employee-login")]
+        [ProducesResponseType(typeof(ApiResponse<LoginResponse>), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 400)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> EmployeeLogin([FromBody] EmployeeLoginRequest request, CancellationToken ct)
+        {
+            try
+            {
+                // Auto-populate ip/device when missing
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
+
+                var result = await _authService.EmployeeLoginAsync(request, ct);
+
+                if (!result.IsSuccess)
+                    return BadRequest(ApiResponse<LoginResponse>.Fail(result.Error ?? "Error en login de empleado"));
 
                 return Ok(ApiResponse<LoginResponse>.Ok(result.Value ?? new LoginResponse()));
             }
