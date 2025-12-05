@@ -7,5 +7,6 @@ namespace MeetLines.Application.DTOs.Auth
         public Guid UserId { get; set; }
         public string Email { get; set; } = string.Empty;
         public string Message { get; set; } = string.Empty;
+        public string Plan { get; set; } = "beginner";
     }
 }
