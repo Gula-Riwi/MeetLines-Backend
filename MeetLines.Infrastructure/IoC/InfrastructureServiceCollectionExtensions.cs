@@ -4,10 +4,16 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Security.Claims;
+using System.Text.Json;
+using Microsoft.AspNetCore.Authentication.OAuth;
 using MeetLines.Infrastructure.Data;
 using MeetLines.Infrastructure.Repositories;
 using MeetLines.Infrastructure.Services;
 using MeetLines.Application.Services.Interfaces;
+using MeetLines.Application.Services;
 using MeetLines.Domain.Repositories;
 
 namespace MeetLines.Infrastructure.IoC
@@ -61,17 +67,8 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<ILoginSessionRepository, LoginSessionRepository>();
             services.AddScoped<IProjectRepository, ProjectRepository>();
             services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
-            services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
-
-            return services;
-        }
-
-        public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
-        {
-            // Servicios de autenticación
-            services.AddScoped<IPasswordHasher, PasswordHasher>();
-            services.AddScoped<IJwtTokenService, JwtTokenService>();
-            services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+            services.AddScoped<IAppointmentRepository, AppointmentRepository>();
 
             // Servicios Multitenancy
             services.AddHttpContextAccessor();
@@ -84,6 +81,21 @@ namespace MeetLines.Infrastructure.IoC
             // GeoIP service (MaxMind DB) - implementation bound to Application interface
             services.AddSingleton<MeetLines.Application.Services.Interfaces.IGeoIpService, MeetLines.Infrastructure.Services.GeoIpService>();
 
+            return services;
+        }
+
+        public static IServiceCollection AddInfrastructureServices(this IServiceCollection services)
+        {
+            // Servicios de autenticación
+            services.AddScoped<IPasswordHasher, PasswordHasher>();
+            services.AddScoped<IJwtTokenService, JwtTokenService>();
+            services.AddScoped<IEmailService, EmailService>();
+            services.AddScoped<MeetLines.Domain.Repositories.ITransferTokenRepository, MeetLines.Infrastructure.Repositories.TransferTokenRepository>();
+
+            // Business Services
+            services.AddScoped<IAppointmentAssignmentService, MeetLines.Application.Services.AppointmentAssignmentService>();
+            services.AddScoped<IAppointmentService, AppointmentService>();
+            
             return services;
         }
 
@@ -126,6 +138,66 @@ namespace MeetLines.Infrastructure.IoC
             {
                 options.AppId = configuration["Authentication:Facebook:AppId"] ?? "";
                 options.AppSecret = configuration["Authentication:Facebook:AppSecret"] ?? "";
+            })
+
+            // Discord OAuth using generic OAuth handler
+            // Discord endpoints: https://discord.com/api/oauth2/
+            // Scopes: identify + email (email returned only if scope 'email' is granted)
+            .AddOAuth("Discord", options =>
+            {
+                options.ClientId = configuration["Authentication:Discord:ClientId"] ?? Environment.GetEnvironmentVariable("DISCORD_CLIENT_ID") ?? "";
+                options.ClientSecret = configuration["Authentication:Discord:ClientSecret"] ?? Environment.GetEnvironmentVariable("DISCORD_CLIENT_SECRET") ?? "";
+                options.CallbackPath = "/signin-discord";
+
+                options.AuthorizationEndpoint = "https://discord.com/api/oauth2/authorize";
+                options.TokenEndpoint = "https://discord.com/api/oauth2/token";
+                options.UserInformationEndpoint = "https://discord.com/api/users/@me";
+
+                options.Scope.Clear();
+                options.Scope.Add("identify");
+                options.Scope.Add("email");
+
+                options.SaveTokens = true;
+
+                options.Events = new OAuthEvents
+                {
+                    OnCreatingTicket = async context =>
+                    {
+                        var request = new HttpRequestMessage(HttpMethod.Get, context.Options.UserInformationEndpoint);
+                        request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", context.AccessToken);
+
+                        var response = await context.Backchannel.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, context.HttpContext.RequestAborted);
+                        response.EnsureSuccessStatusCode();
+
+                        using var payload = JsonDocument.Parse(await response.Content.ReadAsStringAsync(context.HttpContext.RequestAborted));
+                        var root = payload.RootElement;
+
+                        var identity = context.Principal?.Identity as System.Security.Claims.ClaimsIdentity;
+
+                        if (root.TryGetProperty("id", out var idProp) && idProp.ValueKind == JsonValueKind.String)
+                        {
+                            var idVal = idProp.GetString();
+                            if (!string.IsNullOrEmpty(idVal) && identity != null)
+                                identity.AddClaim(new Claim(ClaimTypes.NameIdentifier, idVal));
+                        }
+
+                        // Discord username is separate from discriminator. We'll add the plain username.
+                        if (root.TryGetProperty("username", out var usernameProp) && usernameProp.ValueKind == JsonValueKind.String)
+                        {
+                            var uname = usernameProp.GetString();
+                            if (!string.IsNullOrEmpty(uname) && identity != null)
+                                identity.AddClaim(new Claim(ClaimTypes.Name, uname));
+                        }
+
+                        if (root.TryGetProperty("email", out var emailProp) && emailProp.ValueKind == JsonValueKind.String)
+                        {
+                            var emailVal = emailProp.GetString();
+                            if (!string.IsNullOrEmpty(emailVal) && identity != null)
+                                identity.AddClaim(new Claim(ClaimTypes.Email, emailVal));
+                        }
+                    }
+                };
             });
 
             return services;

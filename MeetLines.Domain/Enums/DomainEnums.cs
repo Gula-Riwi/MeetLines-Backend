@@ -20,7 +20,8 @@
     {
         Local = 0,      // Email y contraseña
         Google = 1,     // OAuth Google
-        Facebook = 2    // OAuth Facebook/Meta
+        Facebook = 2,   // OAuth Facebook/Meta
+        Discord = 3     // OAuth Discord
     }
     
     /// <summary>
