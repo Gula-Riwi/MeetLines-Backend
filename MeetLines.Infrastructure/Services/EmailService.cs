@@ -118,6 +118,46 @@ namespace MeetLines.Infrastructure.Services
 
             await SendEmailAsync(toEmail, subject, body);
         }
+        
+        public async Task SendPasswordChangedNotificationAsync(string toEmail, string userName)
+{
+    var subject = "Tu contraseña ha sido cambiada - MeetLines";
+    var body = $@"
+        <html>
+        <body style='font-family: Arial, sans-serif;'>
+            <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
+                <h2 style='color: #333;'>¡Hola {userName}!</h2>
+                <p>Te informamos que tu contraseña ha sido cambiada exitosamente.</p>
+                
+                <div style='background-color: #f8f9fa; padding: 15px; border-left: 4px solid #28a745; margin: 20px 0;'>
+                    <p style='margin: 0;'><strong>Fecha y hora:</strong> {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
+                    <p style='margin: 10px 0 0 0;'><strong>Acción:</strong> Cambio de contraseña</p>
+                </div>
+
+                <p style='color: #666;'>Por seguridad, todas tus sesiones activas han sido cerradas. Necesitarás iniciar sesión nuevamente con tu nueva contraseña.</p>
+
+                <div style='background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0;'>
+                    <p style='margin: 0; color: #856404;'><strong>⚠️ ¿No fuiste tú?</strong></p>
+                    <p style='margin: 10px 0 0 0; color: #856404;'>Si no realizaste este cambio, tu cuenta podría estar comprometida. Por favor, contacta con nuestro equipo de soporte inmediatamente.</p>
+                </div>
+
+                <div style='text-align: center; margin: 30px 0;'>
+                    <a href='{_frontendUrl}/login' 
+                       style='background-color: #28a745; color: white; padding: 14px 28px; text-decoration: none; border-radius: 4px; display: inline-block;'>
+                        Iniciar Sesión
+                    </a>
+                </div>
+
+                <hr style='border: 1px solid #eee; margin: 30px 0;'>
+                <p style='color: #999; font-size: 12px;'>Este es un correo automático de seguridad. Si tienes alguna pregunta, contacta con soporte.</p>
+                <p style='color: #999; font-size: 12px;'>Equipo de MeetLines</p>
+            </div>
+        </body>
+        </html>
+    ";
+
+    await SendEmailAsync(toEmail, subject, body);
+}
 
         private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
         {

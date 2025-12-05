@@ -13,15 +13,18 @@ namespace MeetLines.Application.Services
         private readonly ISaasUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
         private readonly ILoginSessionRepository _loginSessionRepository;
+        private readonly IEmailService _emailService;
 
         public ProfileService(
             ISaasUserRepository userRepository,
             IPasswordHasher passwordHasher,
-            ILoginSessionRepository loginSessionRepository)
+            ILoginSessionRepository loginSessionRepository,
+            IEmailService emailService)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
             _loginSessionRepository = loginSessionRepository ?? throw new ArgumentNullException(nameof(loginSessionRepository));
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
         }
 
         public async Task<Result<GetProfileResponse>> GetProfileAsync(Guid userId, CancellationToken ct = default)
@@ -157,6 +160,17 @@ namespace MeetLines.Application.Services
 
                 // Cerrar todas las sesiones activas por seguridad
                 await _loginSessionRepository.DeleteAllUserSessionsAsync(userId, ct);
+                
+                try
+                {
+                    await _emailService.SendPasswordChangedNotificationAsync(user.Email, user.Name);
+                }
+                catch (Exception emailEx)
+                {
+                    // Log el error pero no falla la operación
+                    Console.WriteLine($"⚠️ Error al enviar email de notificación: {emailEx.Message}");
+                }
+                // ===== FIN ENVÍO DE EMAIL =====
 
                 return Result.Ok();
             }

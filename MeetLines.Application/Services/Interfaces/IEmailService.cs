@@ -7,5 +7,6 @@ namespace MeetLines.Application.Services.Interfaces
         Task SendEmailVerificationAsync(string toEmail, string userName, string verificationToken);
         Task SendPasswordResetAsync(string toEmail, string userName, string resetToken);
         Task SendWelcomeEmailAsync(string toEmail, string userName);
+        Task SendPasswordChangedNotificationAsync(string toEmail, string userName);
     }
 }
