@@ -12,9 +12,7 @@ using MeetLines.API.Middlewares;
 var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 var envFileName = environmentName == "Development" ? ".env.development" : ".env";
 
-// Determine environment
-var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
-var envFileName = environmentName == "Development" ? ".env.development" : ".env";
+
 
 // Helper searching upwards
 string? FindFileUpwards(string fileName)
