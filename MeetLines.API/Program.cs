@@ -8,28 +8,39 @@ using Microsoft.AspNetCore.Mvc;
 // Asegúrate de que el namespace coincida con donde creaste el archivo del Middleware
 using MeetLines.API.Middlewares; 
 
+// Determine environment
+var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+var envFileName = environmentName == "Development" ? ".env.development" : ".env";
+
 // Load .env file from workspace root FIRST before anything else
-var envPathRoot = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, ".env");
+var workspaceRoot = Directory.GetParent(Directory.GetCurrentDirectory())!.FullName;
+var envPathRoot = Path.Combine(workspaceRoot, envFileName);
+var envPathLocal = Path.Combine(Directory.GetCurrentDirectory(), envFileName);
+
+string? envPathToLoad = null;
+
 if (File.Exists(envPathRoot))
 {
-    DotNetEnv.Env.Load(envPathRoot);
-    Console.WriteLine($"🌎 .env cargado desde raíz: {envPathRoot}");
-    Console.WriteLine($"🌎 DB_HOST desde .env: {Environment.GetEnvironmentVariable("DB_HOST")}");
+    envPathToLoad = envPathRoot;
+    Console.WriteLine($"🌎 Environment: {environmentName}");
+    Console.WriteLine($"🌎 Cargando {envFileName} desde raíz: {envPathRoot}");
+}
+else if (File.Exists(envPathLocal))
+{
+    envPathToLoad = envPathLocal;
+    Console.WriteLine($"🌎 Environment: {environmentName}");
+    Console.WriteLine($"🌎 Cargando {envFileName} desde API: {envPathLocal}");
 }
 else
 {
-    // Fallback: intentar cargar desde la carpeta actual (MeetLines.API)
-    var envPathLocal = Path.Combine(Directory.GetCurrentDirectory(), ".env");
-    if (File.Exists(envPathLocal))
-    {
-        DotNetEnv.Env.Load(envPathLocal);
-        Console.WriteLine($"🌎 .env cargado desde API: {envPathLocal}");
-        Console.WriteLine($"🌎 DB_HOST desde .env: {Environment.GetEnvironmentVariable("DB_HOST")}");
-    }
-    else
-    {
-        Console.WriteLine($"⚠️ No se encontró archivo .env en la raíz ni en MeetLines.API");
-    }
+    Console.WriteLine($"⚠️ Environment: {environmentName}");
+    Console.WriteLine($"⚠️ No se encontró archivo {envFileName} en raíz ni en API.");
+}
+
+if (envPathToLoad != null)
+{
+    DotNetEnv.Env.Load(envPathToLoad);
+    Console.WriteLine($"🌎 DB_HOST cargado: {Environment.GetEnvironmentVariable("DB_HOST")}");
 }
 
 var builder = WebApplication.CreateBuilder(args);
