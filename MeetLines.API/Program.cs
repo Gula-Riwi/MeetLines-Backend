@@ -12,40 +12,49 @@ using MeetLines.API.Middlewares;
 var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
 var envFileName = environmentName == "Development" ? ".env.development" : ".env";
 
-// Load .env file from workspace root FIRST before anything else
-var currentDir = Directory.GetCurrentDirectory();
-var parentDir = Directory.GetParent(currentDir);
-var workspaceRoot = parentDir?.FullName ?? currentDir; // Fallback to current if no parent (e.g. root drive)
 
-var envPathRoot = Path.Combine(workspaceRoot, envFileName);
-var envPathLocal = Path.Combine(currentDir, envFileName);
 
-string? envPathToLoad = null;
-
-// Logic: Check Parent first (Project Root when running from API folder), then Current (if running from Root)
-if (File.Exists(envPathRoot))
+// Helper searching upwards
+string? FindFileUpwards(string fileName)
 {
-    envPathToLoad = envPathRoot;
-    Console.WriteLine($"🌎 Environment: {environmentName}");
-    Console.WriteLine($"🌎 Cargando {envFileName} desde raíz del proyecto: {envPathRoot}");
+    var dir = Directory.GetCurrentDirectory();
+    while (!string.IsNullOrEmpty(dir))
+    {
+        var path = Path.Combine(dir, fileName);
+        if (File.Exists(path)) return path;
+        var parent = Directory.GetParent(dir);
+        if (parent == null) break;
+        dir = parent.FullName;
+    }
+    return null;
 }
-else if (File.Exists(envPathLocal) && envPathLocal != envPathRoot)
+
+var envPathToLoad = FindFileUpwards(envFileName);
+
+if (envPathToLoad != null)
 {
-    // Only check local if it's different (i.e., we are not already at root)
-    envPathToLoad = envPathLocal;
     Console.WriteLine($"🌎 Environment: {environmentName}");
-    Console.WriteLine($"🌎 Cargando {envFileName} desde directorio actual: {envPathLocal}");
+    Console.WriteLine($"🌎 Cargando {envFileName} desde: {envPathToLoad}");
+    DotNetEnv.Env.Load(envPathToLoad);
+    // Verificar carga
+    Console.WriteLine($"🌎 DB_HOST cargado: {Environment.GetEnvironmentVariable("DB_HOST")}");
 }
 else
 {
     Console.WriteLine($"⚠️ Environment: {environmentName}");
-    Console.WriteLine($"⚠️ No se encontró archivo {envFileName} en raíz ni en API.");
-}
-
-if (envPathToLoad != null)
-{
-    DotNetEnv.Env.Load(envPathToLoad);
-    Console.WriteLine($"🌎 DB_HOST cargado: {Environment.GetEnvironmentVariable("DB_HOST")}");
+    Console.WriteLine($"⚠️ No se encontró archivo {envFileName} buscando hacia arriba desde {Directory.GetCurrentDirectory()}");
+    
+    // Fallback: Try loading .env if .env.development was missing in Dev mode
+    if (environmentName == "Development")
+    {
+         Console.WriteLine("⚠️ Intentando fallback a .env normal...");
+         var fallbackPath = FindFileUpwards(".env");
+         if (fallbackPath != null)
+         {
+             DotNetEnv.Env.Load(fallbackPath);
+             Console.WriteLine($"🌎 Fallback: Cargado .env desde {fallbackPath}");
+         }
+    }
 }
 
 var builder = WebApplication.CreateBuilder(args);
