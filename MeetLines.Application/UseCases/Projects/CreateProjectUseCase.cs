@@ -66,19 +66,10 @@ namespace MeetLines.Application.UseCases.Projects
                         $"Current projects: {currentCount}");
                 }
 
-                // Generar o validar subdominio
-                string subdomain;
-                if (!string.IsNullOrWhiteSpace(request.Subdomain))
-                {
-                    subdomain = request.Subdomain.ToLowerInvariant();
-                }
-                else
-                {
-                    // Generar: slug(nombre) + "-" + suffix(4 chars)
-                    var slug = SlugGenerator.Generate(request.Name);
-                    var suffix = GenerateUniqueSuffix();
-                    subdomain = $"{slug}-{suffix}";
-                }
+                // Generar subdominio: slug(nombre) + "-" + suffix(4 chars)
+                var slug = SlugGenerator.Generate(request.Name);
+                var suffix = GenerateUniqueSuffix();
+                string subdomain = $"{slug}-{suffix}";
 
                 // Validar formato
                 if (!SubdomainValidator.IsValid(subdomain, out var validationError))
@@ -87,28 +78,18 @@ namespace MeetLines.Application.UseCases.Projects
                 }
 
                 // Validar unicidad
+                // Validar unicidad y reintentar si es necesario (casos extremadamente raros)
+                int retryCount = 0;
+                while (await _projectRepository.ExistsSubdomainAsync(subdomain, ct) && retryCount < 5)
+                {
+                   suffix = GenerateUniqueSuffix();
+                   subdomain = $"{slug}-{suffix}";
+                   retryCount++;
+                }
+
                 if (await _projectRepository.ExistsSubdomainAsync(subdomain, ct))
                 {
-                    // Si fue generado automáticamente, intentar agregar sufijo numérico
-                    if (string.IsNullOrWhiteSpace(request.Subdomain))
-                    {
-                        int suffix = 1;
-                        string originalSubdomain = subdomain;
-                        while (await _projectRepository.ExistsSubdomainAsync(subdomain, ct) && suffix < 100)
-                        {
-                            subdomain = $"{originalSubdomain}-{suffix}";
-                            suffix++;
-                        }
-                        
-                        if (await _projectRepository.ExistsSubdomainAsync(subdomain, ct))
-                        {
-                            return Result<ProjectResponse>.Fail($"Cannot generate a unique subdomain for '{request.Name}'. Please specify a custom subdomain.");
-                        }
-                    }
-                    else
-                    {
-                        return Result<ProjectResponse>.Fail($"Subdomain '{subdomain}' is already taken.");
-                    }
+                    return Result<ProjectResponse>.Fail($"Unable to generate a unique subdomain for '{request.Name}'. Please try again.");
                 }
 
                 // Crear el proyecto
