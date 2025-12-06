@@ -13,23 +13,28 @@ var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT
 var envFileName = environmentName == "Development" ? ".env.development" : ".env";
 
 // Load .env file from workspace root FIRST before anything else
-var workspaceRoot = Directory.GetParent(Directory.GetCurrentDirectory())!.FullName;
+var currentDir = Directory.GetCurrentDirectory();
+var parentDir = Directory.GetParent(currentDir);
+var workspaceRoot = parentDir?.FullName ?? currentDir; // Fallback to current if no parent (e.g. root drive)
+
 var envPathRoot = Path.Combine(workspaceRoot, envFileName);
-var envPathLocal = Path.Combine(Directory.GetCurrentDirectory(), envFileName);
+var envPathLocal = Path.Combine(currentDir, envFileName);
 
 string? envPathToLoad = null;
 
+// Logic: Check Parent first (Project Root when running from API folder), then Current (if running from Root)
 if (File.Exists(envPathRoot))
 {
     envPathToLoad = envPathRoot;
     Console.WriteLine($"🌎 Environment: {environmentName}");
-    Console.WriteLine($"🌎 Cargando {envFileName} desde raíz: {envPathRoot}");
+    Console.WriteLine($"🌎 Cargando {envFileName} desde raíz del proyecto: {envPathRoot}");
 }
-else if (File.Exists(envPathLocal))
+else if (File.Exists(envPathLocal) && envPathLocal != envPathRoot)
 {
+    // Only check local if it's different (i.e., we are not already at root)
     envPathToLoad = envPathLocal;
     Console.WriteLine($"🌎 Environment: {environmentName}");
-    Console.WriteLine($"🌎 Cargando {envFileName} desde API: {envPathLocal}");
+    Console.WriteLine($"🌎 Cargando {envFileName} desde directorio actual: {envPathLocal}");
 }
 else
 {
