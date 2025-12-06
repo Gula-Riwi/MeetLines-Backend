@@ -5,8 +5,8 @@ using DotNetEnv;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
-// Asegúrate de que el namespace coincida con donde creaste el archivo del Middleware
-using MeetLines.API.Middlewares; 
+using MeetLines.API.Middleware;
+using MeetLines.API.Middlewares;
 
 // Determine environment
 var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
@@ -181,7 +181,25 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 app.UseCors(builder => builder
-    .WithOrigins("http://localhost:5173") 
+    .SetIsOriginAllowed(origin =>
+    {
+        if (string.IsNullOrEmpty(origin)) return false;
+        // Parse origin safely
+        if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri)) return false;
+
+        var host = uri.Host ?? string.Empty;
+
+        // Allow localhost and loopback (any port)
+        if (host.Equals("localhost", StringComparison.OrdinalIgnoreCase)) return true;
+        if (host.Equals("127.0.0.1")) return true;
+
+        // Allow subdomains of meet-lines.local and production domain (any port)
+        if (host.EndsWith(".meet-lines.local", StringComparison.OrdinalIgnoreCase)) return true;
+        if (host.Equals("meet-lines.local", StringComparison.OrdinalIgnoreCase)) return true;
+        if (host.EndsWith(".meet-lines.com", StringComparison.OrdinalIgnoreCase)) return true;
+
+        return false;
+    })
     .AllowAnyMethod()
     .AllowAnyHeader()
     .AllowCredentials());
@@ -195,6 +213,11 @@ if (app.Environment.IsDevelopment())
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "MeetLines API v1");
     });
 }
+
+// === [NUEVO] MIDDLEWARE DE RESOLUCIÓN DE TENANT ===
+// Se coloca antes de autenticación para resolver el tenant
+app.UseMiddleware<TenantResolutionMiddleware>();
+// ==================================================
 
 // === [NUEVO] MIDDLEWARE DE ERRORES (DISCORD) ===
 // Se coloca antes de HTTPS, Auth y Controllers para atrapar cualquier excepción

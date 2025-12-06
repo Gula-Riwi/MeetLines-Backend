@@ -17,17 +17,20 @@ namespace MeetLines.Application.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IProjectRepository _projectRepository;
         private readonly IEmailService _emailService;
+        private readonly ITenantService _tenantService;
 
         public EmployeeService(
             IEmployeeRepository employeeRepository,
             IPasswordHasher passwordHasher,
             IProjectRepository projectRepository,
-            IEmailService emailService)
+            IEmailService emailService,
+            ITenantService tenantService)
         {
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
         }
 
         public async Task<Result<EmployeeResponse>> CreateEmployeeAsync(CreateEmployeeRequest request, CancellationToken ct = default)
@@ -35,21 +38,27 @@ namespace MeetLines.Application.Services
             try
             {
                 // Validate Project existence
-                 var project = await _projectRepository.GetAsync(request.ProjectId, ct);
-                 if (project == null)
-                 {
-                     return Result<EmployeeResponse>.Fail("Proyecto no encontrado");
-                 }
+                var project = await _projectRepository.GetAsync(request.ProjectId, ct);
+                if (project == null)
+                {
+                    return Result<EmployeeResponse>.Fail("Proyecto no encontrado");
+                }
+
+                // Validate tenant consistency (subdomain match)
+                var currentSubdomain = _tenantService.GetCurrentSubdomain();
+                if (!string.IsNullOrWhiteSpace(currentSubdomain) &&
+                    !string.Equals(project.Subdomain, currentSubdomain, StringComparison.OrdinalIgnoreCase))
+                {
+                    return Result<EmployeeResponse>.Fail("El proyecto no pertenece al tenant actual.");
+                }
 
                 // Auto‑generate username from email if not provided
                 string username = request.Username;
                 if (string.IsNullOrWhiteSpace(username))
                 {
-                    // Take the part before '@' as base username
                     username = request.Email.Split('@')[0];
                     var baseUsername = username;
                     int suffix = 1;
-                    // Ensure uniqueness
                     while (await _employeeRepository.GetByUsernameAsync(username, ct) != null)
                     {
                         username = $"{baseUsername}{suffix}";
@@ -58,7 +67,6 @@ namespace MeetLines.Application.Services
                 }
                 else
                 {
-                    // Verify provided username is unique
                     var existing = await _employeeRepository.GetByUsernameAsync(username, ct);
                     if (existing != null)
                     {
@@ -66,16 +74,14 @@ namespace MeetLines.Application.Services
                     }
                 }
 
-                // Generar contraseña aleatoria
+                // Generate random password
                 var password = GenerateRandomPassword();
                 var passwordHash = _passwordHasher.HashPassword(password);
-                var employee = new Employee(request.ProjectId, request.Name, username, request.Email, passwordHash, request.Role, request.Area);
 
+                var employee = new Employee(request.ProjectId, request.Name, username, request.Email, passwordHash, request.Role, request.Area);
                 await _employeeRepository.AddAsync(employee, ct);
 
-
-
-                // Send credentials to employee using their specific email
+                // Send credentials via email
                 await _emailService.SendEmployeeCredentialsAsync(request.Email, request.Name, username, password, request.Area);
 
                 return Result<EmployeeResponse>.Ok(MapToResponse(employee));
@@ -114,7 +120,6 @@ namespace MeetLines.Application.Services
                 CreatedAt = e.CreatedAt
             };
         }
-
 
         private static string GenerateRandomPassword(int length = 12)
         {
