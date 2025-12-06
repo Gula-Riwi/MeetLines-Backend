@@ -174,7 +174,7 @@ namespace MeetLines.API.Controllers
                 var u = userDoc.RootElement;
 
                 var externalId = u.GetProperty("id").GetString() ?? string.Empty;
-                var name = u.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : "Facebook User";
+                var name = (u.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null) ?? "Facebook User";
                 string? email = null;
                 if (u.TryGetProperty("email", out var emailProp) && emailProp.ValueKind == JsonValueKind.String)
                     email = emailProp.GetString();

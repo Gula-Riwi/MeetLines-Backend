@@ -65,9 +65,15 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.Subdomain).IsRequired().HasMaxLength(63);
                 b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
                 b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+                // WhatsApp Integration
+                b.Property(x => x.WhatsappVerifyToken).HasColumnName("whatsapp_verify_token").HasMaxLength(256);
+                b.Property(x => x.WhatsappPhoneNumberId).HasColumnName("whatsapp_phone_number_id").HasMaxLength(100);
+                b.Property(x => x.WhatsappAccessToken).HasColumnName("whatsapp_access_token");
+                b.Property(x => x.WhatsappForwardWebhook).HasColumnName("whatsapp_forward_webhook");
                 b.HasOne<SaasUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.UserId).HasDatabaseName("idx_projects_user");
                 b.HasIndex(x => x.Subdomain).IsUnique().HasDatabaseName("idx_projects_subdomain");
+                b.HasIndex(x => x.WhatsappPhoneNumberId).HasDatabaseName("idx_projects_whatsapp_phone_number_id");
             });
 
             // Channels

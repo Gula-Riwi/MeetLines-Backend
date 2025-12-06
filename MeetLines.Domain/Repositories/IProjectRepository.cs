@@ -52,6 +52,16 @@ namespace MeetLines.Domain.Repositories
         Task<Project?> GetBySubdomainAsync(string subdomain, CancellationToken ct = default);
 
         /// <summary>
+        /// Obtiene un proyecto por su whatsapp phone_number_id
+        /// </summary>
+        Task<Project?> GetByWhatsappPhoneNumberIdAsync(string phoneNumberId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Obtiene un proyecto por su whatsapp verify token
+        /// </summary>
+        Task<Project?> GetByWhatsappVerifyTokenAsync(string verifyToken, CancellationToken ct = default);
+
+        /// <summary>
         /// Verifica si existe un subdominio (para validación de unicidad)
         /// </summary>
         Task<bool> ExistsSubdomainAsync(string subdomain, CancellationToken ct = default);

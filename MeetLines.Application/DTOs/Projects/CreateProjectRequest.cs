@@ -9,5 +9,10 @@ namespace MeetLines.Application.DTOs.Projects
 
         public string? Industry { get; set; }
         public string? Description { get; set; }
+        // Optional WhatsApp integration initial values
+        public string? WhatsappVerifyToken { get; set; }
+        public string? WhatsappPhoneNumberId { get; set; }
+        public string? WhatsappAccessToken { get; set; }
+        public string? WhatsappForwardWebhook { get; set; }
     }
 }

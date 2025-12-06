@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MeetLines.Application.DTOs.Projects;
 using MeetLines.Application.UseCases.Projects;
+using MeetLines.Domain.Repositories;
 using System.Security.Claims;
 
 namespace MeetLines.API.Controllers
@@ -113,6 +114,50 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Obtiene credenciales de un proyecto por su phone_number_id de WhatsApp
+        /// Este endpoint es usado por n8n para obtener las credenciales dinámicamente
+        /// GET: api/projects/phone-number/{phoneNumberId}
+        /// </summary>
+        [HttpGet("phone-number/{phoneNumberId}")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ProjectCredentialsDto), 200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetByWhatsappPhoneNumber(
+            [FromRoute] string phoneNumberId,
+            [FromServices] IProjectRepository projectRepository,
+            CancellationToken ct = default)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(phoneNumberId))
+                {
+                    return BadRequest(new { error = "Phone number ID is required" });
+                }
+
+                var project = await projectRepository.GetByWhatsappPhoneNumberIdAsync(phoneNumberId, ct);
+                if (project == null)
+                {
+                    return NotFound(new { error = "Project not found" });
+                }
+
+                // Devolver solo las credenciales necesarias
+                var dto = new ProjectCredentialsDto
+                {
+                    ProjectId = project.Id.ToString(),
+                    ProjectName = project.Name,
+                    WhatsappPhoneNumberId = project.WhatsappPhoneNumberId ?? string.Empty,
+                    WhatsappAccessToken = project.WhatsappAccessToken ?? string.Empty
+                };
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        /// <summary>
         /// Extrae el ID del usuario del JWT token
         /// </summary>
         private Guid GetUserId()
@@ -123,5 +168,13 @@ namespace MeetLines.API.Controllers
 
             return userId;
         }
+    }
+
+    public class ProjectCredentialsDto
+    {
+        public string ProjectId { get; set; } = null!;
+        public string ProjectName { get; set; } = null!;
+        public string WhatsappPhoneNumberId { get; set; } = null!;
+        public string WhatsappAccessToken { get; set; } = null!;
     }
 }
