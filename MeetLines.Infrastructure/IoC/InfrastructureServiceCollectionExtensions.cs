@@ -90,6 +90,7 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<IPasswordHasher, PasswordHasher>();
             services.AddScoped<IJwtTokenService, JwtTokenService>();
             services.AddScoped<IEmailService, EmailService>();
+            services.AddSingleton<IEmailTemplateBuilder, EmailTemplateBuilder>();
             services.AddScoped<MeetLines.Domain.Repositories.ITransferTokenRepository, MeetLines.Infrastructure.Repositories.TransferTokenRepository>();
 
             // Business Services
