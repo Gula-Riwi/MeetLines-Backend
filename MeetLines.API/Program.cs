@@ -8,41 +8,89 @@ using Microsoft.AspNetCore.Mvc;
 // Asegúrate de que el namespace coincida con donde creaste el archivo del Middleware
 using MeetLines.API.Middlewares; 
 
+// Determine environment
+var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
+var envFileName = environmentName == "Development" ? ".env.development" : ".env";
+
 // Load .env file from workspace root FIRST before anything else
-var envPathRoot = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, ".env");
+var currentDir = Directory.GetCurrentDirectory();
+var parentDir = Directory.GetParent(currentDir);
+var workspaceRoot = parentDir?.FullName ?? currentDir; // Fallback to current if no parent (e.g. root drive)
+
+var envPathRoot = Path.Combine(workspaceRoot, envFileName);
+var envPathLocal = Path.Combine(currentDir, envFileName);
+
+string? envPathToLoad = null;
+
+// Logic: Check Parent first (Project Root when running from API folder), then Current (if running from Root)
 if (File.Exists(envPathRoot))
 {
-    DotNetEnv.Env.Load(envPathRoot);
-    Console.WriteLine($"🌎 .env cargado desde raíz: {envPathRoot}");
-    Console.WriteLine($"🌎 DB_HOST desde .env: {Environment.GetEnvironmentVariable("DB_HOST")}");
+    envPathToLoad = envPathRoot;
+    Console.WriteLine($"🌎 Environment: {environmentName}");
+    Console.WriteLine($"🌎 Cargando {envFileName} desde raíz del proyecto: {envPathRoot}");
+}
+else if (File.Exists(envPathLocal) && envPathLocal != envPathRoot)
+{
+    // Only check local if it's different (i.e., we are not already at root)
+    envPathToLoad = envPathLocal;
+    Console.WriteLine($"🌎 Environment: {environmentName}");
+    Console.WriteLine($"🌎 Cargando {envFileName} desde directorio actual: {envPathLocal}");
 }
 else
 {
-    // Fallback: intentar cargar desde la carpeta actual (MeetLines.API)
-    var envPathLocal = Path.Combine(Directory.GetCurrentDirectory(), ".env");
-    if (File.Exists(envPathLocal))
-    {
-        DotNetEnv.Env.Load(envPathLocal);
-        Console.WriteLine($"🌎 .env cargado desde API: {envPathLocal}");
-        Console.WriteLine($"🌎 DB_HOST desde .env: {Environment.GetEnvironmentVariable("DB_HOST")}");
-    }
-    else
-    {
-        Console.WriteLine($"⚠️ No se encontró archivo .env en la raíz ni en MeetLines.API");
-    }
+    Console.WriteLine($"⚠️ Environment: {environmentName}");
+    Console.WriteLine($"⚠️ No se encontró archivo {envFileName} en raíz ni en API.");
+}
+
+if (envPathToLoad != null)
+{
+    DotNetEnv.Env.Load(envPathToLoad);
+    Console.WriteLine($"🌎 DB_HOST cargado: {Environment.GetEnvironmentVariable("DB_HOST")}");
 }
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Expande variables de entorno en la cadena de conexión
-var config = builder.Configuration;
-var connectionString = config.GetConnectionString("DefaultConnection");
+// Expande variables de entorno en la configuración (Manual para soporte ${VAR})
+// Esto es necesario porque Environment.ExpandEnvironmentVariables no soporta ${VAR} en Windows por defecto
+// y appsettings.json usa esa sintaxis.
+
+string ExpandVariables(string value)
+{
+    if (string.IsNullOrEmpty(value)) return value;
+    return System.Text.RegularExpressions.Regex.Replace(value, @"\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}", match =>
+    {
+        var envVar = match.Groups[1].Value;
+        return Environment.GetEnvironmentVariable(envVar) ?? match.Value;
+    });
+}
+
+// 1. Connection String
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (connectionString != null)
 {
-    var expanded = Environment.ExpandEnvironmentVariables(connectionString);
-    builder.Configuration["ConnectionStrings:DefaultConnection"] = expanded;
-    Console.WriteLine("📊 Conectando a BD local/configurable");
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = ExpandVariables(connectionString);
+    Console.WriteLine("📊 ConnectionString expandido");
 }
+
+// 2. JWT
+var jwtSecret = builder.Configuration["Jwt:SecretKey"];
+if (jwtSecret != null) builder.Configuration["Jwt:SecretKey"] = ExpandVariables(jwtSecret);
+
+// 3. Email
+builder.Configuration["Email:SmtpUser"] = ExpandVariables(builder.Configuration["Email:SmtpUser"] ?? "");
+builder.Configuration["Email:SmtpPassword"] = ExpandVariables(builder.Configuration["Email:SmtpPassword"] ?? "");
+builder.Configuration["Email:FromEmail"] = ExpandVariables(builder.Configuration["Email:FromEmail"] ?? "");
+
+// 4. Auth (Social)
+builder.Configuration["Authentication:Google:ClientId"] = ExpandVariables(builder.Configuration["Authentication:Google:ClientId"] ?? "");
+builder.Configuration["Authentication:Google:ClientSecret"] = ExpandVariables(builder.Configuration["Authentication:Google:ClientSecret"] ?? "");
+builder.Configuration["Authentication:Facebook:AppId"] = ExpandVariables(builder.Configuration["Authentication:Facebook:AppId"] ?? "");
+builder.Configuration["Authentication:Facebook:AppSecret"] = ExpandVariables(builder.Configuration["Authentication:Facebook:AppSecret"] ?? "");
+
+// 5. Multitenancy
+builder.Configuration["Multitenancy:BaseDomain"] = ExpandVariables(builder.Configuration["Multitenancy:BaseDomain"] ?? "");
+builder.Configuration["Multitenancy:Protocol"] = ExpandVariables(builder.Configuration["Multitenancy:Protocol"] ?? "");
 
 // Register application services
 builder.Services.AddApplicationServices();
