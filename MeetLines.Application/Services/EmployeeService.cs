@@ -53,7 +53,7 @@ namespace MeetLines.Application.Services
                 }
 
                 // Auto‑generate username from email if not provided
-                string username = request.Username;
+                string username = request.Username ?? string.Empty;
                 if (string.IsNullOrWhiteSpace(username))
                 {
                     username = request.Email.Split('@')[0];

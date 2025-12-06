@@ -16,5 +16,8 @@ namespace MeetLines.Application.DTOs.Projects
         public string Status { get; set; } = string.Empty;
         public DateTimeOffset CreatedAt { get; set; }
         public DateTimeOffset UpdatedAt { get; set; }
+        // Expose limited WhatsApp fields in response
+        public string? WhatsappPhoneNumberId { get; set; }
+        public string? WhatsappForwardWebhook { get; set; }
     }
 }

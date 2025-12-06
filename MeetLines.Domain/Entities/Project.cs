@@ -7,6 +7,11 @@ namespace MeetLines.Domain.Entities
         public Guid Id { get; private set; }
         public Guid UserId { get; private set; }
         public string Name { get; private set; }
+        // WhatsApp integration fields
+        public string? WhatsappVerifyToken { get; private set; }
+        public string? WhatsappPhoneNumberId { get; private set; }
+        public string? WhatsappAccessToken { get; private set; }
+        public string? WhatsappForwardWebhook { get; private set; }
         public string? Industry { get; private set; }
         public string? Description { get; private set; }
         public string? WorkingHours { get; private set; } // jsonb
@@ -34,6 +39,15 @@ namespace MeetLines.Domain.Entities
             Description = description;
             Status = "active";
             CreatedAt = DateTimeOffset.UtcNow;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void UpdateWhatsappIntegration(string? verifyToken, string? phoneNumberId, string? accessToken, string? forwardWebhook)
+        {
+            WhatsappVerifyToken = string.IsNullOrWhiteSpace(verifyToken) ? null : verifyToken;
+            WhatsappPhoneNumberId = string.IsNullOrWhiteSpace(phoneNumberId) ? null : phoneNumberId;
+            WhatsappAccessToken = string.IsNullOrWhiteSpace(accessToken) ? null : accessToken;
+            WhatsappForwardWebhook = string.IsNullOrWhiteSpace(forwardWebhook) ? null : forwardWebhook;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
