@@ -20,15 +20,21 @@ namespace MeetLines.Application.UseCases.Projects
         private readonly IProjectRepository _projectRepository;
         private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IConfiguration _configuration;
+        private readonly MeetLines.Application.Services.Interfaces.IEmailService _emailService;
+        private readonly ISaasUserRepository _userRepository;
 
         public CreateProjectUseCase(
             IProjectRepository projectRepository,
             ISubscriptionRepository subscriptionRepository,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            MeetLines.Application.Services.Interfaces.IEmailService emailService,
+            ISaasUserRepository userRepository)
         {
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
         }
 
         public async Task<Result<ProjectResponse>> ExecuteAsync(
@@ -60,16 +66,10 @@ namespace MeetLines.Application.UseCases.Projects
                         $"Current projects: {currentCount}");
                 }
 
-                // Generar o validar subdominio
-                string subdomain;
-                if (!string.IsNullOrWhiteSpace(request.Subdomain))
-                {
-                    subdomain = request.Subdomain.ToLowerInvariant();
-                }
-                else
-                {
-                    subdomain = SlugGenerator.Generate(request.Name);
-                }
+                // Generar subdominio: slug(nombre) + "-" + suffix(4 chars)
+                var slug = SlugGenerator.Generate(request.Name);
+                var suffix = GenerateUniqueSuffix();
+                string subdomain = $"{slug}-{suffix}";
 
                 // Validar formato
                 if (!SubdomainValidator.IsValid(subdomain, out var validationError))
@@ -78,28 +78,18 @@ namespace MeetLines.Application.UseCases.Projects
                 }
 
                 // Validar unicidad
+                // Validar unicidad y reintentar si es necesario (casos extremadamente raros)
+                int retryCount = 0;
+                while (await _projectRepository.ExistsSubdomainAsync(subdomain, ct) && retryCount < 5)
+                {
+                   suffix = GenerateUniqueSuffix();
+                   subdomain = $"{slug}-{suffix}";
+                   retryCount++;
+                }
+
                 if (await _projectRepository.ExistsSubdomainAsync(subdomain, ct))
                 {
-                    // Si fue generado automáticamente, intentar agregar sufijo numérico
-                    if (string.IsNullOrWhiteSpace(request.Subdomain))
-                    {
-                        int suffix = 1;
-                        string originalSubdomain = subdomain;
-                        while (await _projectRepository.ExistsSubdomainAsync(subdomain, ct) && suffix < 100)
-                        {
-                            subdomain = $"{originalSubdomain}-{suffix}";
-                            suffix++;
-                        }
-                        
-                        if (await _projectRepository.ExistsSubdomainAsync(subdomain, ct))
-                        {
-                            return Result<ProjectResponse>.Fail($"Cannot generate a unique subdomain for '{request.Name}'. Please specify a custom subdomain.");
-                        }
-                    }
-                    else
-                    {
-                        return Result<ProjectResponse>.Fail($"Subdomain '{subdomain}' is already taken.");
-                    }
+                    return Result<ProjectResponse>.Fail($"Unable to generate a unique subdomain for '{request.Name}'. Please try again.");
                 }
 
                 // Crear el proyecto
@@ -111,6 +101,15 @@ namespace MeetLines.Application.UseCases.Projects
                     request.Description);
 
                 await _projectRepository.AddAsync(project, ct);
+
+
+
+                // Fetch user to get email
+                var user = await _userRepository.GetByIdAsync(userId, ct);
+                if (user != null)
+                {
+                    await _emailService.SendProjectCreatedNotificationAsync(user.Email, user.Name, project.Name);
+                }
 
                 return Result<ProjectResponse>.Ok(MapToResponse(project));
             }
@@ -150,6 +149,15 @@ namespace MeetLines.Application.UseCases.Projects
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt
             };
+        }
+
+
+        private static string GenerateUniqueSuffix(int length = 4)
+        {
+            const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
         }
     }
 }
