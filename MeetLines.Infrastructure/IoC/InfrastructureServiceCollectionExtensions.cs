@@ -72,8 +72,8 @@ namespace MeetLines.Infrastructure.IoC
 
             // Servicios Multitenancy
             services.AddHttpContextAccessor();
-            services.AddScoped<MeetLines.Application.Services.ITenantService, TenantService>();
-            services.AddScoped<MeetLines.Application.Services.ITenantQueryFilter, TenantQueryFilter>();
+            services.AddScoped<MeetLines.Application.Services.Interfaces.ITenantService, TenantService>();
+            services.AddScoped<MeetLines.Application.Services.Interfaces.ITenantQueryFilter, TenantQueryFilter>();
 
             // Memory cache (used by GeoIP service)
             services.AddMemoryCache();

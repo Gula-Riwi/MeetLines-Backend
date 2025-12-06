@@ -17,26 +17,33 @@ namespace MeetLines.Application.Services
         private readonly IAppointmentAssignmentService _assignmentService;
         private readonly IEmailService _emailService;
         private readonly IEmployeeRepository _employeeRepository;
-        private readonly ISaasUserRepository _userRepository; // To check if user is Admin/Owner if needed, or we rely on role string.
+        private readonly ISaasUserRepository _userRepository; 
+        private readonly IProjectRepository _projectRepository; // Added
 
         public AppointmentService(
             IAppointmentRepository appointmentRepository,
             IAppointmentAssignmentService assignmentService,
             IEmailService emailService,
             IEmployeeRepository employeeRepository,
-            ISaasUserRepository userRepository)
+            ISaasUserRepository userRepository,
+            IProjectRepository projectRepository) // Added
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
             _assignmentService = assignmentService ?? throw new ArgumentNullException(nameof(assignmentService));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository)); // Added
         }
 
         public async Task<Result<AppointmentResponse>> CreateAppointmentAsync(CreateAppointmentRequest request, CancellationToken ct = default)
         {
             try
             {
+                // Get Project Info for Email Sender Name
+                var project = await _projectRepository.GetAsync(request.ProjectId, ct);
+                var senderName = project?.Name ?? "MeetLines";
+
                 // 1. Assign Employee
                 // Use a default area "General" or allow passing area in request. 
                 // For MVP, let's assume "General" or handle if service has an area concept.
@@ -84,7 +91,8 @@ namespace MeetLines.Application.Services
                     request.ClientName, 
                     assignedEmployee?.Name ?? "MeetLines Staff", 
                     request.StartTime.Date, 
-                    request.StartTime.ToString("HH:mm")
+                    request.StartTime.ToString("HH:mm"),
+                    senderName // Pass sender name
                 );
 
                 // To Employee
@@ -98,7 +106,8 @@ namespace MeetLines.Application.Services
                         assignedEmployee.Name, 
                         request.ClientName, 
                         request.StartTime.Date, 
-                        request.StartTime.ToString("HH:mm")
+                        request.StartTime.ToString("HH:mm"),
+                        senderName // Pass sender name
                     );
                 }
 

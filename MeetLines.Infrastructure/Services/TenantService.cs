@@ -1,6 +1,6 @@
 using System;
 using Microsoft.AspNetCore.Http;
-using MeetLines.Application.Services;
+using MeetLines.Application.Services.Interfaces;
 
 namespace MeetLines.Infrastructure.Services
 {
