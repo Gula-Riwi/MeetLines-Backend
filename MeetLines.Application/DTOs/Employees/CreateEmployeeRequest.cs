@@ -11,8 +11,8 @@ namespace MeetLines.Application.DTOs.Employees
         [Required]
         public string Name { get; set; } = string.Empty;
 
-        [Required]
-        public string Username { get; set; } = string.Empty;
+        // Username is now auto-generated from email
+        public string? Username { get; set; }
 
         [Required]
         [EmailAddress]

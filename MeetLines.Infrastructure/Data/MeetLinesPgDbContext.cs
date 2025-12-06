@@ -184,7 +184,9 @@ namespace MeetLines.Infrastructure.Data
                 b.HasKey(x => x.Id);
                 b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
                 b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.HasOne<SaasUser>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+                // b.HasOne<SaasUser>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+                // Eliminamos la FK estricta para permitir que UserId sea de Empleado o SaasUser
+                // b.HasOne<SaasUser>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.UserId).HasDatabaseName("idx_sessions_user");
                 b.HasIndex(x => x.TokenHash).HasDatabaseName("idx_sessions_tokenhash");
             });
