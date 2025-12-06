@@ -74,7 +74,10 @@ namespace MeetLines.Application.UseCases.Projects
                 }
                 else
                 {
-                    subdomain = SlugGenerator.Generate(request.Name);
+                    // Generar: slug(nombre) + "-" + suffix(4 chars)
+                    var slug = SlugGenerator.Generate(request.Name);
+                    var suffix = GenerateUniqueSuffix();
+                    subdomain = $"{slug}-{suffix}";
                 }
 
                 // Validar formato
@@ -165,6 +168,15 @@ namespace MeetLines.Application.UseCases.Projects
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt
             };
+        }
+
+
+        private static string GenerateUniqueSuffix(int length = 4)
+        {
+            const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
         }
     }
 }

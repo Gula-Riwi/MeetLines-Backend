@@ -48,7 +48,9 @@ namespace MeetLines.Application.Services
                     return Result<EmployeeResponse>.Fail("El nombre de usuario ya está en uso");
                 }
 
-                var passwordHash = _passwordHasher.HashPassword(request.Password);
+                // Generar contraseña aleatoria
+                var password = GenerateRandomPassword();
+                var passwordHash = _passwordHasher.HashPassword(password);
                 var employee = new Employee(request.ProjectId, request.Name, request.Username, request.Email, passwordHash, request.Role, request.Area);
 
                 await _employeeRepository.AddAsync(employee, ct);
@@ -56,7 +58,7 @@ namespace MeetLines.Application.Services
 
 
                 // Send credentials to employee using their specific email
-                await _emailService.SendEmployeeCredentialsAsync(request.Email, request.Name, request.Username, request.Password, request.Area);
+                await _emailService.SendEmployeeCredentialsAsync(request.Email, request.Name, request.Username, password, request.Area);
 
                 return Result<EmployeeResponse>.Ok(MapToResponse(employee));
             }
@@ -93,6 +95,15 @@ namespace MeetLines.Application.Services
                 IsActive = e.IsActive,
                 CreatedAt = e.CreatedAt
             };
+        }
+
+
+        private static string GenerateRandomPassword(int length = 12)
+        {
+            const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*";
+            var random = new Random();
+            return new string(Enumerable.Repeat(validChars, length)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
         }
     }
 }
