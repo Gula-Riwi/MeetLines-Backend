@@ -1,6 +1,6 @@
 using System;
 
-namespace MeetLines.Application.Services
+namespace MeetLines.Application.Services.Interfaces
 {
     public interface ITenantService
     {
