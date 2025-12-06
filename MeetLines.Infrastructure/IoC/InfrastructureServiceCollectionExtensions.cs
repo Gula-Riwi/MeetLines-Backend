@@ -15,6 +15,7 @@ using MeetLines.Infrastructure.Services;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.Application.Services;
 using MeetLines.Domain.Repositories;
+using MeetLines.Application.Services;
 
 namespace MeetLines.Infrastructure.IoC
 {
@@ -72,14 +73,17 @@ namespace MeetLines.Infrastructure.IoC
 
             // Servicios Multitenancy
             services.AddHttpContextAccessor();
-            services.AddScoped<MeetLines.Application.Services.ITenantService, TenantService>();
-            services.AddScoped<MeetLines.Application.Services.ITenantQueryFilter, TenantQueryFilter>();
+            services.AddScoped<MeetLines.Application.Services.Interfaces.ITenantService, TenantService>();
+            services.AddScoped<MeetLines.Application.Services.Interfaces.ITenantQueryFilter, TenantQueryFilter>();
 
             // Memory cache (used by GeoIP service)
             services.AddMemoryCache();
 
             // GeoIP service (MaxMind DB) - implementation bound to Application interface
             services.AddSingleton<MeetLines.Application.Services.Interfaces.IGeoIpService, MeetLines.Infrastructure.Services.GeoIpService>();
+            
+            // Servicio de Discord Webhooks con HttpClient
+            services.AddHttpClient<IDiscordWebhookService, DiscordWebhookService>();
 
             return services;
         }

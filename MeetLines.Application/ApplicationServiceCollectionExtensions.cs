@@ -27,7 +27,7 @@ namespace MeetLines.Application.IoC
             // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
             services.AddScoped<ILoginUserUseCase, LoginUserUseCase>();
-                services.AddScoped<MeetLines.Application.Services.Interfaces.ITransferUseCases, MeetLines.Application.UseCases.Auth.TransferUseCases>();
+
             services.AddScoped<IOAuthLoginUseCase, OAuthLoginUseCase>();
             services.AddScoped<IRefreshTokenUseCase, RefreshTokenUseCase>();
             services.AddScoped<MeetLines.Application.Services.Interfaces.ITransferUseCases, MeetLines.Application.UseCases.Auth.TransferUseCases>();
@@ -37,6 +37,9 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IResendVerificationEmailUseCase, ResendVerificationEmailUseCase>();
             services.AddScoped<ILogoutUseCase, LogoutUseCase>();
             services.AddScoped<IHealthCheckUseCase, HealthCheckUseCase>();
+            
+            // Registrar HttpClient para Discord
+            services.AddHttpClient<IDiscordWebhookService, DiscordWebhookService>();
 
             // Registrar casos de uso de proyectos
             services.AddScoped<ICreateProjectUseCase, CreateProjectUseCase>();

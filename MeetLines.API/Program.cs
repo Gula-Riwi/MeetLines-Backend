@@ -5,6 +5,8 @@ using DotNetEnv;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
+// Asegúrate de que el namespace coincida con donde creaste el archivo del Middleware
+using MeetLines.API.Middlewares; 
 
 // Load .env file from workspace root FIRST before anything else
 var envPathRoot = Path.Combine(Directory.GetParent(Directory.GetCurrentDirectory())!.FullName, ".env");
@@ -90,7 +92,6 @@ builder.Services.AddSwaggerGen(c =>
         Description = "API de autenticación con Clean Architecture"
     });
     
-    
     // ApiKey para permitir control total sobre el header "Authorization"
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
@@ -138,8 +139,12 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// === [NUEVO] MIDDLEWARE DE ERRORES (DISCORD) ===
+// Se coloca antes de HTTPS, Auth y Controllers para atrapar cualquier excepción
+app.UseMiddleware<DiscordGlobalExceptionMiddleware>();
+// ===============================================
 
+app.UseHttpsRedirection();
 
 app.UseAuthentication(); 
 app.UseAuthorization();

@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using MeetLines.Application.Services;
+using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Repositories;
 using MeetLines.Domain.ValueObjects;
 

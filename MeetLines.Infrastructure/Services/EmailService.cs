@@ -88,31 +88,31 @@ namespace MeetLines.Infrastructure.Services
             await SendEmailAsync(toEmail, subject, body);
         }
 
-        public async Task SendAppointmentAssignedAsync(string toEmail, string employeeName, string clientName, DateTime date, string time)
+        public async Task SendAppointmentAssignedAsync(string toEmail, string employeeName, string clientName, DateTime date, string time, string? senderName = null)
         {
             var subject = "Nueva cita asignada - MeetLines";
             var body = _templateBuilder.BuildAppointmentAssigned(employeeName, clientName, date, time);
-            await SendEmailAsync(toEmail, subject, body);
+            await SendEmailAsync(toEmail, subject, body, senderName);
         }
 
-        public async Task SendAppointmentConfirmedAsync(string toEmail, string clientName, string employeeName, DateTime date, string time)
+        public async Task SendAppointmentConfirmedAsync(string toEmail, string clientName, string employeeName, DateTime date, string time, string? senderName = null)
         {
             var subject = "Confirmación de Cita - MeetLines";
             var body = _templateBuilder.BuildAppointmentConfirmed(clientName, employeeName, date, time);
-            await SendEmailAsync(toEmail, subject, body);
+            await SendEmailAsync(toEmail, subject, body, senderName);
         }
 
-        public async Task SendAppointmentCancelledAsync(string toEmail, string userName, DateTime date, string time, string reason)
+        public async Task SendAppointmentCancelledAsync(string toEmail, string userName, DateTime date, string time, string reason, string? senderName = null)
         {
             var subject = "Cancelación de Cita - MeetLines";
             var body = _templateBuilder.BuildAppointmentCancelled(userName, date, time, reason);
-            await SendEmailAsync(toEmail, subject, body);
+            await SendEmailAsync(toEmail, subject, body, senderName);
         }
 
-        private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+        private async Task SendEmailAsync(string toEmail, string subject, string htmlBody, string? fromName = null)
         {
             var message = new MimeMessage();
-            message.From.Add(new MailboxAddress(_fromName, _fromEmail));
+            message.From.Add(new MailboxAddress(fromName ?? _fromName, _fromEmail));
             message.To.Add(new MailboxAddress("", toEmail));
             message.Subject = subject;
 

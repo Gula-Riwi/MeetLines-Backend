@@ -1,5 +1,5 @@
 using System;
-using MeetLines.Application.Services;
+using MeetLines.Application.Services.Interfaces;
 
 namespace MeetLines.Infrastructure.Services
 {
