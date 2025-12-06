@@ -24,6 +24,31 @@ namespace MeetLines.API.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             var host = context.Request.Host.Host;
+            var path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
+            
+            // Rutas públicas que NO requieren tenant resolution
+            var publicRoutes = new[]
+            {
+                "/api/auth/login",
+                "/api/auth/register",
+                "/api/auth/refresh",
+                "/api/auth/logout",
+                "/api/auth/verify-email",
+                "/api/auth/forgot-password",
+                "/api/auth/reset-password",
+                "/api/auth/oauth",
+                "/health",
+                "/webhook/whatsapp",
+                "/api/projects/phone-number/"  // Para n8n obtener credenciales
+            };
+
+            // Si la ruta es pública, saltarse la resolución de tenant
+            if (publicRoutes.Any(route => path.StartsWith(route, StringComparison.OrdinalIgnoreCase)))
+            {
+                await _next(context);
+                return;
+            }
+
             // Lee del appsettings.json que obtiene valores del .env
             var baseDomain = _configuration["Multitenancy:BaseDomain"] ?? "meet-lines.com";
 
