@@ -19,7 +19,7 @@ namespace MeetLines.Infrastructure.Repositories
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        public async Task<Appointment> GetByIdAsync(int id, CancellationToken ct = default)
+        public async Task<Appointment?> GetByIdAsync(int id, CancellationToken ct = default)
         {
             return await _context.Appointments
                 .FirstOrDefaultAsync(a => a.Id == id, ct);
