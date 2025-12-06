@@ -13,9 +13,9 @@ using MeetLines.Infrastructure.Data;
 using MeetLines.Infrastructure.Repositories;
 using MeetLines.Infrastructure.Services;
 using MeetLines.Application.Services.Interfaces;
-using MeetLines.Application.Services;
 using MeetLines.Domain.Repositories;
 using MeetLines.Application.Services;
+
 
 namespace MeetLines.Infrastructure.IoC
 {

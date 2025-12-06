@@ -14,14 +14,14 @@ namespace MeetLines.Application.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly ILoginSessionRepository _loginSessionRepository;
         private readonly IEmailService _emailService;
-        private readonly DiscordWebhookService _discordService; // <--- Nuevo servicio
+        private readonly IDiscordWebhookService _discordService; // <--- Nuevo servicio
 
         public ProfileService(
             ISaasUserRepository userRepository,
             IPasswordHasher passwordHasher,
             ILoginSessionRepository loginSessionRepository,
             IEmailService emailService,
-            DiscordWebhookService discordService) // <--- Inyección
+            IDiscordWebhookService discordService) // <--- Inyección
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));

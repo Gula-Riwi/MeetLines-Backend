@@ -5,6 +5,9 @@ namespace MeetLines.Application.Services.Interfaces
     public interface IDiscordWebhookService
     {
         // Autenticación
+        Task SendInfoAsync(string title, string description);
+        Task SendEmbedAsync(string title, string description, int color);
+
         Task SendUserRegisteredAsync(string userName, string email, string timezone);
         Task SendUserLoginAsync(string userName, string email, string deviceInfo, string ipAddress);
         Task SendUserLogoutAsync(string userName, string email);

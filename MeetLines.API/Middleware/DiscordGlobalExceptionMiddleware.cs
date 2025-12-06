@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Text.Json;
-using MeetLines.Application.Services;
+using MeetLines.Application.Services.Interfaces;
 
 namespace MeetLines.API.Middlewares
 {
@@ -13,7 +13,7 @@ namespace MeetLines.API.Middlewares
             _next = next;
         }
 
-        public async Task InvokeAsync(HttpContext context, DiscordWebhookService discordService)
+        public async Task InvokeAsync(HttpContext context, IDiscordWebhookService discordService)
         {
             try
             {
@@ -29,7 +29,7 @@ namespace MeetLines.API.Middlewares
             }
         }
 
-        private async Task HandleExceptionToDiscordAsync(HttpContext context, Exception ex, DiscordWebhookService discordService)
+        private async Task HandleExceptionToDiscordAsync(HttpContext context, Exception ex, IDiscordWebhookService discordService)
         {
             try
             {

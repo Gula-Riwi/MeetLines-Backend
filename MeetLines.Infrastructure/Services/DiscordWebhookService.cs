@@ -3,7 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Configuration;
 using MeetLines.Application.Services.Interfaces;
 
-namespace MeetLines.Application.Services
+namespace MeetLines.Infrastructure.Services
 {
     public class DiscordWebhookService : IDiscordWebhookService
     {
