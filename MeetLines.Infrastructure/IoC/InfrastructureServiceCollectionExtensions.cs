@@ -9,6 +9,7 @@ using MeetLines.Infrastructure.Repositories;
 using MeetLines.Infrastructure.Services;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Repositories;
+using MeetLines.Application.Services;
 
 namespace MeetLines.Infrastructure.IoC
 {
@@ -83,6 +84,9 @@ namespace MeetLines.Infrastructure.IoC
 
             // GeoIP service (MaxMind DB) - implementation bound to Application interface
             services.AddSingleton<MeetLines.Application.Services.Interfaces.IGeoIpService, MeetLines.Infrastructure.Services.GeoIpService>();
+            
+            // Servicio de Discord Webhooks con HttpClient
+            services.AddHttpClient<IDiscordWebhookService, DiscordWebhookService>();
 
             return services;
         }

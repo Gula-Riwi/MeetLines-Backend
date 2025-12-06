@@ -19,6 +19,7 @@ namespace MeetLines.Application.Services
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IEmailService _emailService;
         private readonly ISubscriptionRepository _subscriptionRepository;
+        private readonly DiscordWebhookService _discordService;
 
         public AuthService(
             ISaasUserRepository userRepository,
@@ -28,7 +29,8 @@ namespace MeetLines.Application.Services
             IPasswordHasher passwordHasher,
             IJwtTokenService jwtTokenService,
             IEmailService emailService,
-            ISubscriptionRepository subscriptionRepository)
+            ISubscriptionRepository subscriptionRepository,
+            DiscordWebhookService discordService)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _emailVerificationTokenRepository = emailVerificationTokenRepository ?? throw new ArgumentNullException(nameof(emailVerificationTokenRepository));
@@ -38,6 +40,7 @@ namespace MeetLines.Application.Services
             _jwtTokenService = jwtTokenService ?? throw new ArgumentNullException(nameof(jwtTokenService));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
             _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
+            _discordService = discordService;
         }
 
         public async Task<Result<RegisterResponse>> RegisterAsync(RegisterRequest request, CancellationToken ct = default)
@@ -79,6 +82,16 @@ namespace MeetLines.Application.Services
                 // Enviar email de verificación
                 await _emailService.SendEmailVerificationAsync(user.Email, user.Name, verificationToken);
 
+                // [DISCORD] Notificar nuevo registro
+                try 
+                {
+                    await _discordService.SendEmbedAsync(
+                        "🎉 Nuevo Usuario Registrado", 
+                        $"**Nombre:** {user.Name}\n**Email:** {user.Email}\n**Plan:** Beginner (Free)", 
+                        5763719); // Verde
+                }
+                catch { /* Ignorar error de log para no bloquear el registro */ }
+
                 return Result<RegisterResponse>.Ok(new RegisterResponse
                 {
                     UserId = user.Id,
@@ -118,6 +131,8 @@ namespace MeetLines.Application.Services
 
                 if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
                 {
+                    // [DISCORD] Opcional: Notificar intento fallido (útil para seguridad)
+                    // await _discordService.SendInfoAsync("⚠️ Login Fallido", $"Intento fallido para {request.Email}");
                     return Result<LoginResponse>.Fail("Email o contraseña incorrectos");
                 }
 
@@ -139,6 +154,13 @@ namespace MeetLines.Application.Services
                 // Actualizar último login
                 user.UpdateLastLogin();
                 await _userRepository.UpdateAsync(user, ct);
+
+                // [DISCORD] Notificar Login
+                try
+                {
+                    await _discordService.SendInfoAsync("🔐 Inicio de Sesión", $"El usuario **{user.Email}** ha iniciado sesión.");
+                }
+                catch { }
 
                 return Result<LoginResponse>.Ok(new LoginResponse
                 {
@@ -163,6 +185,7 @@ namespace MeetLines.Application.Services
             {
                 // Buscar usuario por external provider ID
                 var user = await _userRepository.GetByExternalProviderIdAsync(request.ExternalProviderId, ct);
+                bool isNewUser = false;
 
                 // Si no existe, buscar por email
                 if (user == null)
@@ -173,6 +196,7 @@ namespace MeetLines.Application.Services
                 // Si no existe, crear nuevo usuario
                 if (user == null)
                 {
+                    isNewUser = true;
                     user = SaasUser.CreateOAuthUser(
                         request.Name,
                         request.Email,
@@ -183,7 +207,6 @@ namespace MeetLines.Application.Services
                     await _userRepository.AddAsync(user, ct);
                     
                     // ===== CREAR SUSCRIPCIÓN GRATUITA PARA OAUTH
-                    
                     var freeSubscription = new Subscription(
                         userId: user.Id,
                         plan: "beginner",
@@ -194,6 +217,16 @@ namespace MeetLines.Application.Services
                     
                     // Enviar email de bienvenida
                     await _emailService.SendWelcomeEmailAsync(user.Email, user.Name);
+
+                    // [DISCORD] Notificar registro via OAuth
+                    try
+                    {
+                        await _discordService.SendEmbedAsync(
+                            "🌐 Nuevo Registro (OAuth)", 
+                            $"Usuario: {user.Name}\nEmail: {user.Email}\nProveedor: {request.Provider}", 
+                            5763719);
+                    }
+                    catch { }
                 }
 
                 // Verificar si el usuario puede hacer login
@@ -220,6 +253,16 @@ namespace MeetLines.Application.Services
                 // Actualizar último login
                 user.UpdateLastLogin();
                 await _userRepository.UpdateAsync(user, ct);
+
+                // [DISCORD] Notificar login OAuth (si no es nuevo usuario)
+                if (!isNewUser)
+                {
+                    try
+                    {
+                        await _discordService.SendInfoAsync("🔐 Login OAuth", $"Usuario: {user.Email} vía {request.Provider}");
+                    }
+                    catch { }
+                }
 
                 return Result<LoginResponse>.Ok(new LoginResponse
                 {
@@ -318,6 +361,13 @@ namespace MeetLines.Application.Services
                 // Enviar email de bienvenida
                 await _emailService.SendWelcomeEmailAsync(user.Email, user.Name);
 
+                // [DISCORD] Notificar verificación
+                try
+                {
+                    await _discordService.SendEmbedAsync("✅ Email Verificado", $"El usuario **{user.Email}** ha verificado su cuenta.", 5763719);
+                }
+                catch { }
+
                 return Result.Ok();
             }
             catch (Exception ex)
@@ -353,6 +403,13 @@ namespace MeetLines.Application.Services
 
                 // Enviar email
                 await _emailService.SendPasswordResetAsync(user.Email, user.Name, resetToken);
+                
+                // [DISCORD] Log de seguridad (Opcional)
+                try
+                {
+                    await _discordService.SendInfoAsync("🔑 Solicitud Recuperación", $"Solicitud de password reset para {user.Email}");
+                }
+                catch { }
 
                 return Result.Ok();
             }
@@ -390,6 +447,13 @@ namespace MeetLines.Application.Services
 
                 // Cerrar todas las sesiones activas por seguridad
                 await _loginSessionRepository.DeleteAllUserSessionsAsync(user.Id, ct);
+
+                // [DISCORD] Notificación de cambio de contraseña
+                try
+                {
+                    await _discordService.SendEmbedAsync("🔄 Contraseña Cambiada", $"El usuario **{user.Email}** ha cambiado su contraseña exitosamente.", 16776960); // Amarillo
+                }
+                catch { }
 
                 return Result.Ok();
             }
@@ -443,6 +507,9 @@ namespace MeetLines.Application.Services
                 if (session != null)
                 {
                     await _loginSessionRepository.DeleteAsync(session.Id, ct);
+                    
+                    // [DISCORD] Opcional: Log de salida
+                    // try { await _discordService.SendInfoAsync("👋 Logout", $"Usuario ID: {session.UserId}"); } catch {}
                 }
 
                 return Result.Ok();

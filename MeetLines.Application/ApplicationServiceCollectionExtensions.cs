@@ -34,6 +34,9 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IResendVerificationEmailUseCase, ResendVerificationEmailUseCase>();
             services.AddScoped<ILogoutUseCase, LogoutUseCase>();
             services.AddScoped<IHealthCheckUseCase, HealthCheckUseCase>();
+            
+            // Registrar HttpClient para Discord
+            services.AddHttpClient<IDiscordWebhookService, DiscordWebhookService>();
 
             // Registrar casos de uso de proyectos
             services.AddScoped<ICreateProjectUseCase, CreateProjectUseCase>();
