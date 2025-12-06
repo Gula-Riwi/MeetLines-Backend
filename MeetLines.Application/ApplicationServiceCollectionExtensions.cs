@@ -22,6 +22,7 @@ namespace MeetLines.Application.IoC
             // Registrar servicios de aplicación
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IProfileService, ProfileService>(); // ← NUEVO
+            services.AddScoped<IEmployeeService, EmployeeService>();
 
             // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
