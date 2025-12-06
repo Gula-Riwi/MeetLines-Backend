@@ -19,7 +19,7 @@ namespace MeetLines.Application.Services
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IEmailService _emailService;
         private readonly ISubscriptionRepository _subscriptionRepository;
-        private readonly DiscordWebhookService _discordService;
+        private readonly IDiscordWebhookService _discordService;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly MeetLines.Application.Services.Interfaces.ITransferUseCases _transferUseCases;
 
@@ -32,7 +32,7 @@ namespace MeetLines.Application.Services
             IJwtTokenService jwtTokenService,
             IEmailService emailService,
             ISubscriptionRepository subscriptionRepository,
-            DiscordWebhookService discordService)
+            IDiscordWebhookService discordService,
             IEmployeeRepository employeeRepository)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
