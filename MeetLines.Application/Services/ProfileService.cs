@@ -14,17 +14,20 @@ namespace MeetLines.Application.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly ILoginSessionRepository _loginSessionRepository;
         private readonly IEmailService _emailService;
+        private readonly DiscordWebhookService _discordService; // <--- Nuevo servicio
 
         public ProfileService(
             ISaasUserRepository userRepository,
             IPasswordHasher passwordHasher,
             ILoginSessionRepository loginSessionRepository,
-            IEmailService emailService)
+            IEmailService emailService,
+            DiscordWebhookService discordService) // <--- Inyección
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
             _loginSessionRepository = loginSessionRepository ?? throw new ArgumentNullException(nameof(loginSessionRepository));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _discordService = discordService; // <--- Asignación
         }
 
         public async Task<Result<GetProfileResponse>> GetProfileAsync(Guid userId, CancellationToken ct = default)
@@ -73,6 +76,14 @@ namespace MeetLines.Application.Services
                 user.UpdateProfile(request.Name, request.Phone, request.Timezone);
                 await _userRepository.UpdateAsync(user, ct);
 
+                // [DISCORD] Notificar actualización
+                try
+                {
+                    string changes = $"Nombre: {request.Name}, Tel: {request.Phone ?? "N/A"}, Zona: {request.Timezone}";
+                    await _discordService.SendProfileUpdatedAsync(user.Name, user.Email, changes);
+                }
+                catch { /* Ignorar error de log */ }
+
                 var response = new GetProfileResponse
                 {
                     Id = user.Id,
@@ -108,6 +119,13 @@ namespace MeetLines.Application.Services
                 // Actualizar foto de perfil
                 user.UpdateProfilePicture(request.ProfilePictureUrl);
                 await _userRepository.UpdateAsync(user, ct);
+
+                // [DISCORD] Notificar cambio de foto
+                try
+                {
+                    await _discordService.SendProfileUpdatedAsync(user.Name, user.Email, "Foto de perfil actualizada");
+                }
+                catch { }
 
                 var response = new GetProfileResponse
                 {
@@ -161,16 +179,22 @@ namespace MeetLines.Application.Services
                 // Cerrar todas las sesiones activas por seguridad
                 await _loginSessionRepository.DeleteAllUserSessionsAsync(userId, ct);
                 
+                // Enviar email
                 try
                 {
                     await _emailService.SendPasswordChangedNotificationAsync(user.Email, user.Name);
                 }
                 catch (Exception emailEx)
                 {
-                    // Log el error pero no falla la operación
                     Console.WriteLine($"⚠️ Error al enviar email de notificación: {emailEx.Message}");
                 }
-                // ===== FIN ENVÍO DE EMAIL =====
+
+                // [DISCORD] Notificar cambio de seguridad crítico
+                try
+                {
+                    await _discordService.SendPasswordChangedAsync(user.Name, user.Email);
+                }
+                catch { }
 
                 return Result.Ok();
             }
@@ -193,6 +217,13 @@ namespace MeetLines.Application.Services
                 // Eliminar foto de perfil (establecer como null)
                 user.UpdateProfilePicture(null!);
                 await _userRepository.UpdateAsync(user, ct);
+
+                // [DISCORD] Notificar eliminación
+                try
+                {
+                    await _discordService.SendProfileUpdatedAsync(user.Name, user.Email, "Foto de perfil eliminada");
+                }
+                catch { }
 
                 return Result.Ok();
             }
