@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using MeetLines.Application.Common;
 using MeetLines.Application.DTOs.Projects;
 using MeetLines.Domain.Repositories;
@@ -16,13 +17,16 @@ namespace MeetLines.Application.UseCases.Projects
     {
         private readonly IProjectRepository _projectRepository;
         private readonly ISubscriptionRepository _subscriptionRepository;
+        private readonly IConfiguration _configuration;
 
         public GetUserProjectsUseCase(
             IProjectRepository projectRepository,
-            ISubscriptionRepository subscriptionRepository)
+            ISubscriptionRepository subscriptionRepository,
+            IConfiguration configuration)
         {
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         public async Task<Result<UserProjectsResponse>> ExecuteAsync(Guid userId, CancellationToken ct = default)
@@ -67,15 +71,24 @@ namespace MeetLines.Application.UseCases.Projects
             _ => 0
         };
 
-        private ProjectResponse MapToResponse(Domain.Entities.Project project) => new()
+        private ProjectResponse MapToResponse(Domain.Entities.Project project)
         {
-            Id = project.Id,
-            Name = project.Name,
-            Industry = project.Industry,
-            Description = project.Description,
-            Status = project.Status,
-            CreatedAt = project.CreatedAt,
-            UpdatedAt = project.UpdatedAt
-        };
+            var baseDomain = _configuration["Multitenancy:BaseDomain"] ?? "meet-lines.com";
+            var protocol = _configuration["Multitenancy:Protocol"] ?? "https";
+            var fullUrl = string.IsNullOrEmpty(project.Subdomain) ? string.Empty : $"{protocol}://{project.Subdomain}.{baseDomain}";
+
+            return new ProjectResponse
+            {
+                Id = project.Id,
+                Name = project.Name,
+                Subdomain = project.Subdomain,
+                FullUrl = fullUrl,
+                Industry = project.Industry,
+                Description = project.Description,
+                Status = project.Status,
+                CreatedAt = project.CreatedAt,
+                UpdatedAt = project.UpdatedAt
+            };
+        }
     }
 }

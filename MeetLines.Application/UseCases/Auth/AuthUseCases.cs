@@ -206,11 +206,17 @@ namespace MeetLines.Application.UseCases.Auth
         {
             try
             {
+                // Si no tenemos email, generar uno basado en el provider y ID
+                if (string.IsNullOrWhiteSpace(request.Email))
+                {
+                    request.Email = $"{request.Provider.ToString().ToLower()}_{request.ExternalProviderId}@oauth.meetlines.local";
+                }
+
                 // Buscar usuario por external provider ID
                 var user = await _userRepository.GetByExternalProviderIdAsync(request.ExternalProviderId, ct);
 
                 // Si no existe, buscar por email
-                if (user == null)
+                if (user == null && !string.IsNullOrWhiteSpace(request.Email))
                 {
                     user = await _userRepository.GetByEmailAsync(request.Email, ct);
                 }
