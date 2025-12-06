@@ -41,24 +41,42 @@ namespace MeetLines.Application.Services
                      return Result<EmployeeResponse>.Fail("Proyecto no encontrado");
                  }
 
-                // Check username uniqueness
-                var existing = await _employeeRepository.GetByUsernameAsync(request.Username, ct);
-                if (existing != null)
+                // Auto‑generate username from email if not provided
+                string username = request.Username;
+                if (string.IsNullOrWhiteSpace(username))
                 {
-                    return Result<EmployeeResponse>.Fail("El nombre de usuario ya está en uso");
+                    // Take the part before '@' as base username
+                    username = request.Email.Split('@')[0];
+                    var baseUsername = username;
+                    int suffix = 1;
+                    // Ensure uniqueness
+                    while (await _employeeRepository.GetByUsernameAsync(username, ct) != null)
+                    {
+                        username = $"{baseUsername}{suffix}";
+                        suffix++;
+                    }
+                }
+                else
+                {
+                    // Verify provided username is unique
+                    var existing = await _employeeRepository.GetByUsernameAsync(username, ct);
+                    if (existing != null)
+                    {
+                        return Result<EmployeeResponse>.Fail("El nombre de usuario ya está en uso");
+                    }
                 }
 
                 // Generar contraseña aleatoria
                 var password = GenerateRandomPassword();
                 var passwordHash = _passwordHasher.HashPassword(password);
-                var employee = new Employee(request.ProjectId, request.Name, request.Username, request.Email, passwordHash, request.Role, request.Area);
+                var employee = new Employee(request.ProjectId, request.Name, username, request.Email, passwordHash, request.Role, request.Area);
 
                 await _employeeRepository.AddAsync(employee, ct);
 
 
 
                 // Send credentials to employee using their specific email
-                await _emailService.SendEmployeeCredentialsAsync(request.Email, request.Name, request.Username, password, request.Area);
+                await _emailService.SendEmployeeCredentialsAsync(request.Email, request.Name, username, password, request.Area);
 
                 return Result<EmployeeResponse>.Ok(MapToResponse(employee));
             }
