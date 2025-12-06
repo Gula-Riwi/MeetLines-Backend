@@ -117,7 +117,89 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
-        /// Create a transfer token bound to the authenticated user and a tenant.
+        /// Exchange a Facebook authorization code for user info and perform OAuth login server-side.
+        /// POST: api/auth/oauth/facebook
+        /// Body: { code: string, redirectUri?: string }
+        /// </summary>
+        [HttpPost("oauth/facebook")]
+        [ProducesResponseType(typeof(ApiResponse<LoginResponse>), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 400)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> FacebookOAuthExchange([FromBody] DiscordExchangeRequest request, CancellationToken ct)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Code))
+                    return BadRequest(ApiResponse.Fail("Code is required"));
+
+                var appId = Environment.GetEnvironmentVariable("FB_APP_ID");
+                var appSecret = Environment.GetEnvironmentVariable("FB_APP_SECRET");
+                if (string.IsNullOrEmpty(appId) || string.IsNullOrEmpty(appSecret))
+                    return StatusCode(500, ApiResponse.Fail("Facebook OAuth is not configured on the server"));
+
+                // Exchange code for access token
+                using var http = new HttpClient();
+                var tokenUrl = $"https://graph.facebook.com/v18.0/oauth/access_token?" +
+                    $"client_id={appId}&" +
+                    $"client_secret={appSecret}&" +
+                    $"code={request.Code}&" +
+                    $"redirect_uri={Uri.EscapeDataString(request.RedirectUri ?? "")}";
+
+                var tokenResp = await http.GetAsync(tokenUrl, ct);
+                if (!tokenResp.IsSuccessStatusCode)
+                {
+                    var err = await tokenResp.Content.ReadAsStringAsync(ct);
+                    return BadRequest(ApiResponse.Fail($"Facebook token exchange failed: {err}"));
+                }
+
+                var tokenJson = await tokenResp.Content.ReadAsStringAsync(ct);
+                using var tokenDoc = JsonDocument.Parse(tokenJson);
+                var root = tokenDoc.RootElement;
+                if (!root.TryGetProperty("access_token", out var accessTokenProp))
+                    return BadRequest(ApiResponse.Fail("Facebook token response did not contain access_token"));
+
+                var accessToken = accessTokenProp.GetString();
+
+                // Get user info
+                var userUrl = $"https://graph.facebook.com/me?fields=id,name,email,picture&access_token={accessToken}";
+                var userResp = await http.GetAsync(userUrl, ct);
+                if (!userResp.IsSuccessStatusCode)
+                {
+                    var err = await userResp.Content.ReadAsStringAsync(ct);
+                    return BadRequest(ApiResponse.Fail($"Facebook user info failed: {err}"));
+                }
+
+                var userJson = await userResp.Content.ReadAsStringAsync(ct);
+                using var userDoc = JsonDocument.Parse(userJson);
+                var u = userDoc.RootElement;
+
+                var externalId = u.GetProperty("id").GetString() ?? string.Empty;
+                var name = u.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : "Facebook User";
+                string? email = null;
+                if (u.TryGetProperty("email", out var emailProp) && emailProp.ValueKind == JsonValueKind.String)
+                    email = emailProp.GetString();
+
+                var oauthRequest = new OAuthLoginRequest
+                {
+                    ExternalProviderId = externalId,
+                    Email = email,
+                    Name = name,
+                    Provider = MeetLines.Domain.Enums.AuthProvider.Facebook,
+                    DeviceInfo = GetUserAgent(),
+                    IpAddress = GetClientIp()
+                };
+
+                var result = await _authService.OAuthLoginAsync(oauthRequest, ct);
+                if (!result.IsSuccess)
+                    return BadRequest(ApiResponse<LoginResponse>.Fail(result.Error ?? "OAuth login failed"));
+
+                return Ok(ApiResponse<LoginResponse>.Ok(result.Value ?? new LoginResponse()));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Internal error: {ex.Message}"));
+            }
+        }
         /// POST: api/auth/create-transfer
         /// Body: { tenant: string }
         /// Requires Authorization: Bearer <accessToken>
