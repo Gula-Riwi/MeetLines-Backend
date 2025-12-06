@@ -51,14 +51,46 @@ if (envPathToLoad != null)
 var builder = WebApplication.CreateBuilder(args);
 
 // Expande variables de entorno en la cadena de conexión
-var config = builder.Configuration;
-var connectionString = config.GetConnectionString("DefaultConnection");
+// Expande variables de entorno en la configuración (Manual para soporte ${VAR})
+// Esto es necesario porque Environment.ExpandEnvironmentVariables no soporta ${VAR} en Windows por defecto
+// y appsettings.json usa esa sintaxis.
+
+string ExpandVariables(string value)
+{
+    if (string.IsNullOrEmpty(value)) return value;
+    return System.Text.RegularExpressions.Regex.Replace(value, @"\$\{([a-zA-Z_][a-zA-Z0-9_]*)\}", match =>
+    {
+        var envVar = match.Groups[1].Value;
+        return Environment.GetEnvironmentVariable(envVar) ?? match.Value;
+    });
+}
+
+// 1. Connection String
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 if (connectionString != null)
 {
-    var expanded = Environment.ExpandEnvironmentVariables(connectionString);
-    builder.Configuration["ConnectionStrings:DefaultConnection"] = expanded;
-    Console.WriteLine("📊 Conectando a BD local/configurable");
+    builder.Configuration["ConnectionStrings:DefaultConnection"] = ExpandVariables(connectionString);
+    Console.WriteLine("📊 ConnectionString expandido");
 }
+
+// 2. JWT
+var jwtSecret = builder.Configuration["Jwt:SecretKey"];
+if (jwtSecret != null) builder.Configuration["Jwt:SecretKey"] = ExpandVariables(jwtSecret);
+
+// 3. Email
+builder.Configuration["Email:SmtpUser"] = ExpandVariables(builder.Configuration["Email:SmtpUser"] ?? "");
+builder.Configuration["Email:SmtpPassword"] = ExpandVariables(builder.Configuration["Email:SmtpPassword"] ?? "");
+builder.Configuration["Email:FromEmail"] = ExpandVariables(builder.Configuration["Email:FromEmail"] ?? "");
+
+// 4. Auth (Social)
+builder.Configuration["Authentication:Google:ClientId"] = ExpandVariables(builder.Configuration["Authentication:Google:ClientId"] ?? "");
+builder.Configuration["Authentication:Google:ClientSecret"] = ExpandVariables(builder.Configuration["Authentication:Google:ClientSecret"] ?? "");
+builder.Configuration["Authentication:Facebook:AppId"] = ExpandVariables(builder.Configuration["Authentication:Facebook:AppId"] ?? "");
+builder.Configuration["Authentication:Facebook:AppSecret"] = ExpandVariables(builder.Configuration["Authentication:Facebook:AppSecret"] ?? "");
+
+// 5. Multitenancy
+builder.Configuration["Multitenancy:BaseDomain"] = ExpandVariables(builder.Configuration["Multitenancy:BaseDomain"] ?? "");
+builder.Configuration["Multitenancy:Protocol"] = ExpandVariables(builder.Configuration["Multitenancy:Protocol"] ?? "");
 
 // Register application services
 builder.Services.AddApplicationServices();
