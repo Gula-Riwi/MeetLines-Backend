@@ -1,4 +1,4 @@
-namespace MeetLines.API.DTOs
+namespace MeetLines.Application.DTOs.Auth
 {
     public class DiscordExchangeRequest
     {
