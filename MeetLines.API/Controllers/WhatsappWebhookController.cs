@@ -2,6 +2,7 @@ using System;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MeetLines.Domain.Repositories;
@@ -91,43 +92,53 @@ namespace MeetLines.API.Controllers
                 if (project == null)
                 {
                     _logger.LogWarning("Project not resolved for incoming Whatsapp webhook. phone_number_id={PhoneNumberId}, headerXProjectId={Header}", phoneNumberId, Request.Headers["X-Project-Id"].ToString());
-                    return BadRequest("Missing phone_number_id");
+                    // Acknowledge the webhook even if we can't resolve the project to avoid retries from the provider
+                    return Ok();
                 }
 
-                // If forward webhook is configured for the project, forward the raw payload
+                // If forward webhook is configured for the project, forward the raw payload in background (fire-and-forget)
                 if (!string.IsNullOrWhiteSpace(project.WhatsappForwardWebhook))
                 {
-                    var client = _httpClientFactory.CreateClient();
-                    var request = new HttpRequestMessage(HttpMethod.Post, project.WhatsappForwardWebhook)
-                    {
-                        Content = new StringContent(rawBody, Encoding.UTF8, "application/json")
-                    };
-                    request.Headers.Add("X-Project-Id", project.Id.ToString());
+                    var forwardUrl = project.WhatsappForwardWebhook;
+                    var projectIdForHeader = project.Id.ToString();
+                    var raw = rawBody;
 
-                    try
+                    _logger.LogInformation("Scheduling forward of Whatsapp webhook to {Url} for project {ProjectId}", forwardUrl, project.Id);
+
+                    _ = Task.Run(async () =>
                     {
-                        _logger.LogInformation("Forwarding Whatsapp webhook to {Url} for project {ProjectId}", project.WhatsappForwardWebhook, project.Id);
-                        var response = await client.SendAsync(request);
-                        var responseBody = string.Empty;
                         try
                         {
-                            responseBody = response.Content != null ? await response.Content.ReadAsStringAsync() : string.Empty;
-                        }
-                        catch (Exception) { /* ignore reading response body errors */ }
+                            var client = _httpClientFactory.CreateClient();
+                            using var request = new HttpRequestMessage(HttpMethod.Post, forwardUrl)
+                            {
+                                Content = new StringContent(raw, Encoding.UTF8, "application/json")
+                            };
+                            request.Headers.Add("X-Project-Id", projectIdForHeader);
 
-                        if (!response.IsSuccessStatusCode)
-                        {
-                            _logger.LogWarning("Forward webhook returned non-success status {Status} for project {ProjectId}. Response body: {Body}", (int)response.StatusCode, project.Id, responseBody);
+                            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                            var response = await client.SendAsync(request, cts.Token);
+                            var responseBody = string.Empty;
+                            try
+                            {
+                                responseBody = response.Content != null ? await response.Content.ReadAsStringAsync() : string.Empty;
+                            }
+                            catch (Exception) { /* ignore reading response body errors */ }
+
+                            if (!response.IsSuccessStatusCode)
+                            {
+                                _logger.LogWarning("Forward webhook returned non-success status {Status} for project {ProjectId}. Response body: {Body}", (int)response.StatusCode, project.Id, responseBody);
+                            }
+                            else
+                            {
+                                _logger.LogInformation("Forward webhook delivered successfully for project {ProjectId}. Status: {Status}", project.Id, (int)response.StatusCode);
+                            }
                         }
-                        else
+                        catch (Exception exSend)
                         {
-                            _logger.LogInformation("Forward webhook delivered successfully for project {ProjectId}. Status: {Status}", project.Id, (int)response.StatusCode);
+                            _logger.LogError(exSend, "Error sending forward webhook to {Url} for project {ProjectId}", forwardUrl, project.Id);
                         }
-                    }
-                    catch (Exception exSend)
-                    {
-                        _logger.LogError(exSend, "Error sending forward webhook to {Url} for project {ProjectId}", project.WhatsappForwardWebhook, project.Id);
-                    }
+                    });
                 }
 
                 // TODO: enqueue internal processing if needed
