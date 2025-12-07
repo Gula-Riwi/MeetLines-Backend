@@ -24,14 +24,7 @@ namespace MeetLines.Infrastructure.Data
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<TransferToken> TransferTokens { get; set; }
         public DbSet<Employee> Employees { get; set; }
-        
-        // WhatsApp Bot System
-        public DbSet<ProjectBotConfig> ProjectBotConfigs { get; set; }
-        public DbSet<KnowledgeBase> KnowledgeBases { get; set; }
-        public DbSet<Conversation> Conversations { get; set; }
-        public DbSet<CustomerFeedback> CustomerFeedbacks { get; set; }
-        public DbSet<CustomerReactivation> CustomerReactivations { get; set; }
-        public DbSet<BotMetrics> BotMetrics { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -268,83 +261,19 @@ namespace MeetLines.Infrastructure.Data
                 b.HasIndex(x => x.Email).IsUnique().HasDatabaseName("idx_employees_email"); // Ensure unique email
                 b.HasIndex(x => x.Area).HasDatabaseName("idx_employees_area"); // Index for Area lookups
             });
-
-            // ProjectBotConfig
-            modelBuilder.Entity<ProjectBotConfig>(b =>
+            
+            // Payments
+            modelBuilder.Entity<Payment>(b =>
             {
-                b.ToTable("project_bot_configs");
+                b.ToTable("payments");
                 b.HasKey(x => x.Id);
                 b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.Amount).HasColumnType("numeric(10,2)");
                 b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
-                b.HasOne<Project>().WithMany().HasForeignKey(c => c.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                b.HasIndex(x => x.ProjectId).IsUnique().HasDatabaseName("idx_botconfig_project");
-            });
-
-            // KnowledgeBase
-            modelBuilder.Entity<KnowledgeBase>(b =>
-            {
-                b.ToTable("knowledge_bases");
-                b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
-                b.HasOne<Project>().WithMany().HasForeignKey(k => k.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_kb_project");
-                b.HasIndex(x => x.Category).HasDatabaseName("idx_kb_category");
-            });
-
-            // Conversation
-            modelBuilder.Entity<Conversation>(b =>
-            {
-                b.ToTable("conversations");
-                b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.HasOne<Project>().WithMany().HasForeignKey(c => c.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                b.HasOne<Employee>().WithMany().HasForeignKey(c => c.HandledByEmployeeId).OnDelete(DeleteBehavior.SetNull);
-                b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_conv_project");
-                b.HasIndex(x => x.CustomerPhone).HasDatabaseName("idx_conv_phone");
-                b.HasIndex(x => x.CreatedAt).HasDatabaseName("idx_conv_created");
-            });
-
-            // CustomerFeedback
-            modelBuilder.Entity<CustomerFeedback>(b =>
-            {
-                b.ToTable("customer_feedbacks");
-                b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.HasOne<Project>().WithMany().HasForeignKey(f => f.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                b.HasOne<Appointment>().WithMany().HasForeignKey(f => f.AppointmentId).OnDelete(DeleteBehavior.SetNull);
-                b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_feedback_project");
-                b.HasIndex(x => x.AppointmentId).HasDatabaseName("idx_feedback_appointment");
-                b.HasIndex(x => x.Rating).HasDatabaseName("idx_feedback_rating");
-            });
-
-            // CustomerReactivation
-            modelBuilder.Entity<CustomerReactivation>(b =>
-            {
-                b.ToTable("customer_reactivations");
-                b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.HasOne<Project>().WithMany().HasForeignKey(r => r.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                b.HasOne<Appointment>().WithMany().HasForeignKey(r => r.NewAppointmentId).OnDelete(DeleteBehavior.SetNull);
-                b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_reactivation_project");
-                b.HasIndex(x => x.CustomerPhone).HasDatabaseName("idx_reactivation_phone");
-                b.HasIndex(x => x.Reactivated).HasDatabaseName("idx_reactivation_status");
-            });
-
-            // BotMetrics
-            modelBuilder.Entity<BotMetrics>(b =>
-            {
-                b.ToTable("bot_metrics");
-                b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.HasOne<Project>().WithMany().HasForeignKey(m => m.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                b.HasIndex(x => new { x.ProjectId, x.Date }).IsUnique().HasDatabaseName("idx_metrics_project_date");
+                b.HasOne<SaasUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => x.UserId).HasDatabaseName("idx_payments_user");
+                b.HasIndex(x => x.MercadoPagoPaymentId).HasDatabaseName("idx_payments_mp_id");
+                b.HasIndex(x => x.MercadoPagoPreferenceId).HasDatabaseName("idx_payments_preference");
             });
         }
     }
