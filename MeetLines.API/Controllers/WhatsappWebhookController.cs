@@ -9,7 +9,6 @@ using MeetLines.Domain.Repositories;
 namespace MeetLines.API.Controllers
 {
     [ApiController]
-    [Route("webhook/whatsapp")]
     public class WhatsappWebhookController : ControllerBase
     {
         private readonly IProjectRepository _projectRepository;
@@ -23,12 +22,17 @@ namespace MeetLines.API.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        [HttpGet]
-        public async Task<IActionResult> Verify([FromQuery(Name = "hub.mode")] string mode,
-                                                [FromQuery(Name = "hub.verify_token")] string verifyToken,
-                                                [FromQuery(Name = "hub.challenge")] string challenge)
+        [HttpGet("webhook/whatsapp")]
+        [HttpGet("{projectId}/whatsapp")]
+        public async Task<IActionResult> Verify([FromRoute(Name = "projectId")] string? projectId,
+                                                [FromQuery(Name = "hub.mode")] string? mode,
+                                                [FromQuery(Name = "hub.verify_token")] string? verifyToken,
+                                                [FromQuery(Name = "hub.challenge")] string? challenge)
         {
             if (!string.Equals(mode, "subscribe", StringComparison.OrdinalIgnoreCase))
+                return BadRequest();
+
+            if (string.IsNullOrEmpty(verifyToken))
                 return BadRequest();
 
             var project = await _projectRepository.GetByWhatsappVerifyTokenAsync(verifyToken);
@@ -38,8 +42,9 @@ namespace MeetLines.API.Controllers
             return Content(challenge ?? string.Empty, "text/plain");
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Receive([FromBody] JsonElement body)
+        [HttpPost("webhook/whatsapp")]
+        [HttpPost("{projectId}/whatsapp")]
+        public async Task<IActionResult> Receive([FromRoute(Name = "projectId")] string? projectId, [FromBody] JsonElement body)
         {
             try
             {
