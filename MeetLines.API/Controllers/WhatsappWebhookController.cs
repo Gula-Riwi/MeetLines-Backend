@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using MeetLines.Domain.Repositories;
+using MeetLines.Domain.Entities;
 
 namespace MeetLines.API.Controllers
 {
@@ -64,17 +65,33 @@ namespace MeetLines.API.Controllers
                 JsonElement body = JsonSerializer.Deserialize<JsonElement>(rawBody);
                 
                 string phoneNumberId = ExtractPhoneNumberId(body);
-                if (string.IsNullOrEmpty(phoneNumberId))
+                Project? project = null;
+
+                if (!string.IsNullOrEmpty(phoneNumberId))
                 {
-                    _logger.LogWarning("Could not extract phone_number_id from webhook body");
-                    return BadRequest("Missing phone_number_id");
+                    project = await _projectRepository.GetByWhatsappPhoneNumberIdAsync(phoneNumberId);
+                    if (project == null)
+                    {
+                        _logger.LogWarning("Project not found for phone_number_id: {PhoneNumberId}", phoneNumberId);
+                    }
                 }
 
-                var project = await _projectRepository.GetByWhatsappPhoneNumberIdAsync(phoneNumberId);
+                // If we didn't find project by phone number, allow specifying project via header X-Project-Id
                 if (project == null)
                 {
-                    _logger.LogWarning("Project not found for phone_number_id: {PhoneNumberId}", phoneNumberId);
-                    return NotFound();
+                    if (Request.Headers.TryGetValue("X-Project-Id", out var projectIdHeader))
+                    {
+                        if (Guid.TryParse(projectIdHeader.ToString(), out var projectGuid))
+                        {
+                            project = await _projectRepository.GetAsync(projectGuid);
+                        }
+                    }
+                }
+
+                if (project == null)
+                {
+                    _logger.LogWarning("Project not resolved for incoming Whatsapp webhook. phone_number_id={PhoneNumberId}, headerXProjectId={Header}", phoneNumberId, Request.Headers["X-Project-Id"].ToString());
+                    return BadRequest("Missing phone_number_id");
                 }
 
                 // If forward webhook is configured for the project, forward the raw payload
@@ -129,6 +146,53 @@ namespace MeetLines.API.Controllers
             try
             {
                 // Typical payload: entry[0].changes[0].value.metadata.phone_number_id
+                // If body itself is a primitive (string/number) containing the phone id
+                if (body.ValueKind == JsonValueKind.String)
+                {
+                    var s = body.GetString();
+                    if (!string.IsNullOrWhiteSpace(s)) return s;
+                }
+                else if (body.ValueKind == JsonValueKind.Number)
+                {
+                    return body.GetRawText();
+                }
+
+                // Direct root property: { "phone_number_id": "..." }
+                if (body.TryGetProperty("phone_number_id", out var rootPhone))
+                {
+                    if (rootPhone.ValueKind == JsonValueKind.String)
+                        return rootPhone.GetString() ?? string.Empty;
+                    return rootPhone.GetRawText();
+                }
+
+                if (body.TryGetProperty("value", out var directValue))
+                {
+                    // value might be an object or a JSON-encoded string
+                    if (directValue.ValueKind == JsonValueKind.String)
+                    {
+                        var inner = directValue.GetString();
+                        if (!string.IsNullOrWhiteSpace(inner))
+                        {
+                            try
+                            {
+                                var parsed = JsonSerializer.Deserialize<JsonElement>(inner);
+                                var fromInner = ExtractPhoneNumberId(parsed);
+                                if (!string.IsNullOrEmpty(fromInner)) return fromInner;
+                            }
+                            catch { /* ignore */ }
+                        }
+                    }
+                    else if (directValue.ValueKind == JsonValueKind.Object)
+                    {
+                        if (directValue.TryGetProperty("metadata", out var meta) && meta.TryGetProperty("phone_number_id", out var metaPhone))
+                        {
+                            if (metaPhone.ValueKind == JsonValueKind.String)
+                                return metaPhone.GetString() ?? string.Empty;
+                            return metaPhone.GetRawText();
+                        }
+                    }
+                }
+
                 if (body.TryGetProperty("entry", out var entry) && entry.GetArrayLength() > 0)
                 {
                     var firstEntry = entry[0];
@@ -137,11 +201,31 @@ namespace MeetLines.API.Controllers
                         var firstChange = changes[0];
                         if (firstChange.TryGetProperty("value", out var value))
                         {
-                            if (value.TryGetProperty("metadata", out var metadata))
+                            // value might be object or stringified JSON
+                            if (value.ValueKind == JsonValueKind.String)
                             {
-                                if (metadata.TryGetProperty("phone_number_id", out var phoneIdProp))
+                                var inner = value.GetString();
+                                if (!string.IsNullOrWhiteSpace(inner))
                                 {
-                                    return phoneIdProp.GetString() ?? string.Empty;
+                                    try
+                                    {
+                                        var parsed = JsonSerializer.Deserialize<JsonElement>(inner);
+                                        var fromInner = ExtractPhoneNumberId(parsed);
+                                        if (!string.IsNullOrEmpty(fromInner)) return fromInner;
+                                    }
+                                    catch { /* ignore */ }
+                                }
+                            }
+                            else if (value.ValueKind == JsonValueKind.Object)
+                            {
+                                if (value.TryGetProperty("metadata", out var metadata))
+                                {
+                                    if (metadata.TryGetProperty("phone_number_id", out var phoneIdProp))
+                                    {
+                                        if (phoneIdProp.ValueKind == JsonValueKind.String)
+                                            return phoneIdProp.GetString() ?? string.Empty;
+                                        return phoneIdProp.GetRawText();
+                                    }
                                 }
                             }
                         }
