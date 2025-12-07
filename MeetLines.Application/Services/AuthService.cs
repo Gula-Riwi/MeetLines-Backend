@@ -21,6 +21,7 @@ namespace MeetLines.Application.Services
         private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IDiscordWebhookService _discordService;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly ITenantService _tenantService;
         private readonly MeetLines.Application.Services.Interfaces.ITransferUseCases _transferUseCases;
 
         public AuthService(
@@ -33,7 +34,8 @@ namespace MeetLines.Application.Services
             IEmailService emailService,
             ISubscriptionRepository subscriptionRepository,
             IDiscordWebhookService discordService,
-            IEmployeeRepository employeeRepository)
+            IEmployeeRepository employeeRepository,
+            ITenantService tenantService)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _emailVerificationTokenRepository = emailVerificationTokenRepository ?? throw new ArgumentNullException(nameof(emailVerificationTokenRepository));
@@ -45,6 +47,7 @@ namespace MeetLines.Application.Services
             _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
             _discordService = discordService;
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
+            _tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
             _transferUseCases = null!; // will be injected via DI by ApplicationServiceCollectionExtensions
         }
 
