@@ -126,6 +126,49 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Gets only the project ID by WhatsApp Phone Number ID (lightweight)
+        /// Used by n8n for optimized lookups
+        /// Requires header: Authorization: Bearer {INTEGRATIONS_API_KEY}
+        /// </summary>
+        [HttpGet("by-whatsapp-id/{phoneNumberId}/id")]
+        public async Task<ActionResult> GetProjectIdOnly(string phoneNumberId, CancellationToken ct = default)
+        {
+            try
+            {
+                // Validate API key
+                if (!ValidateApiKey())
+                {
+                    _logger.LogWarning("Unauthorized access attempt to project ID lookup");
+                    return Unauthorized(new { error = "Invalid or missing API key" });
+                }
+
+                // Query directly without tenant filter
+                var project = await _context.Projects
+                    .AsNoTracking()
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(p => p.WhatsappPhoneNumberId == phoneNumberId, ct);
+
+                if (project == null)
+                {
+                    _logger.LogWarning("Project not found for WhatsApp Phone Number ID: {PhoneNumberId}", phoneNumberId);
+                    return NotFound(new { message = $"No project found for WhatsApp Phone Number ID: {phoneNumberId}" });
+                }
+
+                _logger.LogInformation("Project ID {ProjectId} found for WhatsApp Phone Number ID: {PhoneNumberId}", project.Id, phoneNumberId);
+
+                return Ok(new
+                {
+                    projectId = project.Id
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving project ID by WhatsApp Phone Number ID: {PhoneNumberId}", phoneNumberId);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        /// <summary>
         /// Health check endpoint for n8n
         /// Does not require authentication
         /// </summary>
