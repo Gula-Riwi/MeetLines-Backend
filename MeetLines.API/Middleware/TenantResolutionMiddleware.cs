@@ -59,6 +59,7 @@ namespace MeetLines.API.Middleware
                 // ===== WEBHOOKS =====
                 "/webhook/whatsapp",
                 "/webhook/",
+                "/whatsapp", // n8n may call the top-level /whatsapp path (keep as public)
                 
                 // ===== WHATSAPP =====
                 "/api/whatsapp/send-message",  // Recibe respuesta de n8n
