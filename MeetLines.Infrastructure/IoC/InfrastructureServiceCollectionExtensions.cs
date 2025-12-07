@@ -70,6 +70,8 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            services.AddScoped<IPaymentRepository, PaymentRepository>();
+            services.AddScoped<IMercadoPagoService, MercadoPagoService>();
 
             // Servicios Multitenancy
             services.AddHttpContextAccessor();

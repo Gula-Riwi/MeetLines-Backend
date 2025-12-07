@@ -24,6 +24,7 @@ namespace MeetLines.Infrastructure.Data
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<TransferToken> TransferTokens { get; set; }
         public DbSet<Employee> Employees { get; set; }
+        public DbSet<Payment> Payments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -253,6 +254,20 @@ namespace MeetLines.Infrastructure.Data
                 b.HasIndex(x => x.Username).IsUnique().HasDatabaseName("idx_employees_username");
                 b.HasIndex(x => x.Email).IsUnique().HasDatabaseName("idx_employees_email"); // Ensure unique email
                 b.HasIndex(x => x.Area).HasDatabaseName("idx_employees_area"); // Index for Area lookups
+            });
+            
+            // Payments
+            modelBuilder.Entity<Payment>(b =>
+            {
+                b.ToTable("payments");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.Amount).HasColumnType("numeric(10,2)");
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.HasOne<SaasUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => x.UserId).HasDatabaseName("idx_payments_user");
+                b.HasIndex(x => x.MercadoPagoPaymentId).HasDatabaseName("idx_payments_mp_id");
+                b.HasIndex(x => x.MercadoPagoPreferenceId).HasDatabaseName("idx_payments_preference");
             });
         }
     }
