@@ -11,7 +11,7 @@ namespace MeetLines.API.Controllers
     /// Requiere autenticación con API key.
     /// </summary>
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/project-credentials")]
     public class ProjectCredentialsController : ControllerBase
     {
         private readonly IProjectRepository _projectRepository;
