@@ -73,6 +73,14 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<IPaymentRepository, PaymentRepository>();
             services.AddScoped<IMercadoPagoService, MercadoPagoService>();
 
+            // WhatsApp Bot System Repositories
+            services.AddScoped<IProjectBotConfigRepository, ProjectBotConfigRepository>();
+            services.AddScoped<IKnowledgeBaseRepository, KnowledgeBaseRepository>();
+            services.AddScoped<IConversationRepository, ConversationRepository>();
+            services.AddScoped<ICustomerFeedbackRepository, CustomerFeedbackRepository>();
+            services.AddScoped<ICustomerReactivationRepository, CustomerReactivationRepository>();
+            services.AddScoped<IBotMetricsRepository, BotMetricsRepository>();
+
             // Servicios Multitenancy
             services.AddHttpContextAccessor();
             services.AddScoped<MeetLines.Application.Services.Interfaces.ITenantService, TenantService>();

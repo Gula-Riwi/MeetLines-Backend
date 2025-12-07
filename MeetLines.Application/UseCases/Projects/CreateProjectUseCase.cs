@@ -100,6 +100,12 @@ namespace MeetLines.Application.UseCases.Projects
                     request.Industry,
                     request.Description);
 
+                // If WhatsApp initial values are provided, set them
+                if (!string.IsNullOrWhiteSpace(request.WhatsappVerifyToken) || !string.IsNullOrWhiteSpace(request.WhatsappPhoneNumberId) || !string.IsNullOrWhiteSpace(request.WhatsappAccessToken) || !string.IsNullOrWhiteSpace(request.WhatsappForwardWebhook))
+                {
+                    project.UpdateWhatsappIntegration(request.WhatsappVerifyToken, request.WhatsappPhoneNumberId, request.WhatsappAccessToken, request.WhatsappForwardWebhook);
+                }
+
                 await _projectRepository.AddAsync(project, ct);
 
 
@@ -148,6 +154,8 @@ namespace MeetLines.Application.UseCases.Projects
                 Status = project.Status,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt
+                , WhatsappPhoneNumberId = project.WhatsappPhoneNumberId
+                , WhatsappForwardWebhook = project.WhatsappForwardWebhook
             };
         }
 

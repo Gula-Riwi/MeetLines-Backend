@@ -24,6 +24,70 @@ namespace MeetLines.API.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             var host = context.Request.Host.Host;
+            var path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
+            
+            // ====== RUTAS QUE NO REQUIEREN TENANT ======
+            var publicRoutes = new[]
+            {
+                // ===== AUTH (Todas públicas EXCEPTO employee-login) =====
+                "/api/auth/login",
+                "/api/auth/register",
+                "/api/auth/refresh-token",
+                "/api/auth/logout",
+                "/api/auth/verify-email",
+                "/api/auth/forgot-password",
+                "/api/auth/reset-password",
+                "/api/auth/resend-verification-email",
+                "/api/auth/oauth/discord",
+                "/api/auth/oauth/facebook",
+                "/api/auth/oauth-login",
+                // "/api/auth/employee-login",  // ❌ REQUIERE TENANT (validar que el empleado pertenezca al proyecto)
+                "/api/auth/create-transfer",
+                "/api/auth/accept-transfer",
+                
+                // ===== PROFILE (Requiere auth pero NO tenant) =====
+                "/api/profile",
+                
+                // ===== PROJECTS (Para crear proyecto, requiere auth pero NO tenant) =====
+                "/api/projects",  // GET y POST
+                "/api/projects/phone-number/",  // Para n8n obtener credenciales dinámicamente
+                "/api/projects/",  // GET proyecto público con API key (incluye /public)
+                
+                // ===== PROJECT CREDENTIALS (Para n8n obtener credenciales con API key) =====
+                "/api/project-credentials/",  // GET credenciales por projectId + API key
+                
+                // ===== HEALTH =====
+                "/health",
+                "/api/health",
+                
+                // ===== WEBHOOKS =====
+                "/webhook/whatsapp",
+                "/webhook/",
+                "/whatsapp", // n8n may call the top-level /whatsapp path (keep as public)
+                
+                // ===== WHATSAPP =====
+                "/api/whatsapp/send-message",  // Recibe respuesta de n8n
+                
+                // ===== EMAIL TEMPLATES (Públicas) =====
+                "/api/emailtemplates"
+            };
+
+            // Si la ruta está en la lista de excepciones, NO aplicar tenant resolution
+            if (publicRoutes.Any(route => path.StartsWith(route, StringComparison.OrdinalIgnoreCase)))
+            {
+                await _next(context);
+                return;
+            }
+
+            // Special-case: allow paths like "/{tenantId}/whatsapp" where n8n may prefix a tenant id
+            // e.g. GET https://services.meet-lines.com/1ede30b1-366e-4c61-b648-b68cf3930d40/whatsapp
+            var segments = path.Split(new[] {'/'}, StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length >= 2 && segments[1].Equals("whatsapp", StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(context);
+                return;
+            }
+
             // Lee del appsettings.json que obtiene valores del .env
             var baseDomain = _configuration["Multitenancy:BaseDomain"] ?? "meet-lines.com";
 

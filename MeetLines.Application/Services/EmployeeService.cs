@@ -52,7 +52,7 @@ namespace MeetLines.Application.Services
                     return Result<EmployeeResponse>.Fail("El proyecto no pertenece al tenant actual.");
                 }
 
-                // CORRECCIÓN CS8600: Aseguramos que username no sea null desde el inicio
+                /
                 string username = request.Username ?? string.Empty;
 
                 if (string.IsNullOrWhiteSpace(username))

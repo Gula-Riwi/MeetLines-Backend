@@ -81,5 +81,19 @@ namespace MeetLines.Infrastructure.Repositories
             return await _context.Projects
                 .AnyAsync(p => p.Subdomain == subdomain, ct);
         }
+
+        public async Task<Project?> GetByWhatsappPhoneNumberIdAsync(string phoneNumberId, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(phoneNumberId)) return null;
+            return await _context.Projects
+                .FirstOrDefaultAsync(p => p.WhatsappPhoneNumberId == phoneNumberId, ct);
+        }
+
+        public async Task<Project?> GetByWhatsappVerifyTokenAsync(string verifyToken, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(verifyToken)) return null;
+            return await _context.Projects
+                .FirstOrDefaultAsync(p => p.WhatsappVerifyToken == verifyToken, ct);
+        }
     }
 }

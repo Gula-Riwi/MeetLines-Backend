@@ -174,8 +174,7 @@ namespace MeetLines.API.Controllers
                 var u = userDoc.RootElement;
 
                 var externalId = u.GetProperty("id").GetString() ?? string.Empty;
-                
-                // CORRECCIÓN CS8601: Asegurar que nameProp.GetString() no devuelva null
+             
                 var name = u.TryGetProperty("name", out var nameProp) 
                     ? (nameProp.GetString() ?? "Facebook User") 
                     : "Facebook User";
@@ -190,8 +189,8 @@ namespace MeetLines.API.Controllers
                     Email = email,
                     Name = name,
                     Provider = MeetLines.Domain.Enums.AuthProvider.Facebook,
-                    DeviceInfo = GetUserAgent() ?? "Unknown", // CORRECCIÓN CS8601
-                    IpAddress = GetClientIp() ?? "Unknown"    // CORRECCIÓN CS8601
+                    DeviceInfo = GetUserAgent() ?? "Unknown", 
+                    IpAddress = GetClientIp() ?? "Unknown"   
                 };
 
                 var result = await _authService.OAuthLoginAsync(oauthRequest, ct);
