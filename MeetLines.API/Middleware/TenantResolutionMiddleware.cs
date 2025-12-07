@@ -51,6 +51,7 @@ namespace MeetLines.API.Middleware
                 // ===== PROJECTS (Para crear proyecto, requiere auth pero NO tenant) =====
                 "/api/projects",  // GET y POST
                 "/api/projects/phone-number/",  // Para n8n obtener credenciales dinámicamente
+                "/api/projects/",  // GET proyecto público con API key (incluye /public)
                 
                 // ===== PROJECT CREDENTIALS (Para n8n obtener credenciales con API key) =====
                 "/api/project-credentials/",  // GET credenciales por projectId + API key
