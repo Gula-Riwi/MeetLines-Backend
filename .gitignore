@@ -187,8 +187,6 @@ logs/
 secrets.json
 Secrets.json
 appsettings.*.Local.json
-env.development
-
 
 # OS files
 .DS_Store

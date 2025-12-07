@@ -52,17 +52,13 @@ namespace MeetLines.Application.Services
                     return Result<EmployeeResponse>.Fail("El proyecto no pertenece al tenant actual.");
                 }
 
-                /
+                // Auto‑generate username from email if not provided
                 string username = request.Username ?? string.Empty;
-
                 if (string.IsNullOrWhiteSpace(username))
                 {
-                    // Generar username basado en el email si no viene uno
                     username = request.Email.Split('@')[0];
                     var baseUsername = username;
                     int suffix = 1;
-                    
-                    // Aquí username ya tiene valor, es seguro usarlo
                     while (await _employeeRepository.GetByUsernameAsync(username, ct) != null)
                     {
                         username = $"{baseUsername}{suffix}";
@@ -71,8 +67,6 @@ namespace MeetLines.Application.Services
                 }
                 else
                 {
-                    // Verificar si el username manual ya existe
-                    // Usamos 'var' o 'Employee?' para manejar si el repositorio devuelve null
                     var existing = await _employeeRepository.GetByUsernameAsync(username, ct);
                     if (existing != null)
                     {
@@ -84,7 +78,6 @@ namespace MeetLines.Application.Services
                 var password = GenerateRandomPassword();
                 var passwordHash = _passwordHasher.HashPassword(password);
 
-                // A este punto, 'username' está garantizado de no ser null
                 var employee = new Employee(request.ProjectId, request.Name, username, request.Email, passwordHash, request.Role, request.Area);
                 await _employeeRepository.AddAsync(employee, ct);
 
@@ -104,9 +97,7 @@ namespace MeetLines.Application.Services
             try
             {
                 var employees = await _employeeRepository.GetByProjectIdAsync(projectId, ct);
-                // Aseguramos que employees no sea nulo antes de iterar
-                var safeEmployees = employees ?? Enumerable.Empty<Employee>();
-                var responses = safeEmployees.Select(MapToResponse);
+                var responses = employees.Select(MapToResponse);
                 return Result<IEnumerable<EmployeeResponse>>.Ok(responses);
             }
             catch (Exception ex)

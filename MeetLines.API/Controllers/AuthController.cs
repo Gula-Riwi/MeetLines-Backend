@@ -100,8 +100,8 @@ namespace MeetLines.API.Controllers
                     Email = email,
                     Name = username,
                     Provider = MeetLines.Domain.Enums.AuthProvider.Discord,
-                    DeviceInfo = GetUserAgent() ?? "Unknown", // CORRECCIÓN CS8601
-                    IpAddress = GetClientIp() ?? "Unknown"     // CORRECCIÓN CS8601
+                    DeviceInfo = GetUserAgent(),
+                    IpAddress = GetClientIp()
                 };
 
                 var result = await _authService.OAuthLoginAsync(oauthRequest, ct);
@@ -174,11 +174,7 @@ namespace MeetLines.API.Controllers
                 var u = userDoc.RootElement;
 
                 var externalId = u.GetProperty("id").GetString() ?? string.Empty;
-             
-                var name = u.TryGetProperty("name", out var nameProp) 
-                    ? (nameProp.GetString() ?? "Facebook User") 
-                    : "Facebook User";
-
+                var name = (u.TryGetProperty("name", out var nameProp) ? nameProp.GetString() : null) ?? "Facebook User";
                 string? email = null;
                 if (u.TryGetProperty("email", out var emailProp) && emailProp.ValueKind == JsonValueKind.String)
                     email = emailProp.GetString();
@@ -189,8 +185,8 @@ namespace MeetLines.API.Controllers
                     Email = email,
                     Name = name,
                     Provider = MeetLines.Domain.Enums.AuthProvider.Facebook,
-                    DeviceInfo = GetUserAgent() ?? "Unknown", 
-                    IpAddress = GetClientIp() ?? "Unknown"   
+                    DeviceInfo = GetUserAgent(),
+                    IpAddress = GetClientIp()
                 };
 
                 var result = await _authService.OAuthLoginAsync(oauthRequest, ct);
@@ -204,8 +200,6 @@ namespace MeetLines.API.Controllers
                 return StatusCode(500, ApiResponse.Fail($"Internal error: {ex.Message}"));
             }
         }
-        
-        /// <summary>
         /// POST: api/auth/create-transfer
         /// Body: { tenant: string }
         /// Requires Authorization: Bearer <accessToken>
@@ -225,7 +219,6 @@ namespace MeetLines.API.Controllers
                 var result = await _authService.CreateTransferAsync(request, userId, ct);
                 if (!result.IsSuccess) return BadRequest(ApiResponse.Fail(result.Error ?? "Error creating transfer"));
 
-                // CORRECCIÓN CS8601: Asegurar que no se pase null a Ok
                 return Ok(ApiResponse<string>.Ok(result.Value ?? string.Empty));
             }
             catch (Exception ex)
@@ -307,9 +300,8 @@ namespace MeetLines.API.Controllers
             {
                 // Auto-populate timezone, ip and device info when possible
                 request.Timezone = GetTimezoneFromHeaders() ?? request.Timezone;
-                // CORRECCIÓN CS8601: Asegurar no asignar null
-                request.IpAddress = request.IpAddress ?? GetClientIp() ?? "Unknown";
-                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent() ?? "Unknown";
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
 
                 // FluentValidation se ejecutará automáticamente por el middleware
                 // Ejecutar caso de uso
@@ -342,9 +334,8 @@ namespace MeetLines.API.Controllers
             try
             {
                 // Auto-populate ip/device when missing
-                // CORRECCIÓN CS8601: Asegurar no asignar null
-                request.IpAddress = request.IpAddress ?? GetClientIp() ?? "Unknown";
-                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent() ?? "Unknown";
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
 
                 // Ejecutar caso de uso
                 var result = await _authService.LoginAsync(request, ct);
@@ -373,9 +364,8 @@ namespace MeetLines.API.Controllers
             try
             {
                 // Auto-populate ip/device when missing
-                // CORRECCIÓN CS8601
-                request.IpAddress = request.IpAddress ?? GetClientIp() ?? "Unknown";
-                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent() ?? "Unknown";
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
 
                 var result = await _authService.EmployeeLoginAsync(request, ct);
 
@@ -403,9 +393,8 @@ namespace MeetLines.API.Controllers
             try
             {
                 // Auto-populate ip/device when missing
-                // CORRECCIÓN CS8601
-                request.IpAddress = request.IpAddress ?? GetClientIp() ?? "Unknown";
-                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent() ?? "Unknown";
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
 
                 // Ejecutar caso de uso
                 var result = await _authService.OAuthLoginAsync(request, ct);
@@ -434,9 +423,8 @@ namespace MeetLines.API.Controllers
             try
             {
                 // Auto-populate ip/device when missing
-                // CORRECCIÓN CS8601
-                request.IpAddress = request.IpAddress ?? GetClientIp() ?? "Unknown";
-                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent() ?? "Unknown";
+                request.IpAddress = request.IpAddress ?? GetClientIp();
+                request.DeviceInfo = request.DeviceInfo ?? GetUserAgent();
 
                 var result = await _authService.RefreshTokenAsync(request, ct);
 
@@ -489,8 +477,7 @@ namespace MeetLines.API.Controllers
             try
             {
                 // Auto-populate ip when missing
-                // CORRECCIÓN CS8601
-                request.IpAddress = request.IpAddress ?? GetClientIp() ?? "Unknown";
+                request.IpAddress = request.IpAddress ?? GetClientIp();
 
                 var result = await _authService.ForgotPasswordAsync(request, ct);
 
