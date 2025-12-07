@@ -75,6 +75,15 @@ namespace MeetLines.API.Middleware
                 return;
             }
 
+            // Special-case: allow paths like "/{tenantId}/whatsapp" where n8n may prefix a tenant id
+            // e.g. GET https://services.meet-lines.com/1ede30b1-366e-4c61-b648-b68cf3930d40/whatsapp
+            var segments = path.Split(new[] {'/'}, StringSplitOptions.RemoveEmptyEntries);
+            if (segments.Length >= 2 && segments[1].Equals("whatsapp", StringComparison.OrdinalIgnoreCase))
+            {
+                await _next(context);
+                return;
+            }
+
             // Lee del appsettings.json que obtiene valores del .env
             var baseDomain = _configuration["Multitenancy:BaseDomain"] ?? "meet-lines.com";
 
