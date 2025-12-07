@@ -1,11 +1,13 @@
 using System;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using MeetLines.Domain.Repositories;
+using Microsoft.EntityFrameworkCore;
+using MeetLines.Infrastructure.Data;
 using MeetLines.Domain.Entities;
 
 namespace MeetLines.API.Controllers
@@ -13,13 +15,16 @@ namespace MeetLines.API.Controllers
     [ApiController]
     public class WhatsappWebhookController : ControllerBase
     {
-        private readonly IProjectRepository _projectRepository;
+        private readonly MeetLinesPgDbContext _context;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly Microsoft.Extensions.Logging.ILogger<WhatsappWebhookController> _logger;
 
-        public WhatsappWebhookController(IProjectRepository projectRepository, IHttpClientFactory httpClientFactory, Microsoft.Extensions.Logging.ILogger<WhatsappWebhookController> logger)
+        public WhatsappWebhookController(
+            MeetLinesPgDbContext context,
+            IHttpClientFactory httpClientFactory,
+            Microsoft.Extensions.Logging.ILogger<WhatsappWebhookController> logger)
         {
-            _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -37,10 +42,16 @@ namespace MeetLines.API.Controllers
             if (string.IsNullOrEmpty(verifyToken))
                 return BadRequest();
 
-            var project = await _projectRepository.GetByWhatsappVerifyTokenAsync(verifyToken);
+            // BYPASS TENANT FILTER - Webhook público
+            var project = await _context.Projects
+                .AsNoTracking()
+                .IgnoreQueryFilters()
+                .FirstOrDefaultAsync(p => p.WhatsappVerifyToken == verifyToken);
+
             if (project == null)
                 return Forbid();
 
+            _logger.LogInformation("WhatsApp webhook verified for project {ProjectId}", project.Id);
             return Content(challenge ?? string.Empty, "text/plain");
         }
 
@@ -62,6 +73,8 @@ namespace MeetLines.API.Controllers
                     return BadRequest("Empty body");
                 }
 
+                _logger.LogInformation("Incoming WhatsApp webhook. Body length: {Length}", rawBody.Length);
+
                 // Parse as JsonElement
                 JsonElement body = JsonSerializer.Deserialize<JsonElement>(rawBody);
                 
@@ -70,11 +83,25 @@ namespace MeetLines.API.Controllers
 
                 if (!string.IsNullOrEmpty(phoneNumberId))
                 {
-                    project = await _projectRepository.GetByWhatsappPhoneNumberIdAsync(phoneNumberId);
+                    // BYPASS TENANT FILTER - Webhook público
+                    project = await _context.Projects
+                        .AsNoTracking()
+                        .IgnoreQueryFilters()
+                        .FirstOrDefaultAsync(p => p.WhatsappPhoneNumberId == phoneNumberId);
+
                     if (project == null)
                     {
                         _logger.LogWarning("Project not found for phone_number_id: {PhoneNumberId}", phoneNumberId);
                     }
+                    else
+                    {
+                        _logger.LogInformation("Project {ProjectId} ({ProjectName}) found for phone_number_id: {PhoneNumberId}", 
+                            project.Id, project.Name, phoneNumberId);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Could not extract phone_number_id from webhook payload");
                 }
 
                 // If we didn't find project by phone number, allow specifying project via header X-Project-Id
@@ -84,14 +111,24 @@ namespace MeetLines.API.Controllers
                     {
                         if (Guid.TryParse(projectIdHeader.ToString(), out var projectGuid))
                         {
-                            project = await _projectRepository.GetAsync(projectGuid);
+                            // BYPASS TENANT FILTER
+                            project = await _context.Projects
+                                .AsNoTracking()
+                                .IgnoreQueryFilters()
+                                .FirstOrDefaultAsync(p => p.Id == projectGuid);
+
+                            if (project != null)
+                            {
+                                _logger.LogInformation("Project {ProjectId} found via X-Project-Id header", project.Id);
+                            }
                         }
                     }
                 }
 
                 if (project == null)
                 {
-                    _logger.LogWarning("Project not resolved for incoming Whatsapp webhook. phone_number_id={PhoneNumberId}, headerXProjectId={Header}", phoneNumberId, Request.Headers["X-Project-Id"].ToString());
+                    _logger.LogWarning("Project not resolved for incoming Whatsapp webhook. phone_number_id={PhoneNumberId}, headerXProjectId={Header}", 
+                        phoneNumberId, Request.Headers["X-Project-Id"].ToString());
                     // Acknowledge the webhook even if we can't resolve the project to avoid retries from the provider
                     return Ok();
                 }
