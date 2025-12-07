@@ -52,6 +52,9 @@ namespace MeetLines.API.Middleware
                 "/api/projects",  // GET y POST
                 "/api/projects/phone-number/",  // Para n8n obtener credenciales dinámicamente
                 
+                // ===== PROJECT CREDENTIALS (Para n8n obtener credenciales con API key) =====
+                "/api/project-credentials/",  // GET credenciales por projectId + API key
+                
                 // ===== HEALTH =====
                 "/health",
                 "/api/health",
