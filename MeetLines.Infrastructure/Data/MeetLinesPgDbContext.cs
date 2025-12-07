@@ -286,9 +286,18 @@ namespace MeetLines.Infrastructure.Data
             {
                 b.ToTable("knowledge_bases");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.ProjectId).HasColumnName("project_id");
+                b.Property(x => x.Category).HasColumnName("category");
+                b.Property(x => x.Question).HasColumnName("question");
+                b.Property(x => x.Answer).HasColumnName("answer");
+                b.Property(x => x.Keywords).HasColumnName("keywords");
+                b.Property(x => x.Priority).HasColumnName("priority");
+                b.Property(x => x.IsActive).HasColumnName("is_active");
+                b.Property(x => x.UsageCount).HasColumnName("usage_count");
+                b.Property(x => x.LastUsedAt).HasColumnName("last_used_at");
+                b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+                b.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
                 b.HasOne<Project>().WithMany().HasForeignKey(k => k.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_kb_project");
                 b.HasIndex(x => x.Category).HasDatabaseName("idx_kb_category");
