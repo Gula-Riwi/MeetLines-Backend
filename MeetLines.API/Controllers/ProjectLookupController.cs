@@ -30,7 +30,7 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
-        /// Gets project by WhatsApp Phone Number ID (from Meta/Facebook)
+        /// Gets project ID by WhatsApp Phone Number ID (from Meta/Facebook)
         /// Used by n8n to identify which project a message belongs to
         /// Requires header: Authorization: Bearer {INTEGRATIONS_API_KEY}
         /// </summary>
@@ -49,7 +49,7 @@ namespace MeetLines.API.Controllers
                 // Query directly without tenant filter
                 var project = await _context.Projects
                     .AsNoTracking()
-                    .IgnoreQueryFilters() // IMPORTANTE: Ignora el filtro de tenant
+                    .IgnoreQueryFilters()
                     .FirstOrDefaultAsync(p => p.WhatsappPhoneNumberId == phoneNumberId, ct);
 
                 if (project == null)
@@ -60,15 +60,7 @@ namespace MeetLines.API.Controllers
 
                 _logger.LogInformation("Project {ProjectId} found for WhatsApp Phone Number ID: {PhoneNumberId}", project.Id, phoneNumberId);
 
-                return Ok(new
-                {
-                    projectId = project.Id,
-                    projectName = project.Name,
-                    subdomain = project.Subdomain,
-                    industry = project.Industry,
-                    whatsappPhoneNumberId = project.WhatsappPhoneNumberId,
-                    userId = project.UserId
-                });
+                return Ok(new { projectId = project.Id });
             }
             catch (Exception ex)
             {
