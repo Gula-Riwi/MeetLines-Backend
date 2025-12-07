@@ -101,6 +101,14 @@ builder.Configuration["Authentication:Facebook:AppSecret"] = ExpandVariables(bui
 builder.Configuration["Multitenancy:BaseDomain"] = ExpandVariables(builder.Configuration["Multitenancy:BaseDomain"] ?? "");
 builder.Configuration["Multitenancy:Protocol"] = ExpandVariables(builder.Configuration["Multitenancy:Protocol"] ?? "");
 
+// 6. Integrations API Key
+var integrationsApiKey = Environment.GetEnvironmentVariable("INTEGRATIONS_API_KEY");
+if (!string.IsNullOrEmpty(integrationsApiKey))
+{
+    builder.Configuration["INTEGRATIONS_API_KEY"] = integrationsApiKey;
+    Console.WriteLine("🔑 INTEGRATIONS_API_KEY configurada");
+}
+
 // Register application services
 builder.Services.AddApplicationServices();
 

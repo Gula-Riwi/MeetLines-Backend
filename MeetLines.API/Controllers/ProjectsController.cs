@@ -128,25 +128,37 @@ namespace MeetLines.API.Controllers
             [FromRoute] Guid projectId,
             [FromServices] IProjectRepository projectRepository,
             [FromServices] IConfiguration configuration,
+            [FromServices] ILogger<ProjectsController> logger,
             CancellationToken ct = default)
         {
             try
             {
+                logger.LogInformation("🔍 GetProjectPublic called for ProjectId: {ProjectId}", projectId);
+                
                 // Validar API Key
                 var authHeader = Request.Headers["Authorization"].ToString();
                 var apiKey = authHeader.Replace("Bearer ", "").Replace("Bearer", "").Trim();
                 var expectedApiKey = configuration["INTEGRATIONS_API_KEY"];
 
+                logger.LogInformation("🔑 API Key present: {HasKey}, Expected key configured: {HasExpected}", 
+                    !string.IsNullOrEmpty(apiKey), !string.IsNullOrEmpty(expectedApiKey));
+
                 if (string.IsNullOrEmpty(apiKey) || apiKey != expectedApiKey)
                 {
+                    logger.LogWarning("⚠️ Invalid API Key for ProjectId: {ProjectId}", projectId);
                     return Unauthorized(new { error = "Invalid API Key" });
                 }
 
+                logger.LogInformation("✅ API Key validated, fetching project from database");
                 var project = await projectRepository.GetAsync(projectId, ct);
+                
                 if (project == null)
                 {
+                    logger.LogWarning("⚠️ Project not found: {ProjectId}", projectId);
                     return NotFound(new { error = "Project not found" });
                 }
+
+                logger.LogInformation("✅ Project found: {ProjectName} (ID: {ProjectId})", project.Name, projectId);
 
                 // Devolver solo datos públicos del proyecto
                 var dto = new ProjectPublicDto
@@ -159,8 +171,9 @@ namespace MeetLines.API.Controllers
 
                 return Ok(dto);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                logger.LogError(ex, "❌ Error in GetProjectPublic for ProjectId: {ProjectId}", projectId);
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
