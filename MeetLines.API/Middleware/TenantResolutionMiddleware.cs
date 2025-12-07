@@ -26,23 +26,48 @@ namespace MeetLines.API.Middleware
             var host = context.Request.Host.Host;
             var path = context.Request.Path.Value?.ToLowerInvariant() ?? "";
             
-            // Rutas públicas que NO requieren tenant resolution
+            // ====== RUTAS QUE NO REQUIEREN TENANT ======
             var publicRoutes = new[]
             {
+                // ===== AUTH (Todas públicas EXCEPTO employee-login) =====
                 "/api/auth/login",
                 "/api/auth/register",
-                "/api/auth/refresh",
+                "/api/auth/refresh-token",
                 "/api/auth/logout",
                 "/api/auth/verify-email",
                 "/api/auth/forgot-password",
                 "/api/auth/reset-password",
-                "/api/auth/oauth",
+                "/api/auth/resend-verification-email",
+                "/api/auth/oauth/discord",
+                "/api/auth/oauth/facebook",
+                "/api/auth/oauth-login",
+                // "/api/auth/employee-login",  // ❌ REQUIERE TENANT (validar que el empleado pertenezca al proyecto)
+                "/api/auth/create-transfer",
+                "/api/auth/accept-transfer",
+                
+                // ===== PROFILE (Requiere auth pero NO tenant) =====
+                "/api/profile",
+                
+                // ===== PROJECTS (Para crear proyecto, requiere auth pero NO tenant) =====
+                "/api/projects",  // GET y POST
+                "/api/projects/phone-number/",  // Para n8n obtener credenciales dinámicamente
+                
+                // ===== HEALTH =====
                 "/health",
+                "/api/health",
+                
+                // ===== WEBHOOKS =====
                 "/webhook/whatsapp",
-                "/api/projects/phone-number/"  // Para n8n obtener credenciales
+                "/webhook/",
+                
+                // ===== WHATSAPP =====
+                "/api/whatsapp/send-message",  // Recibe respuesta de n8n
+                
+                // ===== EMAIL TEMPLATES (Públicas) =====
+                "/api/emailtemplates"
             };
 
-            // Si la ruta es pública, saltarse la resolución de tenant
+            // Si la ruta está en la lista de excepciones, NO aplicar tenant resolution
             if (publicRoutes.Any(route => path.StartsWith(route, StringComparison.OrdinalIgnoreCase)))
             {
                 await _next(context);
