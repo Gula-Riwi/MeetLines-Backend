@@ -14,10 +14,29 @@ namespace MeetLines.API.Controllers
     public class KnowledgeBaseController : ControllerBase
     {
         private readonly IKnowledgeBaseService _service;
+        private readonly IConfiguration _configuration;
 
-        public KnowledgeBaseController(IKnowledgeBaseService service)
+        public KnowledgeBaseController(IKnowledgeBaseService service, IConfiguration configuration)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
+
+        private bool ValidateApiKey()
+        {
+            var expectedApiKey = _configuration["INTEGRATIONS_API_KEY"];
+            if (string.IsNullOrEmpty(expectedApiKey))
+            {
+                return false;
+            }
+
+            if (!Request.Headers.TryGetValue("Authorization", out var authHeader))
+            {
+                return false;
+            }
+
+            var token = authHeader.ToString().Replace("Bearer ", "");
+            return token == expectedApiKey;
         }
 
         /// <summary>
@@ -32,10 +51,18 @@ namespace MeetLines.API.Controllers
 
         /// <summary>
         /// Searches knowledge base
+        /// Used by n8n - requires API key authentication
         /// </summary>
         [HttpPost("search")]
+        [AllowAnonymous]
         public async Task<ActionResult> Search(Guid projectId, [FromBody] SearchKnowledgeBaseRequest request, CancellationToken ct = default)
         {
+            // Validate API key for n8n integration
+            if (!ValidateApiKey())
+            {
+                return Unauthorized(new { error = "Invalid or missing API key" });
+            }
+
             if (request.ProjectId != projectId)
             {
                 return BadRequest(new { message = "Project ID mismatch" });
