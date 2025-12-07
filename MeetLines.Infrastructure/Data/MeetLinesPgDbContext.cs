@@ -298,7 +298,6 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.LastUsedAt).HasColumnName("last_used_at");
                 b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
                 b.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
-                b.HasOne<Project>().WithMany().HasForeignKey(k => k.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_kb_project");
                 b.HasIndex(x => x.Category).HasDatabaseName("idx_kb_category");
             });
