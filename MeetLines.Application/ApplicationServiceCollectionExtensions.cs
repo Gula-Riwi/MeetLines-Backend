@@ -7,7 +7,6 @@ using MeetLines.Application.UseCases.Auth;
 using MeetLines.Application.UseCases.HealthCheck;
 using MeetLines.Application.UseCases.Projects;
 
-
 namespace MeetLines.Application.IoC
 {
     /// <summary>
@@ -21,13 +20,19 @@ namespace MeetLines.Application.IoC
         {
             // Registrar servicios de aplicación
             services.AddScoped<IAuthService, AuthService>();
-            services.AddScoped<IProfileService, ProfileService>(); // ← NUEVO
+            services.AddScoped<IProfileService, ProfileService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
+
+            // WhatsApp Bot System Services
+            services.AddScoped<IProjectBotConfigService, ProjectBotConfigService>();
+            services.AddScoped<IKnowledgeBaseService, KnowledgeBaseService>();
+            services.AddScoped<IConversationService, ConversationService>();
+            services.AddScoped<ICustomerFeedbackService, CustomerFeedbackService>();
+            services.AddScoped<IBotMetricsService, BotMetricsService>();
 
             // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
             services.AddScoped<ILoginUserUseCase, LoginUserUseCase>();
-
             services.AddScoped<IOAuthLoginUseCase, OAuthLoginUseCase>();
             services.AddScoped<IRefreshTokenUseCase, RefreshTokenUseCase>();
             services.AddScoped<MeetLines.Application.Services.Interfaces.ITransferUseCases, MeetLines.Application.UseCases.Auth.TransferUseCases>();
@@ -37,8 +42,6 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IResendVerificationEmailUseCase, ResendVerificationEmailUseCase>();
             services.AddScoped<ILogoutUseCase, LogoutUseCase>();
             services.AddScoped<IHealthCheckUseCase, HealthCheckUseCase>();
-            
-
 
             // Registrar casos de uso de proyectos
             services.AddScoped<ICreateProjectUseCase, CreateProjectUseCase>();
