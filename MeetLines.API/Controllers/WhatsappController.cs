@@ -84,7 +84,7 @@ namespace MeetLines.API.Controllers
             try
             {
                 var client = _httpClientFactory.CreateClient();
-                var url = $"https://graph.instagram.com/v17.0/{phoneNumberId}/messages";
+                var url = $"https://graph.facebook.com/v17.0/{phoneNumberId}/messages";
 
                 var payload = new
                 {
