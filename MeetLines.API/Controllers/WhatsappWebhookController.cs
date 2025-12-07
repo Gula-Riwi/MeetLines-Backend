@@ -44,19 +44,36 @@ namespace MeetLines.API.Controllers
 
         [HttpPost("webhook/whatsapp")]
         [HttpPost("{projectId}/whatsapp")]
-        public async Task<IActionResult> Receive([FromRoute(Name = "projectId")] string? projectId, [FromBody] JsonElement body)
+        public async Task<IActionResult> Receive([FromRoute(Name = "projectId")] string? projectId)
         {
             try
             {
+                // Read raw body as string since ASP.NET binding can be finicky with JsonElement
+                string rawBody;
+                using (var reader = new StreamReader(Request.Body))
+                {
+                    rawBody = await reader.ReadToEndAsync();
+                }
+
+                if (string.IsNullOrWhiteSpace(rawBody))
+                {
+                    return BadRequest("Empty body");
+                }
+
+                // Parse as JsonElement
+                JsonElement body = JsonSerializer.Deserialize<JsonElement>(rawBody);
+                
                 string phoneNumberId = ExtractPhoneNumberId(body);
                 if (string.IsNullOrEmpty(phoneNumberId))
                 {
-                    return BadRequest();
+                    _logger.LogWarning("Could not extract phone_number_id from webhook body");
+                    return BadRequest("Missing phone_number_id");
                 }
 
                 var project = await _projectRepository.GetByWhatsappPhoneNumberIdAsync(phoneNumberId);
                 if (project == null)
                 {
+                    _logger.LogWarning("Project not found for phone_number_id: {PhoneNumberId}", phoneNumberId);
                     return NotFound();
                 }
 
@@ -66,7 +83,7 @@ namespace MeetLines.API.Controllers
                     var client = _httpClientFactory.CreateClient();
                     var request = new HttpRequestMessage(HttpMethod.Post, project.WhatsappForwardWebhook)
                     {
-                        Content = new StringContent(body.GetRawText(), Encoding.UTF8, "application/json")
+                        Content = new StringContent(rawBody, Encoding.UTF8, "application/json")
                     };
                     request.Headers.Add("X-Project-Id", project.Id.ToString());
 
@@ -103,7 +120,7 @@ namespace MeetLines.API.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error processing Whatsapp webhook");
-                return StatusCode(500);
+                return StatusCode(500, "Internal server error");
             }
         }
 
