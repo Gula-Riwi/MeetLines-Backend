@@ -114,6 +114,71 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Obtiene datos públicos de un proyecto específico usando INTEGRATIONS_API_KEY
+        /// Este endpoint es usado por n8n para obtener datos del proyecto
+        /// GET: api/projects/{projectId}/public
+        /// Authorization: Bearer {INTEGRATIONS_API_KEY}
+        /// </summary>
+        [HttpGet("{projectId}/public")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ProjectPublicDto), 200)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetProjectPublic(
+            [FromRoute] Guid projectId,
+            [FromServices] IProjectRepository projectRepository,
+            [FromServices] IConfiguration configuration,
+            [FromServices] ILogger<ProjectsController> logger,
+            CancellationToken ct = default)
+        {
+            try
+            {
+                logger.LogInformation("🔍 GetProjectPublic called for ProjectId: {ProjectId}", projectId);
+                
+                // Validar API Key
+                var authHeader = Request.Headers["Authorization"].ToString();
+                var apiKey = authHeader.Replace("Bearer ", "").Replace("Bearer", "").Trim();
+                var expectedApiKey = configuration["INTEGRATIONS_API_KEY"];
+
+                logger.LogInformation("🔑 API Key present: {HasKey}, Expected key configured: {HasExpected}", 
+                    !string.IsNullOrEmpty(apiKey), !string.IsNullOrEmpty(expectedApiKey));
+
+                if (string.IsNullOrEmpty(apiKey) || apiKey != expectedApiKey)
+                {
+                    logger.LogWarning("⚠️ Invalid API Key for ProjectId: {ProjectId}", projectId);
+                    return Unauthorized(new { error = "Invalid API Key" });
+                }
+
+                logger.LogInformation("✅ API Key validated, fetching project from database");
+                var project = await projectRepository.GetAsync(projectId, ct);
+                
+                if (project == null)
+                {
+                    logger.LogWarning("⚠️ Project not found: {ProjectId}", projectId);
+                    return NotFound(new { error = "Project not found" });
+                }
+
+                logger.LogInformation("✅ Project found: {ProjectName} (ID: {ProjectId})", project.Name, projectId);
+
+                // Devolver solo datos públicos del proyecto
+                var dto = new ProjectPublicDto
+                {
+                    Id = project.Id.ToString(),
+                    Name = project.Name,
+                    Industry = project.Industry ?? string.Empty,
+                    Description = project.Description ?? string.Empty
+                };
+
+                return Ok(dto);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, "❌ Error in GetProjectPublic for ProjectId: {ProjectId}", projectId);
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        /// <summary>
         /// Obtiene credenciales de un proyecto por su phone_number_id de WhatsApp
         /// Este endpoint es usado por n8n para obtener las credenciales dinámicamente
         /// GET: api/projects/phone-number/{phoneNumberId}
@@ -151,7 +216,7 @@ namespace MeetLines.API.Controllers
 
                 return Ok(dto);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return StatusCode(500, new { error = "Internal server error" });
             }
