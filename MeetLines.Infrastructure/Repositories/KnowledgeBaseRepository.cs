@@ -60,19 +60,35 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task<IEnumerable<KnowledgeBase>> SearchAsync(Guid projectId, string query, CancellationToken ct = default)
         {
-            // Full-text search using PostgreSQL's to_tsvector
+            // Full-text search - search in question and answer only
+            // Keywords search is done in-memory after fetching results
             var lowerQuery = query.ToLower();
             
-            return await _context.KnowledgeBases
+            var results = await _context.KnowledgeBases
                 .AsNoTracking()
                 .Where(x => x.ProjectId == projectId && x.IsActive)
                 .Where(x => 
                     EF.Functions.ILike(x.Question, $"%{lowerQuery}%") ||
-                    EF.Functions.ILike(x.Answer, $"%{lowerQuery}%") ||
-                    x.Keywords.Contains(lowerQuery))
+                    EF.Functions.ILike(x.Answer, $"%{lowerQuery}%"))
                 .OrderByDescending(x => x.Priority)
                 .ThenByDescending(x => x.UsageCount)
                 .ToListAsync(ct);
+            
+            // Also search in keywords (in-memory since JSONB is complex)
+            var keywordMatches = await _context.KnowledgeBases
+                .AsNoTracking()
+                .Where(x => x.ProjectId == projectId && x.IsActive)
+                .ToListAsync(ct);
+            
+            keywordMatches = keywordMatches
+                .Where(x => x.Keywords != null && x.Keywords.ToLower().Contains(lowerQuery))
+                .ToList();
+            
+            // Combine and deduplicate
+            return results.Union(keywordMatches)
+                .OrderByDescending(x => x.Priority)
+                .ThenByDescending(x => x.UsageCount)
+                .ToList();
         }
 
         public async Task<KnowledgeBase> CreateAsync(KnowledgeBase knowledgeBase, CancellationToken ct = default)
