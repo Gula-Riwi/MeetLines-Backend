@@ -134,6 +134,14 @@ namespace MeetLines.Application.Services
                     return Result<LoginResponse>.Fail("Usuario o contraseña incorrectos");
                 }
 
+                // ✅ VALIDACIÓN: Verificar que el empleado pertenezca al tenant actual
+                var currentTenantId = _tenantService.GetCurrentTenantId();
+                if (currentTenantId != Guid.Empty && employee.ProjectId != currentTenantId)
+                {
+                    // El empleado no pertenece a este tenant/proyecto
+                    return Result<LoginResponse>.Fail("Usuario o contraseña incorrectos");
+                }
+
                 if (!employee.IsActive)
                 {
                     return Result<LoginResponse>.Fail("Cuenta desactivada");

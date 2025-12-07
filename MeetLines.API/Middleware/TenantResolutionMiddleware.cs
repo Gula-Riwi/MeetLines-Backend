@@ -29,7 +29,7 @@ namespace MeetLines.API.Middleware
             // ====== RUTAS QUE NO REQUIEREN TENANT ======
             var publicRoutes = new[]
             {
-                // ===== AUTH (Todas públicas) =====
+                // ===== AUTH (Todas públicas EXCEPTO employee-login) =====
                 "/api/auth/login",
                 "/api/auth/register",
                 "/api/auth/refresh-token",
@@ -41,7 +41,7 @@ namespace MeetLines.API.Middleware
                 "/api/auth/oauth/discord",
                 "/api/auth/oauth/facebook",
                 "/api/auth/oauth-login",
-                "/api/auth/employee-login",
+                // "/api/auth/employee-login",  // ❌ REQUIERE TENANT (validar que el empleado pertenezca al proyecto)
                 "/api/auth/create-transfer",
                 "/api/auth/accept-transfer",
                 
