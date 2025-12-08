@@ -76,8 +76,5 @@ namespace MeetLines.Domain.Entities
         public Guid CreatedBy { get; set; }
         public Guid? UpdatedBy { get; set; }
         public bool IsActive { get; set; } = true;
-        
-        // Navigation
-        public Project? Project { get; set; }
     }
 }
