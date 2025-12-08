@@ -16,11 +16,13 @@ namespace MeetLines.Application.Services
     public class ProjectBotConfigService : IProjectBotConfigService
     {
         private readonly IProjectBotConfigRepository _repository;
+        private readonly IProjectRepository _projectRepository;
         private readonly JsonSerializerOptions _jsonOptions;
 
-        public ProjectBotConfigService(IProjectBotConfigRepository repository)
+        public ProjectBotConfigService(IProjectBotConfigRepository repository, IProjectRepository projectRepository)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -36,6 +38,18 @@ namespace MeetLines.Application.Services
 
         public async Task<ProjectBotConfigDto> CreateAsync(CreateProjectBotConfigRequest request, Guid createdBy, CancellationToken ct = default)
         {
+            // Validate that the project belongs to the user
+            var project = await _projectRepository.GetAsync(request.ProjectId, ct);
+            if (project == null)
+            {
+                throw new InvalidOperationException($"Project {request.ProjectId} not found");
+            }
+
+            if (project.UserId != createdBy)
+            {
+                throw new UnauthorizedAccessException($"User {createdBy} does not have permission to create bot configuration for project {request.ProjectId}");
+            }
+
             // Get industry defaults
             var defaults = GetIndustryDefaultsInternal(request.Industry);
 
