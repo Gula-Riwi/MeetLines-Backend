@@ -46,6 +46,27 @@ namespace MeetLines.Application.Services
             return results.Select(MapToDto);
         }
 
+        public async Task<KnowledgeBaseDto?> SearchBestAsync(SearchKnowledgeBaseRequest request, CancellationToken ct = default)
+        {
+            var results = await _repository.SearchAsync(request.ProjectId, request.Query, ct);
+            
+            if (!string.IsNullOrEmpty(request.Category))
+            {
+                results = results.Where(x => x.Category == request.Category);
+            }
+
+            if (request.ActiveOnly)
+            {
+                results = results.Where(x => x.IsActive);
+            }
+
+            // Return only the first (most relevant) result
+            // Already ordered by Priority DESC, then UsageCount DESC in repository
+            var bestMatch = results.FirstOrDefault();
+            
+            return bestMatch != null ? MapToDto(bestMatch) : null;
+        }
+
         public async Task<KnowledgeBaseDto> CreateAsync(CreateKnowledgeBaseRequest request, CancellationToken ct = default)
         {
             var entity = new KnowledgeBase(

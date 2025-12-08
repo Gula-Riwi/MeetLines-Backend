@@ -10,6 +10,7 @@ namespace MeetLines.Application.Services.Interfaces
     {
         Task<IEnumerable<KnowledgeBaseDto>> GetByProjectIdAsync(Guid projectId, bool activeOnly = true, CancellationToken ct = default);
         Task<IEnumerable<KnowledgeBaseDto>> SearchAsync(SearchKnowledgeBaseRequest request, CancellationToken ct = default);
+        Task<KnowledgeBaseDto?> SearchBestAsync(SearchKnowledgeBaseRequest request, CancellationToken ct = default);
         Task<KnowledgeBaseDto> CreateAsync(CreateKnowledgeBaseRequest request, CancellationToken ct = default);
         Task<KnowledgeBaseDto> UpdateAsync(Guid id, UpdateKnowledgeBaseRequest request, CancellationToken ct = default);
         Task DeleteAsync(Guid id, CancellationToken ct = default);

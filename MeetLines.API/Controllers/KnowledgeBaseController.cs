@@ -50,7 +50,7 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
-        /// Searches knowledge base
+        /// Searches knowledge base and returns ONLY the best match
         /// Used by n8n - requires API key authentication
         /// </summary>
         [HttpPost("search")]
@@ -68,8 +68,22 @@ namespace MeetLines.API.Controllers
                 return BadRequest(new { message = "Project ID mismatch" });
             }
 
-            var results = await _service.SearchAsync(request, ct);
-            return Ok(results);
+            // Return only the best match to avoid multiple n8n executions
+            var result = await _service.SearchBestAsync(request, ct);
+            
+            if (result == null)
+            {
+                // Return empty object when no match found
+                return Ok(new 
+                { 
+                    answer = (string?)null,
+                    question = (string?)null,
+                    category = (string?)null,
+                    message = "No se encontró información relevante" 
+                });
+            }
+            
+            return Ok(result);
         }
 
         /// <summary>
