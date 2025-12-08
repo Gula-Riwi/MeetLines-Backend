@@ -70,6 +70,7 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+            services.AddScoped<IAppUserRepository, AppUserRepository>();
 
             // WhatsApp Bot System Repositories
             services.AddScoped<IProjectBotConfigRepository, ProjectBotConfigRepository>();
@@ -78,6 +79,7 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<ICustomerFeedbackRepository, CustomerFeedbackRepository>();
             services.AddScoped<ICustomerReactivationRepository, CustomerReactivationRepository>();
             services.AddScoped<IBotMetricsRepository, BotMetricsRepository>();
+            services.AddScoped<IServiceRepository, ServiceRepository>();
 
             // Servicios Multitenancy
             services.AddHttpContextAccessor();
@@ -107,7 +109,6 @@ namespace MeetLines.Infrastructure.IoC
 
             // Business Services
             services.AddScoped<IAppointmentAssignmentService, MeetLines.Application.Services.AppointmentAssignmentService>();
-            services.AddScoped<IAppointmentService, AppointmentService>();
             
             return services;
         }
