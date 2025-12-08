@@ -105,8 +105,7 @@ namespace MeetLines.Infrastructure.Repositories
             var reactivation = await _context.CustomerReactivations.FindAsync(new object[] { id }, ct);
             if (reactivation != null)
             {
-                reactivation.Reactivated = true;
-                reactivation.NewAppointmentId = newAppointmentId;
+                reactivation.MarkAsReactivated(newAppointmentId);
                 await _context.SaveChangesAsync(ct);
             }
         }

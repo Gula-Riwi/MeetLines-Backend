@@ -71,22 +71,34 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task<BotMetrics> UpsertAsync(BotMetrics metrics, CancellationToken ct = default)
         {
-            var existing = await GetByProjectAndDateAsync(metrics.ProjectId, metrics.Date, ct);
+            var existing = await _context.BotMetrics
+                .FirstOrDefaultAsync(x => x.ProjectId == metrics.ProjectId && x.Date == metrics.Date, ct);
             
             if (existing != null)
             {
-                // Update existing
-                metrics.Id = existing.Id;
-                _context.BotMetrics.Update(metrics);
+                // Update existing using domain method
+                existing.UpdateMetrics(
+                    totalConversations: metrics.TotalConversations,
+                    botConversations: metrics.BotConversations,
+                    humanConversations: metrics.HumanConversations,
+                    appointmentsBooked: metrics.AppointmentsBooked,
+                    conversionRate: metrics.ConversionRate,
+                    customersReactivated: metrics.CustomersReactivated,
+                    reactivationRate: metrics.ReactivationRate,
+                    averageResponseTime: metrics.AverageResponseTime,
+                    customerSatisfactionScore: metrics.CustomerSatisfactionScore,
+                    averageFeedbackRating: metrics.AverageFeedbackRating
+                );
+                await _context.SaveChangesAsync(ct);
+                return existing;
             }
             else
             {
                 // Create new
                 _context.BotMetrics.Add(metrics);
+                await _context.SaveChangesAsync(ct);
+                return metrics;
             }
-            
-            await _context.SaveChangesAsync(ct);
-            return metrics;
         }
 
         public async Task<BotMetrics> CreateAsync(BotMetrics metrics, CancellationToken ct = default)

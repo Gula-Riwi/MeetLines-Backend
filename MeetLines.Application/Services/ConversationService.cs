@@ -53,22 +53,23 @@ namespace MeetLines.Application.Services
 
         public async Task<ConversationDto> CreateAsync(CreateConversationRequest request, CancellationToken ct = default)
         {
-            var entity = new Conversation
+            var entity = new Conversation(
+                projectId: request.ProjectId,
+                customerPhone: request.CustomerPhone,
+                customerMessage: request.CustomerMessage,
+                botResponse: request.BotResponse,
+                botType: request.BotType,
+                customerName: request.CustomerName,
+                intent: request.Intent,
+                intentConfidence: request.IntentConfidence,
+                sentiment: request.Sentiment
+            );
+
+            // Mark as requiring human attention if requested
+            if (request.RequiresHumanAttention)
             {
-                Id = Guid.NewGuid(),
-                ProjectId = request.ProjectId,
-                CustomerPhone = request.CustomerPhone,
-                CustomerName = request.CustomerName,
-                CustomerMessage = request.CustomerMessage,
-                BotResponse = request.BotResponse,
-                BotType = request.BotType,
-                Intent = request.Intent,
-                IntentConfidence = request.IntentConfidence,
-                Sentiment = request.Sentiment,
-                RequiresHumanAttention = request.RequiresHumanAttention,
-                HandledByHuman = false,
-                CreatedAt = DateTime.UtcNow
-            };
+                entity.MarkAsRequiringHumanAttention();
+            }
 
             var created = await _repository.CreateAsync(entity, ct);
             return MapToDto(created);

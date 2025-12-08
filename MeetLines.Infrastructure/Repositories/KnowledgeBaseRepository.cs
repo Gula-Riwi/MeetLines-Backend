@@ -110,8 +110,7 @@ namespace MeetLines.Infrastructure.Repositories
             var kb = await _context.KnowledgeBases.FindAsync(new object[] { id }, ct);
             if (kb != null)
             {
-                kb.UsageCount++;
-                kb.LastUsedAt = DateTime.UtcNow;
+                kb.RecordUsage();
                 await _context.SaveChangesAsync(ct);
             }
         }

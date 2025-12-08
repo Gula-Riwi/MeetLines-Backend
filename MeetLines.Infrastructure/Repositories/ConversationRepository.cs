@@ -94,8 +94,7 @@ namespace MeetLines.Infrastructure.Repositories
             var conversation = await _context.Conversations.FindAsync(new object[] { id }, ct);
             if (conversation != null)
             {
-                conversation.HandledByHuman = true;
-                conversation.HandledByEmployeeId = employeeId;
+                conversation.AssignToEmployee(employeeId);
                 await _context.SaveChangesAsync(ct);
             }
         }
