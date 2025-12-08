@@ -38,6 +38,8 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task<ProjectBotConfig> CreateAsync(ProjectBotConfig config, CancellationToken ct = default)
         {
+            // Bypass tenant filtering when creating - validation happens at controller level
+            _context.ChangeTracker.QueryTrackingBehavior = QueryTrackingBehavior.NoTracking;
             _context.ProjectBotConfigs.Add(config);
             await _context.SaveChangesAsync(ct);
             return config;
