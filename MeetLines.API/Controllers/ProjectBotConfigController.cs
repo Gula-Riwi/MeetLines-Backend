@@ -14,18 +14,45 @@ namespace MeetLines.API.Controllers
     public class ProjectBotConfigController : ControllerBase
     {
         private readonly IProjectBotConfigService _service;
+        private readonly IConfiguration _configuration;
 
-        public ProjectBotConfigController(IProjectBotConfigService service)
+        public ProjectBotConfigController(IProjectBotConfigService service, IConfiguration configuration)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
+
+        private bool ValidateApiKey()
+        {
+            var expectedApiKey = _configuration["INTEGRATIONS_API_KEY"];
+            if (string.IsNullOrEmpty(expectedApiKey))
+            {
+                return false;
+            }
+
+            if (!Request.Headers.TryGetValue("Authorization", out var authHeader))
+            {
+                return false;
+            }
+
+            var token = authHeader.ToString().Replace("Bearer ", "");
+            return token == expectedApiKey;
         }
 
         /// <summary>
         /// Gets bot configuration for a project
+        /// Used by n8n - requires API key authentication
         /// </summary>
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ActionResult<ProjectBotConfigDto>> GetByProjectId(Guid projectId, CancellationToken ct)
         {
+            // Validate API key for n8n integration
+            if (!ValidateApiKey())
+            {
+                return Unauthorized(new { error = "Invalid or missing API key" });
+            }
+
             var config = await _service.GetByProjectIdAsync(projectId, ct);
             if (config == null)
             {
