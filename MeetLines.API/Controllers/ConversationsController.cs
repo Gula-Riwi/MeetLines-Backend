@@ -14,10 +14,29 @@ namespace MeetLines.API.Controllers
     public class ConversationsController : ControllerBase
     {
         private readonly IConversationService _service;
+        private readonly IConfiguration _configuration;
 
-        public ConversationsController(IConversationService service)
+        public ConversationsController(IConversationService service, IConfiguration configuration)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
+
+        private bool ValidateApiKey()
+        {
+            var expectedApiKey = _configuration["INTEGRATIONS_API_KEY"];
+            if (string.IsNullOrEmpty(expectedApiKey))
+            {
+                return false;
+            }
+
+            if (!Request.Headers.TryGetValue("Authorization", out var authHeader))
+            {
+                return false;
+            }
+
+            var token = authHeader.ToString().Replace("Bearer ", "");
+            return token == expectedApiKey;
         }
 
         /// <summary>
@@ -61,6 +80,7 @@ namespace MeetLines.API.Controllers
 
         /// <summary>
         /// Creates a conversation (called by n8n webhook)
+        /// Requires API key authentication
         /// </summary>
         [HttpPost]
         [AllowAnonymous] // n8n webhook
@@ -69,6 +89,12 @@ namespace MeetLines.API.Controllers
             [FromBody] CreateConversationRequest request,
             CancellationToken ct = default)
         {
+            // Validate API key for n8n integration
+            if (!ValidateApiKey())
+            {
+                return Unauthorized(new { error = "Invalid or missing API key" });
+            }
+
             if (request.ProjectId != projectId)
             {
                 return BadRequest(new { message = "Project ID mismatch" });
