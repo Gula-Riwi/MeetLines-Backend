@@ -75,9 +75,20 @@ namespace MeetLines.API.Controllers
                 return BadRequest(new { message = "Project ID mismatch" });
             }
 
-            var userId = Guid.Parse(User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value ?? throw new UnauthorizedAccessException());
-            var config = await _service.CreateAsync(request, userId, ct);
-            return CreatedAtAction(nameof(GetByProjectId), new { projectId }, config);
+            try
+            {
+                var userId = Guid.Parse(User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value ?? throw new UnauthorizedAccessException());
+                var config = await _service.CreateAsync(request, userId, ct);
+                return CreatedAtAction(nameof(GetByProjectId), new { projectId }, config);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized(new { message = "You don't have permission to create bot configuration for this project" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { error = "Failed to create bot configuration", details = ex.Message });
+            }
         }
 
         /// <summary>
