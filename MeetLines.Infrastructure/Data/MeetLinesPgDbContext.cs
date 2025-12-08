@@ -291,7 +291,7 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.Category).HasColumnName("category");
                 b.Property(x => x.Question).HasColumnName("question");
                 b.Property(x => x.Answer).HasColumnName("answer");
-                b.Property(x => x.Keywords).HasColumnName("keywords");
+                b.Property(x => x.Keywords).HasColumnName("keywords").HasColumnType("jsonb");
                 b.Property(x => x.Priority).HasColumnName("priority");
                 b.Property(x => x.IsActive).HasColumnName("is_active");
                 b.Property(x => x.UsageCount).HasColumnName("usage_count");
