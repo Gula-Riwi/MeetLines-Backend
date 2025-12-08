@@ -60,35 +60,26 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task<IEnumerable<KnowledgeBase>> SearchAsync(Guid projectId, string query, CancellationToken ct = default)
         {
-            // Full-text search - search in question and answer only
-            // Keywords search is done in-memory after fetching results
+            // Full-text search - search in question and answer
             var lowerQuery = query.ToLower();
             
-            var results = await _context.KnowledgeBases
+            // Get all active entries for this project
+            var allEntries = await _context.KnowledgeBases
                 .AsNoTracking()
                 .Where(x => x.ProjectId == projectId && x.IsActive)
+                .ToListAsync(ct);
+            
+            // Filter in memory to search in question, answer, and keywords
+            var results = allEntries
                 .Where(x => 
-                    EF.Functions.ILike(x.Question, $"%{lowerQuery}%") ||
-                    EF.Functions.ILike(x.Answer, $"%{lowerQuery}%"))
-                .OrderByDescending(x => x.Priority)
-                .ThenByDescending(x => x.UsageCount)
-                .ToListAsync(ct);
-            
-            // Also search in keywords (in-memory since JSONB is complex)
-            var keywordMatches = await _context.KnowledgeBases
-                .AsNoTracking()
-                .Where(x => x.ProjectId == projectId && x.IsActive)
-                .ToListAsync(ct);
-            
-            keywordMatches = keywordMatches
-                .Where(x => x.Keywords != null && x.Keywords.ToLower().Contains(lowerQuery))
-                .ToList();
-            
-            // Combine and deduplicate
-            return results.Union(keywordMatches)
+                    x.Question.ToLower().Contains(lowerQuery) ||
+                    x.Answer.ToLower().Contains(lowerQuery) ||
+                    (x.Keywords != null && x.Keywords.ToLower().Contains(lowerQuery)))
                 .OrderByDescending(x => x.Priority)
                 .ThenByDescending(x => x.UsageCount)
                 .ToList();
+            
+            return results;
         }
 
         public async Task<KnowledgeBase> CreateAsync(KnowledgeBase knowledgeBase, CancellationToken ct = default)
