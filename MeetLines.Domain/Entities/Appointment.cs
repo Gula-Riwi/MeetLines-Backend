@@ -7,7 +7,7 @@ namespace MeetLines.Domain.Entities
         public int Id { get; private set; } // Changed to int (serial)
         public Guid ProjectId { get; private set; }
         public Guid? LeadId { get; private set; } // Restored
-        public Guid AppUserId { get; private set; } // From SQL
+        public Guid? AppUserId { get; private set; } // Made nullable - can be set later
         public int ServiceId { get; private set; } // New
         public Guid? EmployeeId { get; private set; } // New: Assigned Employee
         public DateTimeOffset StartTime { get; private set; }
@@ -26,7 +26,7 @@ namespace MeetLines.Domain.Entities
         public Appointment(
             Guid projectId, 
             Guid? leadId,
-            Guid appUserId, 
+            Guid? appUserId,  // Now nullable
             int serviceId, 
             DateTimeOffset startTime, 
             DateTimeOffset endTime,

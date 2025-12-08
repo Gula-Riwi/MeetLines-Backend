@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using MeetLines.Application.Common;
@@ -14,172 +15,222 @@ namespace MeetLines.Application.Services
     public class AppointmentService : IAppointmentService
     {
         private readonly IAppointmentRepository _appointmentRepository;
-        private readonly IAppointmentAssignmentService _assignmentService;
-        private readonly IEmailService _emailService;
+        private readonly IServiceRepository _serviceRepository;
         private readonly IEmployeeRepository _employeeRepository;
-        private readonly ISaasUserRepository _userRepository; 
-        private readonly IProjectRepository _projectRepository; // Added
+        private readonly IProjectBotConfigRepository _botConfigRepository;
+        private readonly IAppUserRepository _appUserRepository;
 
         public AppointmentService(
             IAppointmentRepository appointmentRepository,
-            IAppointmentAssignmentService assignmentService,
-            IEmailService emailService,
+            IServiceRepository serviceRepository,
             IEmployeeRepository employeeRepository,
-            ISaasUserRepository userRepository,
-            IProjectRepository projectRepository) // Added
+            IProjectBotConfigRepository botConfigRepository,
+            IAppUserRepository appUserRepository)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
-            _assignmentService = assignmentService ?? throw new ArgumentNullException(nameof(assignmentService));
-            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
-            _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
-            _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository)); // Added
+            _botConfigRepository = botConfigRepository ?? throw new ArgumentNullException(nameof(botConfigRepository));
+            _appUserRepository = appUserRepository ?? throw new ArgumentNullException(nameof(appUserRepository));
+        }
+
+        public async Task<IEnumerable<ServiceDto>> GetServicesAsync(Guid projectId, CancellationToken ct = default)
+        {
+            var services = await _serviceRepository.GetByProjectIdAsync(projectId, true, ct);
+            return services.Select(s => new ServiceDto
+            {
+                Id = s.Id,
+                ProjectId = s.ProjectId,
+                Name = s.Name,
+                Description = s.Description,
+                Price = s.Price,
+                Currency = s.Currency,
+                DurationMinutes = s.DurationMinutes,
+                IsActive = s.IsActive
+            });
+        }
+
+        public async Task<AvailableSlotsResponse> GetAvailableSlotsAsync(Guid projectId, DateTime date, int? serviceId = null, CancellationToken ct = default)
+        {
+            // 1. Get BotConfig
+            var botConfig = await _botConfigRepository.GetByProjectIdAsync(projectId, ct);
+            if (botConfig == null || string.IsNullOrEmpty(botConfig.TransactionalConfigJson))
+            {
+                return new AvailableSlotsResponse { Date = date.ToString("yyyy-MM-dd"), Slots = new List<AvailableSlotDto>() };
+            }
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var config = JsonSerializer.Deserialize<TransactionalConfig>(botConfig.TransactionalConfigJson, options);
+            if (config == null || !config.AppointmentEnabled)
+            {
+                return new AvailableSlotsResponse { Date = date.ToString("yyyy-MM-dd"), Slots = new List<AvailableSlotDto>() };
+            }
+
+            // 2. Get business hours for the day
+            var dayOfWeek = date.DayOfWeek.ToString().ToLower();
+            if (!config.BusinessHours.ContainsKey(dayOfWeek))
+            {
+                return new AvailableSlotsResponse { Date = date.ToString("yyyy-MM-dd"), Slots = new List<AvailableSlotDto>() };
+            }
+
+            var businessHours = config.BusinessHours[dayOfWeek];
+            if (businessHours.Closed)
+            {
+                return new AvailableSlotsResponse { Date = date.ToString("yyyy-MM-dd"), Slots = new List<AvailableSlotDto>() };
+            }
+
+            // 3. Get active employees
+            var allEmployees = await _employeeRepository.GetByProjectIdAsync(projectId, ct);
+            var employees = allEmployees.Where(e => e.IsActive).ToList();
+            if (!employees.Any())
+            {
+                return new AvailableSlotsResponse { Date = date.ToString("yyyy-MM-dd"), Slots = new List<AvailableSlotDto>() };
+            }
+
+            // 4. Get existing appointments for the date
+            var allAppointments = await _appointmentRepository.GetByProjectIdAsync(projectId, ct);
+            var dateStart = new DateTimeOffset(date.Date, TimeSpan.Zero);
+            var dateEnd = dateStart.AddDays(1);
+            var existingAppointments = allAppointments.Where(a => 
+                a.StartTime >= dateStart && a.StartTime < dateEnd).ToList();
+
+            // 5. Calculate available slots
+            var slots = new List<AvailableSlotDto>();
+            
+            if (!TimeSpan.TryParse(businessHours.Start, out var startTime) || 
+                !TimeSpan.TryParse(businessHours.End, out var endTime))
+            {
+                return new AvailableSlotsResponse { Date = date.ToString("yyyy-MM-dd"), Slots = new List<AvailableSlotDto>() };
+            }
+            
+            var slotDuration = config.SlotDuration;
+
+            foreach (var employee in employees)
+            {
+                var currentTime = startTime;
+
+                while (currentTime.Add(TimeSpan.FromMinutes(slotDuration)) <= endTime)
+                {
+                    var slotStart = new DateTimeOffset(date.Date.Add(currentTime), TimeSpan.Zero);
+                    var slotEnd = slotStart.AddMinutes(slotDuration);
+
+                    // Check if employee is available
+                    var isAvailable = !existingAppointments.Any(a =>
+                        a.EmployeeId == employee.Id &&
+                        a.Status != "cancelled" &&
+                        a.StartTime < slotEnd &&
+                        a.EndTime > slotStart);
+
+                    if (isAvailable)
+                    {
+                        slots.Add(new AvailableSlotDto
+                        {
+                            Time = currentTime.ToString(@"hh\:mm"),
+                            EmployeeId = employee.Id,
+                            EmployeeName = employee.Name,
+                            EmployeeRole = employee.Role
+                        });
+                    }
+
+                    currentTime = currentTime.Add(TimeSpan.FromMinutes(slotDuration));
+                }
+            }
+
+            return new AvailableSlotsResponse
+            {
+                Date = date.ToString("yyyy-MM-dd"),
+                Slots = slots
+            };
         }
 
         public async Task<Result<AppointmentResponse>> CreateAppointmentAsync(CreateAppointmentRequest request, CancellationToken ct = default)
         {
-            try
+            // Get service details
+            var service = await _serviceRepository.GetAsync(request.ServiceId, ct);
+            if (service == null)
             {
-                // Get Project Info for Email Sender Name
-                var project = await _projectRepository.GetAsync(request.ProjectId, ct);
-                var senderName = project?.Name ?? "MeetLines";
-
-                // 1. Assign Employee
-                // Use a default area "General" or allow passing area in request. 
-                // For MVP, let's assume "General" or handle if service has an area concept.
-                // Request doesn't have Area yet. Let's assume General for now.
-                var area = "General"; 
-                var assignedEmployee = await _assignmentService.FindAvailableEmployeeAsync(request.ProjectId, area, ct);
-                
-                // 2. Create Appointment Entity
-                // NOTE: 'AppUserId' is required by entity. In this flow, we might be efficiently creating a user 
-                // or using a guest ID. The Entity requires GUID. 
-                // Let's generate a placeholder GUID for the guest client if they are not logged in.
-                // ideally we should create a 'Lead' or 'User' for them.
-                var appUserId = Guid.NewGuid(); // Placeholder for guest
-                
-                // PriceSnapshot defaults to 0 for now as we don't have Service repo to fetch price yet.
-                var price = 0m; 
-
-                var appointment = new Appointment(
-                    request.ProjectId,
-                    null, // LeadId
-                    appUserId,
-                    request.ServiceId,
-                    request.StartTime,
-                    request.EndTime,
-                    price,
-                    "COP",
-                    request.UserNotes
-                );
-
-                if (assignedEmployee != null)
-                {
-                    appointment.AssignToEmployee(assignedEmployee.Id);
-                }
-
-                // Confirm immediately for MVP "Wow" factor
-                appointment.Confirm("http://meetlines.com/meet/" + appointment.Id);
-
-                // 3. Save to DB
-                await _appointmentRepository.AddAsync(appointment, ct);
-
-                // 4. Send Notifications
-                // To Client
-                await _emailService.SendAppointmentConfirmedAsync(
-                    request.ClientEmail, 
-                    request.ClientName, 
-                    assignedEmployee?.Name ?? "MeetLines Staff", 
-                    request.StartTime.Date, 
-                    request.StartTime.ToString("HH:mm"),
-                    senderName // Pass sender name
-                );
-
-                // To Employee
-                if (assignedEmployee != null)
-                {
-                    // Assuming Username is Email for Employee or we need to add Email to Employee entity.
-                    // IMPORTANT: We previously assumed Username is used for login. 
-                    // Let's assume Username IS the email for notification purposes.
-                    await _emailService.SendAppointmentAssignedAsync(
-                        assignedEmployee.Email, 
-                        assignedEmployee.Name, 
-                        request.ClientName, 
-                        request.StartTime.Date, 
-                        request.StartTime.ToString("HH:mm"),
-                        senderName // Pass sender name
-                    );
-                }
-
-                return Result<AppointmentResponse>.Ok(MapToResponse(appointment, assignedEmployee?.Name));
+                return Result<AppointmentResponse>.Fail($"Service {request.ServiceId} not found");
             }
-            catch (Exception ex)
+
+            // Get or create AppUser
+            var appUser = await _appUserRepository.GetByEmailAsync(request.ClientEmail, ct);
+            if (appUser == null)
             {
-                // Log exception
-                return Result<AppointmentResponse>.Fail($"Error creating appointment: {ex.Message}");
+                // Create new AppUser for this customer
+                appUser = new AppUser(
+                    email: request.ClientEmail,
+                    fullName: request.ClientName,
+                    phone: null, // Could add phone to request later
+                    authProvider: "bot"
+                );
+                await _appUserRepository.AddAsync(appUser, ct);
             }
+
+            // Create appointment with the AppUser
+            var appointment = new Appointment(
+                projectId: request.ProjectId,
+                leadId: null,
+                appUserId: appUser.Id,
+                serviceId: request.ServiceId,
+                startTime: request.StartTime,
+                endTime: request.EndTime,
+                priceSnapshot: service.Price,
+                currencySnapshot: service.Currency,
+                userNotes: request.UserNotes
+            );
+
+            await _appointmentRepository.AddAsync(appointment, ct);
+
+            var response = new AppointmentResponse
+            {
+                Id = appointment.Id,
+                ProjectId = appointment.ProjectId,
+                ServiceId = appointment.ServiceId,
+                EmployeeId = appointment.EmployeeId,
+                StartTime = appointment.StartTime,
+                EndTime = appointment.EndTime,
+                Status = appointment.Status,
+                UserNotes = appointment.UserNotes,
+                CreatedAt = appointment.CreatedAt
+            };
+
+            return Result<AppointmentResponse>.Ok(response);
         }
 
         public async Task<Result<IEnumerable<AppointmentResponse>>> GetAppointmentsAsync(Guid userId, string userRole, Guid projectId, CancellationToken ct = default)
         {
-            try
+            var appointments = await _appointmentRepository.GetByProjectIdAsync(projectId, ct);
+            
+            var responses = appointments.Select(a => new AppointmentResponse
             {
-                IEnumerable<Appointment> appointments;
+                Id = a.Id,
+                ProjectId = a.ProjectId,
+                ServiceId = a.ServiceId,
+                EmployeeId = a.EmployeeId,
+                StartTime = a.StartTime,
+                EndTime = a.EndTime,
+                Status = a.Status,
+                UserNotes = a.UserNotes,
+                CreatedAt = a.CreatedAt
+            });
 
-                // Validate access rights
-                // Simplification: We trust the controller to pass correct Role/ProjectId context
-                
-                if (userRole == "Employee")
-                {
-                    // Employees see only their own appointments
-                    // Verify that the userId effectively belongs to this Project? 
-                    // The query filters by EmployeeId=userId, so they can't see others anyway.
-                    appointments = await _appointmentRepository.GetByEmployeeIdAsync(userId, ct);
-                }
-                else 
-                {
-                    // Admin/Owner sees all appointments for the project
-                    // 'User' role usually implies Owner in this context, or we check if user is owner of project.
-                    // For now, assume if not Employee, and has ProjectId, they see all.
-                    appointments = await _appointmentRepository.GetByProjectIdAsync(projectId, ct);
-                }
-
-                // Map to DTO
-                var responses = new List<AppointmentResponse>();
-                foreach (var app in appointments)
-                {
-                    string? empName = null;
-                    if (app.EmployeeId.HasValue)
-                    {
-                        var emp = await _employeeRepository.GetByIdAsync(app.EmployeeId.Value, ct);
-                        empName = emp?.Name;
-                    }
-                    responses.Add(MapToResponse(app, empName));
-                }
-
-                return Result<IEnumerable<AppointmentResponse>>.Ok(responses);
-            }
-            catch (Exception ex)
-            {
-                return Result<IEnumerable<AppointmentResponse>>.Fail($"Error retrieving appointments: {ex.Message}");
-            }
+            return Result<IEnumerable<AppointmentResponse>>.Ok(responses);
         }
+    }
 
-        private AppointmentResponse MapToResponse(Appointment app, string? employeeName)
-        {
-            return new AppointmentResponse
-            {
-                Id = app.Id,
-                ProjectId = app.ProjectId,
-                ServiceId = app.ServiceId,
-                EmployeeId = app.EmployeeId,
-                EmployeeName = employeeName,
-                StartTime = app.StartTime,
-                EndTime = app.EndTime,
-                Status = app.Status,
-                UserNotes = app.UserNotes,
-                CreatedAt = app.CreatedAt
-            };
-        }
+    // Helper classes for JSON deserialization
+    public class TransactionalConfig
+    {
+        public bool AppointmentEnabled { get; set; }
+        public Dictionary<string, BusinessHours> BusinessHours { get; set; } = new();
+        public int SlotDuration { get; set; } = 30;
+        public int BufferBetweenAppointments { get; set; } = 0;
+    }
+
+    public class BusinessHours
+    {
+        public bool Closed { get; set; }
+        public string Start { get; set; } = "09:00";
+        public string End { get; set; } = "18:00";
     }
 }

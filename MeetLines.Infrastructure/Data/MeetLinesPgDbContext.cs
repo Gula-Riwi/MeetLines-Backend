@@ -24,6 +24,8 @@ namespace MeetLines.Infrastructure.Data
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<TransferToken> TransferTokens { get; set; }
         public DbSet<Employee> Employees { get; set; }
+        public DbSet<Service> Services { get; set; }
+        public DbSet<AppUser> AppUsers { get; set; }
         
         // WhatsApp Bot System
         public DbSet<ProjectBotConfig> ProjectBotConfigs { get; set; }
@@ -104,11 +106,11 @@ namespace MeetLines.Infrastructure.Data
             {
                 b.ToTable("appointments");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Id).ValueGeneratedOnAdd(); // Serial
+                b.Property(x => x.Id).HasColumnName("id").ValueGeneratedOnAdd(); // Serial
                 
                 b.Property(x => x.ProjectId).HasColumnName("project_id");
-                b.Property(x => x.LeadId).HasColumnName("lead_id"); // Restored
-                b.Property(x => x.AppUserId).HasColumnName("app_users_id"); 
+                b.Ignore(x => x.LeadId); // Column doesn't exist in database
+                b.Property(x => x.AppUserId).HasColumnName("app_users_id").IsRequired(false); // Nullable
                 b.Property(x => x.ServiceId).HasColumnName("service_id");
                 b.Property(x => x.EmployeeId).HasColumnName("employee_id");
                 
@@ -416,6 +418,43 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
                 b.HasOne<Project>().WithMany().HasForeignKey(m => m.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => new { x.ProjectId, x.Date }).IsUnique().HasDatabaseName("idx_metrics_project_date");
+            });
+
+            // Services
+            modelBuilder.Entity<Service>(b =>
+            {
+                b.ToTable("services");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasColumnName("id");
+                b.Property(x => x.ProjectId).HasColumnName("project_id");
+                b.Property(x => x.Name).HasColumnName("name").HasMaxLength(100);
+                b.Property(x => x.Description).HasColumnName("description");
+                b.Property(x => x.Price).HasColumnName("price").HasPrecision(15, 2);
+                b.Property(x => x.Currency).HasColumnName("currency").HasMaxLength(3);
+                b.Property(x => x.DurationMinutes).HasColumnName("duration_minutes");
+                b.Property(x => x.IsActive).HasColumnName("is_active");
+                b.Property(x => x.CreatedAt).HasColumnName("created_at");
+                b.Property(x => x.UpdatedAt).HasColumnName("updated_at");
+                b.HasOne<Project>().WithMany().HasForeignKey(x => x.ProjectId).OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // AppUsers
+            modelBuilder.Entity<AppUser>(b =>
+            {
+                b.ToTable("app_users");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.Email).HasColumnName("email").HasMaxLength(150).IsRequired();
+                b.Property(x => x.PasswordHash).HasColumnName("password_hash").HasMaxLength(255);
+                b.Property(x => x.FullName).HasColumnName("full_name").HasMaxLength(150).IsRequired();
+                b.Property(x => x.Phone).HasColumnName("phone").HasMaxLength(50);
+                b.Property(x => x.IsEmailVerified).HasColumnName("is_email_verified").HasDefaultValue(false);
+                b.Property(x => x.IsPhoneVerified).HasColumnName("is_phone_verified").HasDefaultValue(false);
+                b.Property(x => x.AuthProvider).HasColumnName("auth_provider").HasMaxLength(50).HasDefaultValue("email");
+                b.Property(x => x.ExternalProviderId).HasColumnName("external_provider_id").HasMaxLength(255);
+                b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                b.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
+                b.HasIndex(x => x.Email).IsUnique().HasDatabaseName("app_users_email_key");
             });
         }
     }
