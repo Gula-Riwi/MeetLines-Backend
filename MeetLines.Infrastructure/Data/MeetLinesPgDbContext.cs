@@ -274,9 +274,23 @@ namespace MeetLines.Infrastructure.Data
             {
                 b.ToTable("project_bot_configs");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.ProjectId).HasColumnName("project_id");
+                b.Property(x => x.BotName).HasColumnName("bot_name");
+                b.Property(x => x.Industry).HasColumnName("industry");
+                b.Property(x => x.Tone).HasColumnName("tone");
+                b.Property(x => x.Timezone).HasColumnName("timezone");
+                b.Property(x => x.ReceptionConfigJson).HasColumnName("reception_config_json").HasColumnType("jsonb");
+                b.Property(x => x.TransactionalConfigJson).HasColumnName("transactional_config_json").HasColumnType("jsonb");
+                b.Property(x => x.FeedbackConfigJson).HasColumnName("feedback_config_json").HasColumnType("jsonb");
+                b.Property(x => x.ReactivationConfigJson).HasColumnName("reactivation_config_json").HasColumnType("jsonb");
+                b.Property(x => x.IntegrationsConfigJson).HasColumnName("integrations_config_json").HasColumnType("jsonb");
+                b.Property(x => x.AdvancedConfigJson).HasColumnName("advanced_config_json").HasColumnType("jsonb");
+                b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+                b.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
+                b.Property(x => x.CreatedBy).HasColumnName("created_by");
+                b.Property(x => x.UpdatedBy).HasColumnName("updated_by");
+                b.Property(x => x.IsActive).HasColumnName("is_active");
                 b.HasOne<Project>().WithMany().HasForeignKey(c => c.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.ProjectId).IsUnique().HasDatabaseName("idx_botconfig_project");
             });
