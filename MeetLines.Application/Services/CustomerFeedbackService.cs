@@ -34,18 +34,14 @@ namespace MeetLines.Application.Services
 
         public async Task<CustomerFeedbackDto> CreateAsync(CreateFeedbackRequest request, CancellationToken ct = default)
         {
-            var entity = new CustomerFeedback
-            {
-                Id = Guid.NewGuid(),
-                ProjectId = request.ProjectId,
-                AppointmentId = request.AppointmentId,
-                CustomerPhone = request.CustomerPhone,
-                CustomerName = request.CustomerName,
-                Rating = request.Rating,
-                Comment = request.Comment,
-                OwnerNotified = false,
-                CreatedAt = DateTime.UtcNow
-            };
+            var entity = new CustomerFeedback(
+                projectId: request.ProjectId,
+                customerPhone: request.CustomerPhone,
+                rating: request.Rating,
+                appointmentId: request.AppointmentId,
+                customerName: request.CustomerName,
+                comment: request.Comment
+            );
 
             var created = await _repository.CreateAsync(entity, ct);
             return MapToDto(created);

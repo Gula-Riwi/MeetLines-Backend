@@ -48,20 +48,14 @@ namespace MeetLines.Application.Services
 
         public async Task<KnowledgeBaseDto> CreateAsync(CreateKnowledgeBaseRequest request, CancellationToken ct = default)
         {
-            var entity = new KnowledgeBase
-            {
-                Id = Guid.NewGuid(),
-                ProjectId = request.ProjectId,
-                Category = request.Category,
-                Question = request.Question,
-                Answer = request.Answer,
-                Keywords = JsonSerializer.Serialize(request.Keywords ?? new List<string>()),
-                Priority = request.Priority,
-                IsActive = true,
-                UsageCount = 0,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var entity = new KnowledgeBase(
+                projectId: request.ProjectId,
+                category: request.Category,
+                question: request.Question,
+                answer: request.Answer,
+                keywords: JsonSerializer.Serialize(request.Keywords ?? new List<string>()),
+                priority: request.Priority
+            );
 
             var created = await _repository.CreateAsync(entity, ct);
             return MapToDto(created);
@@ -75,14 +69,23 @@ namespace MeetLines.Application.Services
                 throw new InvalidOperationException($"Knowledge base entry {id} not found");
             }
 
-            if (request.Category != null) entity.Category = request.Category;
-            if (request.Question != null) entity.Question = request.Question;
-            if (request.Answer != null) entity.Answer = request.Answer;
-            if (request.Keywords != null) entity.Keywords = JsonSerializer.Serialize(request.Keywords);
-            if (request.Priority.HasValue) entity.Priority = request.Priority.Value;
-            if (request.IsActive.HasValue) entity.IsActive = request.IsActive.Value;
+            // Use domain method to update
+            entity.Update(
+                category: request.Category,
+                question: request.Question,
+                answer: request.Answer,
+                keywords: request.Keywords != null ? JsonSerializer.Serialize(request.Keywords) : null,
+                priority: request.Priority
+            );
 
-            entity.UpdatedAt = DateTime.UtcNow;
+            // Handle activation/deactivation separately
+            if (request.IsActive.HasValue)
+            {
+                if (request.IsActive.Value)
+                    entity.Activate();
+                else
+                    entity.Deactivate();
+            }
 
             await _repository.UpdateAsync(entity, ct);
             return MapToDto(entity);
