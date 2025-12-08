@@ -39,13 +39,8 @@ namespace MeetLines.Application.Services
         public async Task<ProjectBotConfigDto> CreateAsync(CreateProjectBotConfigRequest request, Guid createdBy, CancellationToken ct = default)
         {
             // Validate that the project belongs to the user
-            var project = await _projectRepository.GetAsync(request.ProjectId, ct);
-            if (project == null)
-            {
-                throw new InvalidOperationException($"Project {request.ProjectId} not found");
-            }
-
-            if (project.UserId != createdBy)
+            var isOwner = await _projectRepository.IsUserProjectOwnerAsync(createdBy, request.ProjectId, ct);
+            if (!isOwner)
             {
                 throw new UnauthorizedAccessException($"User {createdBy} does not have permission to create bot configuration for project {request.ProjectId}");
             }
