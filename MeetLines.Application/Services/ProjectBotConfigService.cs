@@ -41,25 +41,20 @@ namespace MeetLines.Application.Services
             // Get industry defaults
             var defaults = GetIndustryDefaultsInternal(request.Industry);
 
-            var config = new ProjectBotConfig
-            {
-                Id = Guid.NewGuid(),
-                ProjectId = request.ProjectId,
-                BotName = request.BotName ?? defaults.BotName,
-                Industry = request.Industry,
-                Tone = request.Tone ?? defaults.Tone,
-                Timezone = request.Timezone ?? defaults.Timezone,
-                ReceptionConfigJson = JsonSerializer.Serialize(defaults.ReceptionConfig, _jsonOptions),
-                TransactionalConfigJson = JsonSerializer.Serialize(defaults.TransactionalConfig, _jsonOptions),
-                FeedbackConfigJson = JsonSerializer.Serialize(defaults.FeedbackConfig, _jsonOptions),
-                ReactivationConfigJson = JsonSerializer.Serialize(defaults.ReactivationConfig, _jsonOptions),
-                IntegrationsConfigJson = JsonSerializer.Serialize(defaults.IntegrationsConfig, _jsonOptions),
-                AdvancedConfigJson = JsonSerializer.Serialize(defaults.AdvancedConfig, _jsonOptions),
-                CreatedBy = createdBy,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                IsActive = true
-            };
+            var config = new ProjectBotConfig(
+                projectId: request.ProjectId,
+                botName: request.BotName ?? defaults.BotName,
+                industry: request.Industry,
+                tone: request.Tone ?? defaults.Tone,
+                timezone: request.Timezone ?? defaults.Timezone,
+                receptionConfigJson: JsonSerializer.Serialize(defaults.ReceptionConfig, _jsonOptions),
+                transactionalConfigJson: JsonSerializer.Serialize(defaults.TransactionalConfig, _jsonOptions),
+                feedbackConfigJson: JsonSerializer.Serialize(defaults.FeedbackConfig, _jsonOptions),
+                reactivationConfigJson: JsonSerializer.Serialize(defaults.ReactivationConfig, _jsonOptions),
+                integrationsConfigJson: JsonSerializer.Serialize(defaults.IntegrationsConfig, _jsonOptions),
+                advancedConfigJson: JsonSerializer.Serialize(defaults.AdvancedConfig, _jsonOptions),
+                createdBy: createdBy
+            );
 
             var created = await _repository.CreateAsync(config, ct);
             return MapToDto(created);
@@ -73,30 +68,30 @@ namespace MeetLines.Application.Services
                 throw new InvalidOperationException($"Bot configuration not found for project {projectId}");
             }
 
-            // Update only provided fields
-            if (request.BotName != null) config.BotName = request.BotName;
-            if (request.Tone != null) config.Tone = request.Tone;
+            // Update basic config if provided
+            if (request.BotName != null || request.Tone != null)
+            {
+                config.UpdateBasicConfig(request.BotName, request.Tone, updatedBy);
+            }
             
+            // Update individual configurations if provided
             if (request.ReceptionConfig != null)
-                config.ReceptionConfigJson = JsonSerializer.Serialize(request.ReceptionConfig, _jsonOptions);
+                config.UpdateReceptionConfig(JsonSerializer.Serialize(request.ReceptionConfig, _jsonOptions), updatedBy);
             
             if (request.TransactionalConfig != null)
-                config.TransactionalConfigJson = JsonSerializer.Serialize(request.TransactionalConfig, _jsonOptions);
+                config.UpdateTransactionalConfig(JsonSerializer.Serialize(request.TransactionalConfig, _jsonOptions), updatedBy);
             
             if (request.FeedbackConfig != null)
-                config.FeedbackConfigJson = JsonSerializer.Serialize(request.FeedbackConfig, _jsonOptions);
+                config.UpdateFeedbackConfig(JsonSerializer.Serialize(request.FeedbackConfig, _jsonOptions), updatedBy);
             
             if (request.ReactivationConfig != null)
-                config.ReactivationConfigJson = JsonSerializer.Serialize(request.ReactivationConfig, _jsonOptions);
+                config.UpdateReactivationConfig(JsonSerializer.Serialize(request.ReactivationConfig, _jsonOptions), updatedBy);
             
             if (request.IntegrationsConfig != null)
-                config.IntegrationsConfigJson = JsonSerializer.Serialize(request.IntegrationsConfig, _jsonOptions);
+                config.UpdateIntegrationsConfig(JsonSerializer.Serialize(request.IntegrationsConfig, _jsonOptions), updatedBy);
             
             if (request.AdvancedConfig != null)
-                config.AdvancedConfigJson = JsonSerializer.Serialize(request.AdvancedConfig, _jsonOptions);
-
-            config.UpdatedBy = updatedBy;
-            config.UpdatedAt = DateTime.UtcNow;
+                config.UpdateAdvancedConfig(JsonSerializer.Serialize(request.AdvancedConfig, _jsonOptions), updatedBy);
 
             await _repository.UpdateAsync(config, ct);
             return MapToDto(config);
