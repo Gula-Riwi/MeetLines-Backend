@@ -67,6 +67,7 @@ namespace MeetLines.Infrastructure.Repositories
         public async Task<bool> IsUserProjectOwnerAsync(Guid userId, Guid projectId, CancellationToken ct = default)
         {
             return await _context.Projects
+                .IgnoreQueryFilters()
                 .AnyAsync(p => p.Id == projectId && p.UserId == userId, ct);
         }
 
