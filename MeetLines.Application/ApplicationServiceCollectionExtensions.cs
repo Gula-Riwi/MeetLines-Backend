@@ -29,6 +29,7 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IConversationService, ConversationService>();
             services.AddScoped<ICustomerFeedbackService, CustomerFeedbackService>();
             services.AddScoped<IBotMetricsService, BotMetricsService>();
+            services.AddScoped<IAppointmentService, AppointmentService>();
 
             // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();

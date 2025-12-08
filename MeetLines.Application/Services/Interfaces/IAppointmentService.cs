@@ -11,5 +11,7 @@ namespace MeetLines.Application.Services.Interfaces
     {
         Task<Result<AppointmentResponse>> CreateAppointmentAsync(CreateAppointmentRequest request, CancellationToken ct = default);
         Task<Result<IEnumerable<AppointmentResponse>>> GetAppointmentsAsync(Guid userId, string userRole, Guid projectId, CancellationToken ct = default);
+        Task<IEnumerable<ServiceDto>> GetServicesAsync(Guid projectId, CancellationToken ct = default);
+        Task<AvailableSlotsResponse> GetAvailableSlotsAsync(Guid projectId, DateTime date, int? serviceId = null, CancellationToken ct = default);
     }
 }
