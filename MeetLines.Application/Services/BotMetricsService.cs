@@ -84,23 +84,20 @@ namespace MeetLines.Application.Services
             var reactivations = await _reactivationRepo.GetSuccessfulReactivationsAsync(projectId, startOfDay, ct);
             var reactivationsList = reactivations.ToList();
 
-            var metrics = new BotMetrics
-            {
-                Id = Guid.NewGuid(),
-                ProjectId = projectId,
-                Date = startOfDay,
-                TotalConversations = totalConversations,
-                BotConversations = botConversations,
-                HumanConversations = humanConversations,
-                AppointmentsBooked = 0,
-                ConversionRate = 0,
-                AverageFeedbackRating = avgFeedbackRating,
-                CustomersReactivated = reactivationsList.Count,
-                ReactivationRate = 0,
-                AverageResponseTime = 0,
-                CustomerSatisfactionScore = avgFeedbackRating ?? 0,
-                CreatedAt = DateTime.UtcNow
-            };
+            var metrics = new BotMetrics(
+                projectId: projectId,
+                date: startOfDay,
+                totalConversations: totalConversations,
+                botConversations: botConversations,
+                humanConversations: humanConversations,
+                appointmentsBooked: 0,
+                conversionRate: 0,
+                customersReactivated: reactivationsList.Count,
+                reactivationRate: 0,
+                averageResponseTime: 0,
+                customerSatisfactionScore: avgFeedbackRating ?? 0,
+                averageFeedbackRating: avgFeedbackRating
+            );
 
             var upserted = await _metricsRepo.UpsertAsync(metrics, ct);
             return MapToDto(upserted);

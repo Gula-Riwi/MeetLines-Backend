@@ -92,8 +92,7 @@ namespace MeetLines.Infrastructure.Repositories
             var feedback = await _context.CustomerFeedbacks.FindAsync(new object[] { id }, ct);
             if (feedback != null)
             {
-                feedback.OwnerResponse = response;
-                feedback.OwnerRespondedAt = DateTime.UtcNow;
+                feedback.AddOwnerResponse(response);
                 await _context.SaveChangesAsync(ct);
             }
         }
