@@ -39,6 +39,7 @@ namespace MeetLines.Application.DTOs.BotSystem
         public double? IntentConfidence { get; set; }
         public double? Sentiment { get; set; }
         public bool RequiresHumanAttention { get; set; } = false;
+        public string? MetadataJson { get; set; }
     }
 
     /// <summary>

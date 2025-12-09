@@ -71,6 +71,12 @@ namespace MeetLines.Application.Services
                 entity.MarkAsRequiringHumanAttention();
             }
 
+            // Set initial metadata if provided
+            if (!string.IsNullOrWhiteSpace(request.MetadataJson))
+            {
+                entity.UpdateMetadata(request.MetadataJson);
+            }
+
             var created = await _repository.CreateAsync(entity, ct);
             return MapToDto(created);
         }
