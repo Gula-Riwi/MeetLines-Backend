@@ -86,6 +86,8 @@ namespace MeetLines.Infrastructure.Repositories
         public async Task UpdateAsync(Conversation conversation, CancellationToken ct = default)
         {
             _context.Conversations.Update(conversation);
+            // Don't update CreatedAt to avoid DateTime UTC issues
+            _context.Entry(conversation).Property(x => x.CreatedAt).IsModified = false;
             await _context.SaveChangesAsync(ct);
         }
 

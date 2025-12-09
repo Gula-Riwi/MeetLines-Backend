@@ -127,5 +127,27 @@ namespace MeetLines.API.Controllers
             var avgSentiment = await _service.GetAverageSentimentAsync(projectId, startDate, ct);
             return Ok(new { averageSentiment = avgSentiment });
         }
+
+        /// <summary>
+        /// Updates conversation metadata (called by n8n Bot 2)
+        /// Requires API key authentication
+        /// </summary>
+        [HttpPatch("{id}")]
+        [AllowAnonymous] // n8n webhook
+        public async Task<ActionResult> Update(
+            Guid projectId,
+            Guid id,
+            [FromBody] UpdateConversationRequest request,
+            CancellationToken ct = default)
+        {
+            // Validate API key for n8n integration
+            if (!ValidateApiKey())
+            {
+                return Unauthorized(new { error = "Invalid or missing API key" });
+            }
+
+            await _service.UpdateAsync(id, request, ct);
+            return Ok(new { success = true });
+        }
     }
 }
