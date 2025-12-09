@@ -67,7 +67,7 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IEnumerable<Conversation>> GetByDateRangeAsync(Guid projectId, DateTime startDate, DateTime endDate, CancellationToken ct = default)
+        public async Task<IEnumerable<Conversation>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default)
         {
             return await _context.Conversations
                 .AsNoTracking()
@@ -108,7 +108,7 @@ namespace MeetLines.Infrastructure.Repositories
                 .CountAsync(ct);
         }
 
-        public async Task<double?> GetAverageSentimentAsync(Guid projectId, DateTime? startDate = null, CancellationToken ct = default)
+        public async Task<double?> GetAverageSentimentAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default)
         {
             var query = _context.Conversations
                 .Where(x => x.ProjectId == projectId && x.Sentiment.HasValue);

@@ -17,7 +17,7 @@ namespace MeetLines.Domain.Entities
         public string? CustomerName { get; private set; }
         
         /// <summary>Fecha de última visita/compra</summary>
-        public DateTime LastVisitDate { get; private set; }
+        public DateTimeOffset LastVisitDate { get; private set; }
         
         /// <summary>Días de inactividad</summary>
         public int DaysInactive { get; private set; }
@@ -46,7 +46,7 @@ namespace MeetLines.Domain.Entities
         /// <summary>Porcentaje de descuento ofrecido</summary>
         public int? DiscountPercentage { get; private set; }
         
-        public DateTime CreatedAt { get; private set; }
+        public DateTimeOffset CreatedAt { get; private set; }
 
         // EF Core constructor
         private CustomerReactivation() 
@@ -58,7 +58,7 @@ namespace MeetLines.Domain.Entities
         public CustomerReactivation(
             Guid projectId,
             string customerPhone,
-            DateTime lastVisitDate,
+            DateTimeOffset lastVisitDate,
             int daysInactive,
             int attemptNumber,
             string messageSent,
@@ -85,7 +85,7 @@ namespace MeetLines.Domain.Entities
             NewAppointmentId = null;
             DiscountOffered = discountOffered;
             DiscountPercentage = discountPercentage;
-            CreatedAt = DateTime.UtcNow;
+            CreatedAt = DateTimeOffset.UtcNow;
         }
 
         public void RecordCustomerResponse(string response)

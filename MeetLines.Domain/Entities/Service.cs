@@ -15,8 +15,8 @@ namespace MeetLines.Domain.Entities
         public string Currency { get; private set; }
         public int DurationMinutes { get; private set; }
         public bool IsActive { get; private set; }
-        public DateTime CreatedAt { get; private set; }
-        public DateTime UpdatedAt { get; private set; }
+        public DateTimeOffset CreatedAt { get; private set; }
+        public DateTimeOffset UpdatedAt { get; private set; }
 
         // EF Core constructor
         private Service()
@@ -44,8 +44,8 @@ namespace MeetLines.Domain.Entities
             Currency = currency;
             DurationMinutes = durationMinutes;
             IsActive = true;
-            CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
+            CreatedAt = DateTimeOffset.UtcNow;
+            UpdatedAt = DateTimeOffset.UtcNow;
         }
 
         public void UpdateDetails(string name, string? description, decimal price, int durationMinutes)
@@ -57,7 +57,7 @@ namespace MeetLines.Domain.Entities
             Description = description;
             Price = price;
             DurationMinutes = durationMinutes;
-            UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTimeOffset.UtcNow;
         }
 
         public void Activate()

@@ -9,7 +9,7 @@ namespace MeetLines.Application.DTOs.BotSystem
     {
         public Guid Id { get; set; }
         public Guid ProjectId { get; set; }
-        public DateTime Date { get; set; }
+        public DateTimeOffset Date { get; set; }
         public int TotalConversations { get; set; }
         public int BotConversations { get; set; }
         public int HumanConversations { get; set; }
@@ -20,7 +20,7 @@ namespace MeetLines.Application.DTOs.BotSystem
         public double ReactivationRate { get; set; }
         public double AverageResponseTime { get; set; }
         public double CustomerSatisfactionScore { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
     }
 
     /// <summary>
@@ -44,8 +44,8 @@ namespace MeetLines.Application.DTOs.BotSystem
     public class GetMetricsRequest
     {
         public Guid ProjectId { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public DateTimeOffset? StartDate { get; set; }
+        public DateTimeOffset? EndDate { get; set; }
         public int? LastNDays { get; set; }
     }
 }

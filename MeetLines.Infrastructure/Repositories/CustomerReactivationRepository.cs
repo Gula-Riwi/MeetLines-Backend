@@ -60,7 +60,7 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task<IEnumerable<CustomerReactivation>> GetEligibleForNextAttemptAsync(Guid projectId, CancellationToken ct = default)
         {
-            var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+            var thirtyDaysAgo = DateTimeOffset.UtcNow.AddDays(-30);
             
             return await _context.CustomerReactivations
                 .AsNoTracking()
@@ -71,7 +71,7 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IEnumerable<CustomerReactivation>> GetSuccessfulReactivationsAsync(Guid projectId, DateTime? startDate = null, CancellationToken ct = default)
+        public async Task<IEnumerable<CustomerReactivation>> GetSuccessfulReactivationsAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default)
         {
             var query = _context.CustomerReactivations
                 .AsNoTracking()
@@ -110,7 +110,7 @@ namespace MeetLines.Infrastructure.Repositories
             }
         }
 
-        public async Task<double> GetReactivationRateAsync(Guid projectId, DateTime? startDate = null, CancellationToken ct = default)
+        public async Task<double> GetReactivationRateAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default)
         {
             var query = _context.CustomerReactivations
                 .Where(x => x.ProjectId == projectId);

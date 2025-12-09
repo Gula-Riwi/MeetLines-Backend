@@ -39,7 +39,7 @@ namespace MeetLines.Domain.Repositories
         /// <summary>
         /// Gets successful reactivations
         /// </summary>
-        Task<IEnumerable<CustomerReactivation>> GetSuccessfulReactivationsAsync(Guid projectId, DateTime? startDate = null, CancellationToken ct = default);
+        Task<IEnumerable<CustomerReactivation>> GetSuccessfulReactivationsAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default);
         
         /// <summary>
         /// Creates a new reactivation attempt
@@ -59,7 +59,7 @@ namespace MeetLines.Domain.Repositories
         /// <summary>
         /// Gets reactivation rate for a project
         /// </summary>
-        Task<double> GetReactivationRateAsync(Guid projectId, DateTime? startDate = null, CancellationToken ct = default);
+        Task<double> GetReactivationRateAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default);
         
         /// <summary>
         /// Gets count of reactivation attempts by attempt number

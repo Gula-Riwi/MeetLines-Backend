@@ -20,7 +20,7 @@ namespace MeetLines.Application.DTOs.BotSystem
         public bool RequiresHumanAttention { get; set; }
         public bool HandledByHuman { get; set; }
         public Guid? HandledByEmployeeId { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
     }
 
     /// <summary>
@@ -50,8 +50,8 @@ namespace MeetLines.Application.DTOs.BotSystem
         public int PageSize { get; set; } = 50;
         public string? BotType { get; set; }
         public bool? RequiresHumanAttention { get; set; }
-        public DateTime? StartDate { get; set; }
-        public DateTime? EndDate { get; set; }
+        public DateTimeOffset? StartDate { get; set; }
+        public DateTimeOffset? EndDate { get; set; }
     }
 
     /// <summary>

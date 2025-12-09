@@ -10,7 +10,7 @@ namespace MeetLines.Application.Services.Interfaces
     public interface IBotMetricsService
     {
         Task<IEnumerable<BotMetricsDto>> GetMetricsAsync(GetMetricsRequest request, CancellationToken ct = default);
-        Task<BotMetricsSummaryDto> GetSummaryAsync(Guid projectId, DateTime? startDate = null, DateTime? endDate = null, CancellationToken ct = default);
-        Task<BotMetricsDto> UpsertMetricsAsync(Guid projectId, DateTime date, CancellationToken ct = default);
+        Task<BotMetricsSummaryDto> GetSummaryAsync(Guid projectId, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, CancellationToken ct = default);
+        Task<BotMetricsDto> UpsertMetricsAsync(Guid projectId, DateTimeOffset date, CancellationToken ct = default);
     }
 }

@@ -29,7 +29,7 @@ namespace MeetLines.Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.Id == id, ct);
         }
 
-        public async Task<BotMetrics?> GetByProjectAndDateAsync(Guid projectId, DateTime date, CancellationToken ct = default)
+        public async Task<BotMetrics?> GetByProjectAndDateAsync(Guid projectId, DateTimeOffset date, CancellationToken ct = default)
         {
             var dateOnly = date.Date;
             return await _context.BotMetrics
@@ -37,7 +37,7 @@ namespace MeetLines.Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.ProjectId == projectId && x.Date == dateOnly, ct);
         }
 
-        public async Task<IEnumerable<BotMetrics>> GetByDateRangeAsync(Guid projectId, DateTime startDate, DateTime endDate, CancellationToken ct = default)
+        public async Task<IEnumerable<BotMetrics>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default)
         {
             var startDateOnly = startDate.Date;
             var endDateOnly = endDate.Date;
@@ -60,7 +60,7 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task<IEnumerable<BotMetrics>> GetLastNDaysAsync(Guid projectId, int days, CancellationToken ct = default)
         {
-            var startDate = DateTime.UtcNow.Date.AddDays(-days);
+            var startDate = DateTimeOffset.UtcNow.Date.AddDays(-days);
             
             return await _context.BotMetrics
                 .AsNoTracking()
@@ -124,7 +124,7 @@ namespace MeetLines.Infrastructure.Repositories
             }
         }
 
-        public async Task<BotMetricsSummary> GetSummaryAsync(Guid projectId, DateTime? startDate = null, DateTime? endDate = null, CancellationToken ct = default)
+        public async Task<BotMetricsSummary> GetSummaryAsync(Guid projectId, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, CancellationToken ct = default)
         {
             var query = _context.BotMetrics
                 .Where(x => x.ProjectId == projectId);
