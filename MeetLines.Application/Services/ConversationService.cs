@@ -118,6 +118,7 @@ namespace MeetLines.Application.Services
                 RequiresHumanAttention = entity.RequiresHumanAttention,
                 HandledByHuman = entity.HandledByHuman,
                 HandledByEmployeeId = entity.HandledByEmployeeId,
+                MetadataJson = entity.MetadataJson,
                 CreatedAt = entity.CreatedAt
             };
         }
