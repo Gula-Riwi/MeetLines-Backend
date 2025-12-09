@@ -114,5 +114,14 @@ namespace MeetLines.Domain.Entities
         {
             Sentiment = sentiment;
         }
+
+        public void UpdateMetadata(string? metadataJson, string? lastMessage = null, string? lastResponse = null)
+        {
+            MetadataJson = metadataJson;
+            if (!string.IsNullOrWhiteSpace(lastMessage))
+                CustomerMessage = lastMessage;
+            if (!string.IsNullOrWhiteSpace(lastResponse))
+                BotResponse = lastResponse;
+        }
     }
 }

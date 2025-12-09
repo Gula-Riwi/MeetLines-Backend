@@ -85,6 +85,22 @@ namespace MeetLines.Application.Services
             return await _repository.GetAverageSentimentAsync(projectId, startDate, ct);
         }
 
+        public async Task UpdateAsync(Guid id, UpdateConversationRequest request, CancellationToken ct = default)
+        {
+            var conversation = await _repository.GetAsync(id, ct);
+            if (conversation == null)
+            {
+                throw new InvalidOperationException($"Conversation {id} not found");
+            }
+
+            var metadataJson = request.Metadata != null 
+                ? System.Text.Json.JsonSerializer.Serialize(request.Metadata) 
+                : null;
+
+            conversation.UpdateMetadata(metadataJson, request.LastMessage, request.LastResponse);
+            await _repository.UpdateAsync(conversation, ct);
+        }
+
         private ConversationDto MapToDto(Conversation entity)
         {
             return new ConversationDto
