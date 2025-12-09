@@ -20,6 +20,7 @@ namespace MeetLines.Application.DTOs.BotSystem
         public bool RequiresHumanAttention { get; set; }
         public bool HandledByHuman { get; set; }
         public Guid? HandledByEmployeeId { get; set; }
+        public string? MetadataJson { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
     }
 
