@@ -53,4 +53,14 @@ namespace MeetLines.Application.DTOs.BotSystem
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
     }
+
+    /// <summary>
+    /// DTO for updating conversation metadata (from n8n Bot 2)
+    /// </summary>
+    public class UpdateConversationRequest
+    {
+        public object? Metadata { get; set; }
+        public string? LastMessage { get; set; }
+        public string? LastResponse { get; set; }
+    }
 }
