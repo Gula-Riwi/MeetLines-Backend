@@ -71,8 +71,8 @@ namespace MeetLines.Domain.Entities
         // METADATOS
         // ==========================================
         
-        public DateTime CreatedAt { get; private set; }
-        public DateTime UpdatedAt { get; private set; }
+        public DateTimeOffset CreatedAt { get; private set; }
+        public DateTimeOffset UpdatedAt { get; private set; }
         public Guid CreatedBy { get; private set; }
         public Guid? UpdatedBy { get; private set; }
         public bool IsActive { get; private set; }
@@ -124,8 +124,8 @@ namespace MeetLines.Domain.Entities
             IntegrationsConfigJson = integrationsConfigJson ?? "{}";
             AdvancedConfigJson = advancedConfigJson ?? "{}";
             CreatedBy = createdBy;
-            CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
+            CreatedAt = DateTimeOffset.UtcNow;
+            UpdatedAt = DateTimeOffset.UtcNow;
             IsActive = true;
         }
 
@@ -138,7 +138,7 @@ namespace MeetLines.Domain.Entities
                 Tone = tone;
 
             UpdatedBy = updatedBy;
-            UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTimeOffset.UtcNow;
         }
 
         public void UpdateReceptionConfig(string receptionConfigJson, Guid updatedBy)

@@ -39,7 +39,7 @@ namespace MeetLines.Domain.Repositories
         /// <summary>
         /// Gets feedback by date range
         /// </summary>
-        Task<IEnumerable<CustomerFeedback>> GetByDateRangeAsync(Guid projectId, DateTime startDate, DateTime endDate, CancellationToken ct = default);
+        Task<IEnumerable<CustomerFeedback>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default);
         
         /// <summary>
         /// Creates a new feedback
@@ -59,7 +59,7 @@ namespace MeetLines.Domain.Repositories
         /// <summary>
         /// Gets average rating for a project
         /// </summary>
-        Task<double?> GetAverageRatingAsync(Guid projectId, DateTime? startDate = null, CancellationToken ct = default);
+        Task<double?> GetAverageRatingAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default);
         
         /// <summary>
         /// Gets feedback count by rating

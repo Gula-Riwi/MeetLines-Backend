@@ -65,7 +65,7 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IEnumerable<CustomerFeedback>> GetByDateRangeAsync(Guid projectId, DateTime startDate, DateTime endDate, CancellationToken ct = default)
+        public async Task<IEnumerable<CustomerFeedback>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default)
         {
             return await _context.CustomerFeedbacks
                 .AsNoTracking()
@@ -97,7 +97,7 @@ namespace MeetLines.Infrastructure.Repositories
             }
         }
 
-        public async Task<double?> GetAverageRatingAsync(Guid projectId, DateTime? startDate = null, CancellationToken ct = default)
+        public async Task<double?> GetAverageRatingAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default)
         {
             var query = _context.CustomerFeedbacks
                 .Where(x => x.ProjectId == projectId);

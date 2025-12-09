@@ -19,12 +19,12 @@ namespace MeetLines.Domain.Repositories
         /// <summary>
         /// Gets metrics by project and date
         /// </summary>
-        Task<BotMetrics?> GetByProjectAndDateAsync(Guid projectId, DateTime date, CancellationToken ct = default);
+        Task<BotMetrics?> GetByProjectAndDateAsync(Guid projectId, DateTimeOffset date, CancellationToken ct = default);
         
         /// <summary>
         /// Gets metrics for a project within date range
         /// </summary>
-        Task<IEnumerable<BotMetrics>> GetByDateRangeAsync(Guid projectId, DateTime startDate, DateTime endDate, CancellationToken ct = default);
+        Task<IEnumerable<BotMetrics>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default);
         
         /// <summary>
         /// Gets latest metrics for a project
@@ -59,7 +59,7 @@ namespace MeetLines.Domain.Repositories
         /// <summary>
         /// Gets aggregated metrics summary
         /// </summary>
-        Task<BotMetricsSummary> GetSummaryAsync(Guid projectId, DateTime? startDate = null, DateTime? endDate = null, CancellationToken ct = default);
+        Task<BotMetricsSummary> GetSummaryAsync(Guid projectId, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, CancellationToken ct = default);
     }
     
     /// <summary>
