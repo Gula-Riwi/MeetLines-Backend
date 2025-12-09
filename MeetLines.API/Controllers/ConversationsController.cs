@@ -72,8 +72,15 @@ namespace MeetLines.API.Controllers
         /// Gets conversation history for a specific customer
         /// </summary>
         [HttpGet("customer/{customerPhone}")]
+        [AllowAnonymous] // n8n webhook
         public async Task<ActionResult> GetByCustomer(Guid projectId, string customerPhone, CancellationToken ct = default)
         {
+            // Validate API key for n8n integration
+            if (!ValidateApiKey())
+            {
+                return Unauthorized(new { error = "Invalid or missing API key" });
+            }
+
             var conversations = await _service.GetByCustomerPhoneAsync(projectId, customerPhone, ct);
             return Ok(conversations);
         }
