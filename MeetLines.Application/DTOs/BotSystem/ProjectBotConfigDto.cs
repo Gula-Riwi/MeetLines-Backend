@@ -24,8 +24,8 @@ namespace MeetLines.Application.DTOs.BotSystem
         public AdvancedBotConfig? AdvancedConfig { get; set; }
         
         public bool IsActive { get; set; } = true;
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset UpdatedAt { get; set; }
     }
 
     /// <summary>

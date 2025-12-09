@@ -39,7 +39,7 @@ namespace MeetLines.Domain.Repositories
         /// <summary>
         /// Gets conversations by date range
         /// </summary>
-        Task<IEnumerable<Conversation>> GetByDateRangeAsync(Guid projectId, DateTime startDate, DateTime endDate, CancellationToken ct = default);
+        Task<IEnumerable<Conversation>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default);
         
         /// <summary>
         /// Creates a new conversation
@@ -64,6 +64,6 @@ namespace MeetLines.Domain.Repositories
         /// <summary>
         /// Gets average sentiment for a project
         /// </summary>
-        Task<double?> GetAverageSentimentAsync(Guid projectId, DateTime? startDate = null, CancellationToken ct = default);
+        Task<double?> GetAverageSentimentAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default);
     }
 }

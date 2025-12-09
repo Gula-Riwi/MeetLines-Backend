@@ -33,9 +33,9 @@ namespace MeetLines.Domain.Entities
         public string? OwnerResponse { get; private set; }
         
         /// <summary>Fecha de respuesta del dueño</summary>
-        public DateTime? OwnerRespondedAt { get; private set; }
+        public DateTimeOffset? OwnerRespondedAt { get; private set; }
         
-        public DateTime CreatedAt { get; private set; }
+        public DateTimeOffset CreatedAt { get; private set; }
 
         // EF Core constructor
         private CustomerFeedback() 
@@ -67,7 +67,7 @@ namespace MeetLines.Domain.Entities
             OwnerNotified = false;
             OwnerResponse = null;
             OwnerRespondedAt = null;
-            CreatedAt = DateTime.UtcNow;
+            CreatedAt = DateTimeOffset.UtcNow;
         }
 
         public void MarkOwnerAsNotified()
@@ -80,7 +80,7 @@ namespace MeetLines.Domain.Entities
             if (string.IsNullOrWhiteSpace(response)) throw new ArgumentException("Response cannot be empty", nameof(response));
             
             OwnerResponse = response;
-            OwnerRespondedAt = DateTime.UtcNow;
+            OwnerRespondedAt = DateTimeOffset.UtcNow;
         }
 
         public void UpdateSentiment(double sentiment)

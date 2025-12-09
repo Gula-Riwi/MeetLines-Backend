@@ -17,8 +17,8 @@ namespace MeetLines.Application.DTOs.BotSystem
         public double? Sentiment { get; set; }
         public bool OwnerNotified { get; set; }
         public string? OwnerResponse { get; set; }
-        public DateTime? OwnerRespondedAt { get; set; }
-        public DateTime CreatedAt { get; set; }
+        public DateTimeOffset? OwnerRespondedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
     }
 
     /// <summary>

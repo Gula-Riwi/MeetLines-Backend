@@ -32,10 +32,10 @@ namespace MeetLines.Domain.Entities
         public int UsageCount { get; private set; }
         
         /// <summary>Última vez que se usó</summary>
-        public DateTime? LastUsedAt { get; private set; }
+        public DateTimeOffset? LastUsedAt { get; private set; }
         
-        public DateTime CreatedAt { get; private set; }
-        public DateTime UpdatedAt { get; private set; }
+        public DateTimeOffset CreatedAt { get; private set; }
+        public DateTimeOffset UpdatedAt { get; private set; }
 
         // EF Core constructor
         private KnowledgeBase() 
@@ -62,8 +62,8 @@ namespace MeetLines.Domain.Entities
             IsActive = true;
             UsageCount = 0;
             LastUsedAt = null;
-            CreatedAt = DateTime.UtcNow;
-            UpdatedAt = DateTime.UtcNow;
+            CreatedAt = DateTimeOffset.UtcNow;
+            UpdatedAt = DateTimeOffset.UtcNow;
         }
 
         public void Update(string? category, string? question, string? answer, string? keywords, int? priority)
@@ -83,13 +83,13 @@ namespace MeetLines.Domain.Entities
             if (priority.HasValue)
                 Priority = priority.Value;
 
-            UpdatedAt = DateTime.UtcNow;
+            UpdatedAt = DateTimeOffset.UtcNow;
         }
 
         public void RecordUsage()
         {
             UsageCount++;
-            LastUsedAt = DateTime.UtcNow;
+            LastUsedAt = DateTimeOffset.UtcNow;
             UpdatedAt = DateTime.UtcNow;
         }
 

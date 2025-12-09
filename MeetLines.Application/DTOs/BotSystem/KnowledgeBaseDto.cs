@@ -17,9 +17,9 @@ namespace MeetLines.Application.DTOs.BotSystem
         public int Priority { get; set; }
         public bool IsActive { get; set; } = true;
         public int UsageCount { get; set; }
-        public DateTime? LastUsedAt { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
+        public DateTimeOffset? LastUsedAt { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+        public DateTimeOffset UpdatedAt { get; set; }
     }
 
     /// <summary>

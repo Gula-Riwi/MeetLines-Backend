@@ -46,7 +46,7 @@ namespace MeetLines.Domain.Entities
         /// <summary>Metadata adicional en JSON</summary>
         public string? MetadataJson { get; private set; }
         
-        public DateTime CreatedAt { get; private set; }
+        public DateTimeOffset CreatedAt { get; private set; }
 
         // EF Core constructor
         private Conversation() 
@@ -88,7 +88,7 @@ namespace MeetLines.Domain.Entities
             HandledByHuman = false;
             HandledByEmployeeId = null;
             MetadataJson = metadataJson;
-            CreatedAt = DateTime.UtcNow;
+            CreatedAt = DateTimeOffset.UtcNow;
         }
 
         public void MarkAsRequiringHumanAttention()

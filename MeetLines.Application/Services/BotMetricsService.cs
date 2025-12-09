@@ -50,7 +50,7 @@ namespace MeetLines.Application.Services
             return metrics.Select(MapToDto);
         }
 
-        public async Task<BotMetricsSummaryDto> GetSummaryAsync(Guid projectId, DateTime? startDate = null, DateTime? endDate = null, CancellationToken ct = default)
+        public async Task<BotMetricsSummaryDto> GetSummaryAsync(Guid projectId, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, CancellationToken ct = default)
         {
             var summary = await _metricsRepo.GetSummaryAsync(projectId, startDate, endDate, ct);
             
@@ -67,7 +67,7 @@ namespace MeetLines.Application.Services
             };
         }
 
-        public async Task<BotMetricsDto> UpsertMetricsAsync(Guid projectId, DateTime date, CancellationToken ct = default)
+        public async Task<BotMetricsDto> UpsertMetricsAsync(Guid projectId, DateTimeOffset date, CancellationToken ct = default)
         {
             // Calculate metrics for the day
             var startOfDay = date.Date;

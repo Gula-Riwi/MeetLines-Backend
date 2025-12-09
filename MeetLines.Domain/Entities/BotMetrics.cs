@@ -11,7 +11,7 @@ namespace MeetLines.Domain.Entities
         public Guid ProjectId { get; private set; }
         
         /// <summary>Fecha de la métrica</summary>
-        public DateTime Date { get; private set; }
+        public DateTimeOffset Date { get; private set; }
         
         /// <summary>Total de conversaciones</summary>
         public int TotalConversations { get; private set; }
@@ -43,14 +43,14 @@ namespace MeetLines.Domain.Entities
         /// <summary>Satisfacción del cliente (0-100)</summary>
         public double CustomerSatisfactionScore { get; private set; }
         
-        public DateTime CreatedAt { get; private set; }
+        public DateTimeOffset CreatedAt { get; private set; }
 
         // EF Core constructor
         private BotMetrics() { }
 
         public BotMetrics(
             Guid projectId,
-            DateTime date,
+            DateTimeOffset date,
             int totalConversations,
             int botConversations,
             int humanConversations,
@@ -80,7 +80,7 @@ namespace MeetLines.Domain.Entities
             ReactivationRate = reactivationRate;
             AverageResponseTime = averageResponseTime;
             CustomerSatisfactionScore = customerSatisfactionScore;
-            CreatedAt = DateTime.UtcNow;
+            CreatedAt = DateTimeOffset.UtcNow;
         }
 
         public void UpdateMetrics(
