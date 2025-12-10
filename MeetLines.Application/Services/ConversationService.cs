@@ -125,6 +125,8 @@ namespace MeetLines.Application.Services
                 HandledByHuman = entity.HandledByHuman,
                 HandledByEmployeeId = entity.HandledByEmployeeId,
                 MetadataJson = entity.MetadataJson,
+                LastMessage = entity.LastMessage,
+                LastResponse = entity.LastResponse,
                 CreatedAt = entity.CreatedAt
             };
         }

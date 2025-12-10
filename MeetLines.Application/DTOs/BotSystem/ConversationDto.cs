@@ -21,6 +21,8 @@ namespace MeetLines.Application.DTOs.BotSystem
         public bool HandledByHuman { get; set; }
         public Guid? HandledByEmployeeId { get; set; }
         public string? MetadataJson { get; set; }
+        public string? LastMessage { get; set; }
+        public string? LastResponse { get; set; }
         public DateTimeOffset CreatedAt { get; set; }
     }
 
