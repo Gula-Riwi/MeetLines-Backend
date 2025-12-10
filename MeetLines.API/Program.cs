@@ -205,6 +205,7 @@ app.UseCors(builder => builder
         if (host.EndsWith(".meet-lines.local", StringComparison.OrdinalIgnoreCase)) return true;
         if (host.Equals("meet-lines.local", StringComparison.OrdinalIgnoreCase)) return true;
         if (host.EndsWith(".meet-lines.com", StringComparison.OrdinalIgnoreCase)) return true;
+        if (host.Equals("meet-lines.com", StringComparison.OrdinalIgnoreCase)) return true;
 
         return false;
     })
