@@ -115,13 +115,16 @@ namespace MeetLines.Domain.Entities
             Sentiment = sentiment;
         }
 
+        public string? LastMessage { get; private set; }
+        public string? LastResponse { get; private set; }
+
         public void UpdateMetadata(string? metadataJson, string? lastMessage = null, string? lastResponse = null)
         {
             MetadataJson = metadataJson;
             if (!string.IsNullOrWhiteSpace(lastMessage))
-                CustomerMessage = lastMessage;
+                LastMessage = lastMessage;
             if (!string.IsNullOrWhiteSpace(lastResponse))
-                BotResponse = lastResponse;
+                LastResponse = lastResponse;
         }
     }
 }
