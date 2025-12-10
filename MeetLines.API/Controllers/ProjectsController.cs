@@ -23,19 +23,22 @@ namespace MeetLines.API.Controllers
         private readonly IGetProjectByIdUseCase _getProjectByIdUseCase;
         private readonly IUpdateProjectUseCase _updateProjectUseCase;
         private readonly IDeleteProjectUseCase _deleteProjectUseCase;
+        private readonly IConfigureWhatsappUseCase _configureWhatsappUseCase;
 
         public ProjectsController(
             ICreateProjectUseCase createProjectUseCase,
             IGetUserProjectsUseCase getUserProjectsUseCase,
             IGetProjectByIdUseCase getProjectByIdUseCase,
             IUpdateProjectUseCase updateProjectUseCase,
-            IDeleteProjectUseCase deleteProjectUseCase)
+            IDeleteProjectUseCase deleteProjectUseCase,
+            IConfigureWhatsappUseCase configureWhatsappUseCase)
         {
             _createProjectUseCase = createProjectUseCase ?? throw new ArgumentNullException(nameof(createProjectUseCase));
             _getUserProjectsUseCase = getUserProjectsUseCase ?? throw new ArgumentNullException(nameof(getUserProjectsUseCase));
             _getProjectByIdUseCase = getProjectByIdUseCase ?? throw new ArgumentNullException(nameof(getProjectByIdUseCase));
             _updateProjectUseCase = updateProjectUseCase ?? throw new ArgumentNullException(nameof(updateProjectUseCase));
             _deleteProjectUseCase = deleteProjectUseCase ?? throw new ArgumentNullException(nameof(deleteProjectUseCase));
+            _configureWhatsappUseCase = configureWhatsappUseCase ?? throw new ArgumentNullException(nameof(configureWhatsappUseCase));
         }
 
         /// <summary>
@@ -111,6 +114,21 @@ namespace MeetLines.API.Controllers
                 return BadRequest(new { error = result.Error });
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Configura la integración de WhatsApp para un proyecto
+        /// </summary>
+        [HttpPatch("{projectId}/whatsapp")]
+        public async Task<IActionResult> ConfigureWhatsapp(Guid projectId, [FromBody] ConfigureWhatsappRequest request, CancellationToken ct)
+        {
+            var userId = GetUserId();
+            var result = await _configureWhatsappUseCase.ExecuteAsync(userId, projectId, request, ct);
+
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.Error });
+
+            return Ok(result.Value);
         }
 
         /// <summary>
