@@ -139,7 +139,9 @@ namespace MeetLines.Application.Services
 
                 // ✅ VALIDACIÓN: Verificar que el empleado pertenezca al tenant actual
                 var currentTenantId = _tenantService.GetCurrentTenantId();
-                if (currentTenantId != Guid.Empty && employee.ProjectId != currentTenantId)
+                // Solo validar si HAY un tenant resuelto (si es null, es dominio principal o reservado, permitir acceso o decidir política)
+                // En este caso, permitimos login desde dominio principal si se conocen las credenciales
+                if (currentTenantId.HasValue && currentTenantId.Value != Guid.Empty && employee.ProjectId != currentTenantId.Value)
                 {
                     // El empleado no pertenece a este tenant/proyecto
                     return Result<LoginResponse>.Fail("Usuario o contraseña incorrectos");
