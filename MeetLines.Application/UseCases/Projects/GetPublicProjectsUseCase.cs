@@ -21,9 +21,9 @@ namespace MeetLines.Application.UseCases.Projects
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
-        public async Task<Result<IEnumerable<ProjectPublicSummaryDto>>> ExecuteAsync(CancellationToken ct = default)
+        public async Task<Result<IEnumerable<ProjectPublicSummaryDto>>> ExecuteAsync(double? latitude = null, double? longitude = null, CancellationToken ct = default)
         {
-            var projects = await _projectRepository.GetAllAsync(ct);
+            var projects = await _projectRepository.GetPublicProjectsByDistanceAsync(latitude, longitude, ct);
             var dtos = projects.Select(MapToPublicDto).ToList();
             return Result<IEnumerable<ProjectPublicSummaryDto>>.Ok(dtos);
         }
@@ -35,7 +35,13 @@ namespace MeetLines.Application.UseCases.Projects
                 Id = project.Id,
                 Name = project.Name,
                 Description = project.Description ?? string.Empty,
-                Industry = project.Industry ?? string.Empty
+                Industry = project.Industry ?? string.Empty,
+                Address = project.Address,
+                City = project.City,
+                Country = project.Country,
+                Latitude = project.Latitude,
+                Longitude = project.Longitude,
+                DistanceKm = project.Distance
             };
         }
     }

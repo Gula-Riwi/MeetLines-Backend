@@ -18,12 +18,20 @@ namespace MeetLines.Domain.Entities
         public string? Config { get; private set; } // jsonb
         public string Subdomain { get; private set; }
         public string Status { get; private set; }
+        public string? Address { get; private set; }
+        public string? City { get; private set; }
+        public string? Country { get; private set; }
+        public double? Latitude { get; private set; }
+        public double? Longitude { get; private set; }
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset UpdatedAt { get; private set; }
 
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
+        public double? Distance { get; set; }
+
         private Project() { Name = null!; Status = null!; Subdomain = null!; } // EF Core
 
-        public Project(Guid userId, string name, string subdomain, string? industry = null, string? description = null)
+        public Project(Guid userId, string name, string subdomain, string? industry = null, string? description = null, string? address = null, string? city = null, string? country = null, double? latitude = null, double? longitude = null)
         {
             if (userId == Guid.Empty) throw new ArgumentException("UserId cannot be empty", nameof(userId));
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name cannot be empty", nameof(name));
@@ -37,6 +45,11 @@ namespace MeetLines.Domain.Entities
             Subdomain = subdomain;
             Industry = industry;
             Description = description;
+            Address = address;
+            City = city;
+            Country = country;
+            Latitude = latitude;
+            Longitude = longitude;
             Status = "active";
             CreatedAt = DateTimeOffset.UtcNow;
             UpdatedAt = DateTimeOffset.UtcNow;
@@ -51,12 +64,17 @@ namespace MeetLines.Domain.Entities
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        public void UpdateDetails(string name, string? industry, string? description)
+        public void UpdateDetails(string name, string? industry, string? description, string? address, string? city, string? country, double? latitude = null, double? longitude = null)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name cannot be empty", nameof(name));
             Name = name;
             Industry = industry;
             Description = description;
+            Address = address;
+            City = city;
+            Country = country;
+            Latitude = latitude;
+            Longitude = longitude;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 

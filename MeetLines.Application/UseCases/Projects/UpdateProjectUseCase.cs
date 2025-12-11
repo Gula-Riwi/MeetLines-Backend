@@ -60,7 +60,7 @@ namespace MeetLines.Application.UseCases.Projects
                     project.UpdateSubdomain(request.Subdomain);
                 }
 
-                project.UpdateDetails(request.Name, request.Industry, request.Description);
+                project.UpdateDetails(request.Name, request.Industry, request.Description, request.Address, request.City, request.Country, request.Latitude, request.Longitude);
 
                 // Update WhatsApp integration fields if provided
                 if (!string.IsNullOrWhiteSpace(request.WhatsappVerifyToken) || !string.IsNullOrWhiteSpace(request.WhatsappPhoneNumberId) || !string.IsNullOrWhiteSpace(request.WhatsappAccessToken) || !string.IsNullOrWhiteSpace(request.WhatsappForwardWebhook))
@@ -88,6 +88,11 @@ namespace MeetLines.Application.UseCases.Projects
             Subdomain = project.Subdomain,
             Industry = project.Industry,
             Description = project.Description,
+            Address = project.Address,
+            City = project.City,
+            Country = project.Country,
+            Latitude = project.Latitude,
+            Longitude = project.Longitude,
             Status = project.Status,
             CreatedAt = project.CreatedAt,
             UpdatedAt = project.UpdatedAt,
