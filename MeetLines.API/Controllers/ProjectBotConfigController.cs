@@ -64,11 +64,7 @@ namespace MeetLines.API.Controllers
                 return NotFound(new { message = "Bot configuration not found" });
             }
             return Ok(config);
-            if (config == null)
-            {
-                return NotFound(new { message = "Bot configuration not found" });
-            }
-            return Ok(config);
+
         }
 
         /// <summary>

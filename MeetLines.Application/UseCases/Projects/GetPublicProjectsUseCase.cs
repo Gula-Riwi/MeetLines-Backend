@@ -35,8 +35,7 @@ namespace MeetLines.Application.UseCases.Projects
                 Id = project.Id,
                 Name = project.Name,
                 Description = project.Description ?? string.Empty,
-                Industry = project.Industry ?? string.Empty,
-                Subdomain = project.Subdomain
+                Industry = project.Industry ?? string.Empty
             };
         }
     }
