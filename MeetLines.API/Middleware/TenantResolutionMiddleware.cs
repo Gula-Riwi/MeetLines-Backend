@@ -62,7 +62,6 @@ namespace MeetLines.API.Middleware
                 
                 // ===== WEBHOOKS =====
                 "/webhook/whatsapp",
-                "/webhook/telegram",  // Telegram webhook (identifica proyecto por botToken en URL)
                 "/webhook/",
                 "/whatsapp", // n8n may call the top-level /whatsapp path (keep as public)
                 
