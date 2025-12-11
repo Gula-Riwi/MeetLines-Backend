@@ -100,7 +100,7 @@ namespace MeetLines.Application.UseCases.Projects
                 // Por defecto desde configuración (similar a WhatsApp)
                 forwardWebhook = _configuration["TELEGRAM_FORWARD_WEBHOOK"] 
                     ?? _configuration["Webhooks:N8nBaseUrl"] 
-                    ?? "http://localhost:5678/webhook/telegram-bot";
+                    ?? "https://services.meet-lines.com/webhook/telegram-bot";
             }
 
             // 4️⃣ Actualizar proyecto con los datos de Telegram

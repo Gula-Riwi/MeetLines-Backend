@@ -42,42 +42,7 @@ namespace MeetLines.API.Controllers
              return Ok(projects.Select(p => new { p.Id, p.Name, p.Subdomain, p.TelegramBotToken }));
         }
 
-        [HttpPost("debug-update")]
-        public async Task<ActionResult> DebugUpdateProject([FromBody] UpdateTokenRequest req)
-        {
-             if (string.IsNullOrEmpty(req.NgrokUrl)) return BadRequest("NgrokUrl is required");
 
-             var project = await _context.Projects.IgnoreQueryFilters().FirstOrDefaultAsync(p => p.Id == req.ProjectId);
-             if (project == null) return NotFound("Project not found");
-             
-             // 1. Update DB
-             var forwardUrl = !string.IsNullOrWhiteSpace(req.ForwardWebhookUrl) ? req.ForwardWebhookUrl : project.TelegramForwardWebhook;
-             project.UpdateTelegramIntegration(req.BotToken, project.TelegramBotUsername, forwardUrl);
-             await _projectRepository.UpdateAsync(project); 
-
-             // 2. Register Webhook with Telegram
-             // The URL must point to OUR backend controller
-             var webhookUrl = $"{req.NgrokUrl}/webhook/telegram/{req.BotToken}";
-             var client = _httpClientFactory.CreateClient();
-             var telegramApiUrl = $"https://api.telegram.org/bot{req.BotToken}/setWebhook?url={webhookUrl}";
-             
-             var response = await client.GetAsync(telegramApiUrl);
-             var body = await response.Content.ReadAsStringAsync();
-
-             if (!response.IsSuccessStatusCode)
-             {
-                 return StatusCode(500, $"DB Updated, but Webhook failed: {body}");
-             }
-
-             return Ok(new { message = "Updated and Webhook Registered", telegramResponse = body, webhookUrl, forwardUrl });
-        }
-
-        public class UpdateTokenRequest {
-            public Guid ProjectId { get; set; }
-            public string BotToken { get; set; } = null!;
-            public string NgrokUrl { get; set; } = null!;
-            public string? ForwardWebhookUrl { get; set; }
-        }
 
         // --- END DEBUG ---
 
