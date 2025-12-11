@@ -69,6 +69,7 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<IProjectRepository, ProjectRepository>();
             services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
+            services.AddScoped<IChannelRepository, ChannelRepository>();
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IAppUserRepository, AppUserRepository>();
 

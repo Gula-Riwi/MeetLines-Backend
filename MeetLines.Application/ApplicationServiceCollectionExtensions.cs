@@ -6,6 +6,7 @@ using MeetLines.Application.Validators;
 using MeetLines.Application.UseCases.Auth;
 using MeetLines.Application.UseCases.HealthCheck;
 using MeetLines.Application.UseCases.Projects;
+using MeetLines.Application.UseCases.Channels;
 
 namespace MeetLines.Application.IoC
 {
@@ -53,6 +54,13 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IConfigureWhatsappUseCase, ConfigureWhatsappUseCase>();
             services.AddScoped<IGetPublicProjectsUseCase, GetPublicProjectsUseCase>();
             services.AddScoped<IGetPublicProjectEmployeesUseCase, GetPublicProjectEmployeesUseCase>();
+
+            // Channels Use Cases
+            services.AddScoped<ICreateChannelUseCase, CreateChannelUseCase>();
+            services.AddScoped<IGetProjectChannelsUseCase, GetProjectChannelsUseCase>();
+            services.AddScoped<IDeleteChannelUseCase, DeleteChannelUseCase>();
+            services.AddScoped<IGetPublicProjectChannelsUseCase, GetPublicProjectChannelsUseCase>();
+            services.AddScoped<IUpdateChannelUseCase, UpdateChannelUseCase>();
 
             // Registrar validadores de FluentValidation
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
