@@ -12,16 +12,16 @@ namespace MeetLines.Domain.ValueObjects
         public bool Enabled { get; set; } = true;
         
         [JsonPropertyName("welcomeMessage")]
-        public string WelcomeMessage { get; set; } = "¡Hola! Soy {botName}, el asistente virtual de {businessName}. ¿En qué puedo ayudarte?";
+        public string WelcomeMessage { get; set; } = "¡Hola! Soy {botName}, el asistente virtual. ¿En qué puedo ayudarte?";
         
         [JsonPropertyName("intentTriggerKeywords")]
         public string IntentTriggerKeywords { get; set; } = "agendar,reservar,cita,comprar";
         
         [JsonPropertyName("handoffMessage")]
-        public string HandoffMessage { get; set; } = "¡Perfecto! Te ayudo con eso enseguida 📅";
+        public string HandoffMessage { get; set; } = "¡Perfecto! Te ayudo con eso enseguida.";
         
         [JsonPropertyName("outOfHoursMessage")]
-        public string OutOfHoursMessage { get; set; } = "Gracias por contactarnos. Nuestro horario es {hours}. Te responderemos pronto.";
+        public string OutOfHoursMessage { get; set; } = "Gracias por contactarnos. Nuestro horario de atención ha terminado. Te responderemos pronto.";
         
         [JsonPropertyName("customPrompt")]
         public string? CustomPrompt { get; set; }
@@ -46,12 +46,12 @@ namespace MeetLines.Domain.ValueObjects
 
         public int MaxAdvanceBookingDays { get; set; } = 30;
         public int MinAdvanceBookingDays { get; set; } = 0;
-        public string ConfirmationMessage { get; set; } = "✅ ¡Listo! Tu cita está confirmada para el {date} a las {time}.";
+        public string ConfirmationMessage { get; set; } = "✅ ¡Listo! Tu cita está confirmada.";
         public bool SendReminder { get; set; } = true;
         public int ReminderHoursBefore { get; set; } = 24;
         
         [JsonPropertyName("reminderMessage")]
-        public string ReminderMessage { get; set; } = "Hola, te recordamos tu cita mañana a las {time}.";
+        public string ReminderMessage { get; set; } = "Hola, te recordamos tu cita mañana.";
         public bool AllowCancellation { get; set; } = true;
         public int MinCancellationHours { get; set; } = 24;
         public string? CustomPrompt { get; set; }
@@ -104,7 +104,7 @@ namespace MeetLines.Domain.ValueObjects
         public int DaysBetweenAttempts { get; set; } = 30;
         public List<string> Messages { get; set; } = new()
         {
-            "Hola, hace {days} días no te vemos. ¿Te gustaría agendar?",
+            "Hola, hace días no te vemos. ¿Te gustaría agendar?",
             "Hola, ¿cómo has estado? Tenemos disponibilidad esta semana.",
             "Hola, te extrañamos. ¿Podemos ayudarte en algo?"
         };
