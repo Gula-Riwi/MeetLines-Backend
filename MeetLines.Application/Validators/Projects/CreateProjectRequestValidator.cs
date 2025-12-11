@@ -28,20 +28,7 @@ namespace MeetLines.Application.Validators.Projects
                 .WithMessage("La descripción no puede exceder 500 caracteres")
                 .When(x => !string.IsNullOrEmpty(x.Description));
 
-            RuleFor(x => x.WhatsappPhoneNumberId)
-                .MaximumLength(100)
-                .WithMessage("El phone_number_id no puede exceder 100 caracteres")
-                .When(x => !string.IsNullOrEmpty(x.WhatsappPhoneNumberId));
 
-            RuleFor(x => x.WhatsappVerifyToken)
-                .MaximumLength(256)
-                .WithMessage("El verify token no puede exceder 256 caracteres")
-                .When(x => !string.IsNullOrEmpty(x.WhatsappVerifyToken));
-
-            RuleFor(x => x.WhatsappForwardWebhook)
-                .Must(url => string.IsNullOrWhiteSpace(url) || System.Uri.IsWellFormedUriString(url, System.UriKind.Absolute))
-                .WithMessage("El webhook de reenvío debe ser una URL válida")
-                .When(x => !string.IsNullOrEmpty(x.WhatsappForwardWebhook));
         }
     }
 }
