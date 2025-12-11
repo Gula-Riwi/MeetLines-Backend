@@ -152,6 +152,16 @@ namespace MeetLines.Application.Services
                 return Result<AppointmentResponse>.Fail($"Service {request.ServiceId} not found");
             }
 
+            // Validate Employee if provided
+            if (request.EmployeeId.HasValue)
+            {
+                var employee = await _employeeRepository.GetByIdAsync(request.EmployeeId.Value, ct);
+                if (employee == null)
+                {
+                     return Result<AppointmentResponse>.Fail($"Employee {request.EmployeeId} not found");
+                }
+            }
+
             // Get or create AppUser
             var appUser = await _appUserRepository.GetByEmailAsync(request.ClientEmail, ct);
             if (appUser == null)
@@ -160,10 +170,16 @@ namespace MeetLines.Application.Services
                 appUser = new AppUser(
                     email: request.ClientEmail,
                     fullName: request.ClientName,
-                    phone: null, // Could add phone to request later
+                    phone: request.ClientPhone, 
                     authProvider: "bot"
                 );
                 await _appUserRepository.AddAsync(appUser, ct);
+            }
+            else if (!string.IsNullOrEmpty(request.ClientPhone) && string.IsNullOrEmpty(appUser.Phone))
+            {
+                // Update phone if missing
+                appUser.UpdateInfo(appUser.FullName, request.ClientPhone);
+                await _appUserRepository.UpdateAsync(appUser, ct);
             }
 
             // Create appointment with the AppUser
@@ -178,6 +194,11 @@ namespace MeetLines.Application.Services
                 currencySnapshot: service.Currency,
                 userNotes: request.UserNotes
             );
+
+            if (request.EmployeeId.HasValue)
+            {
+                appointment.AssignToEmployee(request.EmployeeId.Value);
+            }
 
             await _appointmentRepository.AddAsync(appointment, ct);
 
