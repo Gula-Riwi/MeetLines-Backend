@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MeetLines.Application.DTOs.Projects;
 using MeetLines.Application.UseCases.Projects;
+using MeetLines.Application.UseCases.Projects.Interfaces;
 using MeetLines.Domain.Repositories;
 using System.Security.Claims;
 
@@ -24,9 +25,11 @@ namespace MeetLines.API.Controllers
         private readonly IUpdateProjectUseCase _updateProjectUseCase;
         private readonly IDeleteProjectUseCase _deleteProjectUseCase;
         private readonly IConfigureWhatsappUseCase _configureWhatsappUseCase;
+        private readonly IConfigureTelegramUseCase _configureTelegramUseCase;
         private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
         private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
         private readonly IConfiguration _configuration;
+
 
         public ProjectsController(
             ICreateProjectUseCase createProjectUseCase,
@@ -35,9 +38,11 @@ namespace MeetLines.API.Controllers
             IUpdateProjectUseCase updateProjectUseCase,
             IDeleteProjectUseCase deleteProjectUseCase,
             IConfigureWhatsappUseCase configureWhatsappUseCase,
+            IConfigureTelegramUseCase configureTelegramUseCase)
             IGetPublicProjectsUseCase getPublicProjectsUseCase,
             IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase,
             IConfiguration configuration)
+
         {
             _createProjectUseCase = createProjectUseCase ?? throw new ArgumentNullException(nameof(createProjectUseCase));
             _getUserProjectsUseCase = getUserProjectsUseCase ?? throw new ArgumentNullException(nameof(getUserProjectsUseCase));
@@ -45,6 +50,7 @@ namespace MeetLines.API.Controllers
             _updateProjectUseCase = updateProjectUseCase ?? throw new ArgumentNullException(nameof(updateProjectUseCase));
             _deleteProjectUseCase = deleteProjectUseCase ?? throw new ArgumentNullException(nameof(deleteProjectUseCase));
             _configureWhatsappUseCase = configureWhatsappUseCase ?? throw new ArgumentNullException(nameof(configureWhatsappUseCase));
+            _configureTelegramUseCase = configureTelegramUseCase ?? throw new ArgumentNullException(nameof(configureTelegramUseCase));
             _getPublicProjectsUseCase = getPublicProjectsUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectsUseCase));
             _getPublicProjectEmployeesUseCase = getPublicProjectEmployeesUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectEmployeesUseCase));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -286,6 +292,25 @@ namespace MeetLines.API.Controllers
             {
                 return StatusCode(500, new { error = "Internal server error" });
             }
+        }
+
+        /// <summary>
+        /// Configura la integración de Telegram para un proyecto
+        /// Sigue el mismo patrón que ConfigureWhatsapp
+        /// </summary>
+        [HttpPatch("{projectId}/telegram")]
+        public async Task<IActionResult> ConfigureTelegram(
+            Guid projectId,
+            [FromBody] ConfigureTelegramRequest request,
+            CancellationToken ct)
+        {
+            var userId = GetUserId();
+            var result = await _configureTelegramUseCase.ExecuteAsync(userId, projectId, request, ct);
+
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.Error });
+
+            return Ok(result.Value);
         }
 
         /// <summary>

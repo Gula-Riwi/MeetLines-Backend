@@ -1,0 +1,703 @@
+{
+  "name": "Recepcion Bot Telegram",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook-test/Telegram",
+        "options": {}
+      },
+      "id": "22b3f868-f7fd-42d8-9b4f-25a6a752fa1e",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -6096,
+        704
+      ],
+      "webhookId": "meetlines-telegram-webhook"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5ed0c4e8-4f03-40dc-81d6-277ae6c20c27",
+              "name": "projectId",
+              "value": "={{ $('Webhook').item.json.headers['x-project-id'] }}",
+              "type": "string"
+            },
+            {
+              "id": "e3a2bfba-9612-4490-bb3c-616c09dc3050",
+              "name": "botToken",
+              "value": "={{ $('Webhook').item.json.headers['x-telegram-bot-token'] }}",
+              "type": "string"
+            },
+            {
+              "id": "9983be08-29f6-4d8c-90e3-f34526691b5d",
+              "name": "mensaje",
+              "value": "={{ $('Webhook').item.json.body.message.text }}",
+              "type": "string"
+            },
+            {
+              "id": "936d593a-8231-4528-8905-73dc58a25840",
+              "name": "tonumber",
+              "value": "={{ $('Webhook').item.json.body.message.chat.id.toString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "24bd8fc5-cd21-49ce-99d0-39cb2ca427d2",
+      "name": "Extract Message Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        -5472,
+        752
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://7e0738e08503.ngrok-free.app/api/Projects/{{ $json.projectId }}/public",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -4656,
+        592
+      ],
+      "id": "fe977602-5a72-44a8-af97-16f3bc407339",
+      "name": "Get project",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "7xzvYiTLUbiNIgOp",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://7e0738e08503.ngrok-free.app/api/projects/{{ $('Extract Message Data').item.json.projectId }}/knowledge-base/search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"projectId\": \"{{ $('Extract Message Data').item.json.projectId }}\",\n  \"query\": \"{{ $('Extract Message Data').item.json.mensaje }}\",\n  \"activeOnly\": true,\n  \"limit\": 3\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -4368,
+        592
+      ],
+      "id": "bca5ea16-c46b-4ff4-a8e3-c662d9a60d69",
+      "name": "get respuestas",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "7xzvYiTLUbiNIgOp",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://7e0738e08503.ngrok-free.app/api/projects/{{ $json.id }}/bot-config",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -4512,
+        592
+      ],
+      "id": "5a0af82a-9250-4e52-9ab7-ed3a07abb47d",
+      "name": "get bot config",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "7xzvYiTLUbiNIgOp",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract Message Data').item.json.mensaje }}",
+        "options": {
+          "systemMessage": "=Eres {{ $('get bot config').item.json.botName || 'el asistente virtual' }} de {{ $('Get project').item.json.name }}.\n\nCONTEXTO:\n- Industria: {{ $('get bot config').item.json.industry }}\n- Tono: {{ $('get bot config').item.json.tone }}\n- Tu rol: Asistente de atención al cliente\n\nINFORMACIÓN DE LA BASE DE CONOCIMIENTO:\n{{ $('get respuestas').item.json.answer || 'No se encontró información específica en la base de conocimiento.' }}\n\nMENSAJE DEL CLIENTE:\n{{ $('Extract Message Data').item.json.mensaje }}\n\nINSTRUCCIONES DE RESPUESTA:\n\n1. SI LA BASE DE CONOCIMIENTO TIENE INFORMACIÓN (arriba):\n   - Usa ESA información para responder\n   - Sé preciso y específico\n   - No inventes ni agregues información extra\n\n2. SI LA BASE DE CONOCIMIENTO ESTÁ VACÍA:\n   - Responde con información general sobre {{ $('get bot config').item.json.industry }}\n   - Ofrece contactar directamente para detalles específicos\n   - Ejemplo: \"Para información específica sobre [tema], te recomiendo contactarnos directamente. ¿Hay algo más en lo que pueda ayudarte? 😊\"\n\n3. TEMAS PERMITIDOS:\n   ✅ Servicios de {{ $('Get project').item.json.name }}\n   ✅ Precios y promociones\n   ✅ Horarios de atención\n   ✅ Ubicación y contacto\n\n4. TEMAS PROHIBIDOS:\n   ❌ Temas generales (clima, noticias, política)\n   ❌ Otros negocios\n   ❌ Temas fuera de {{ $('get bot config').item.json.industry }}\n   \n   Si preguntan algo prohibido: \"Lo siento, solo puedo ayudarte con información sobre {{ $('Get project').item.json.name }}. ¿Tienes alguna pregunta sobre nuestros servicios? 😊\"\n\n5. ESTILO:\n   - Máximo 2-3 líneas\n   - Tono: {{ $('get bot config').item.json.tone }}\n   - Usa emojis ocasionalmente\n   - Sé natural y conversacional\n   - NO menciones palabras como \"agendar\", \"reservar\", \"cita\"\n\nResponde ahora:"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -4224,
+        592
+      ],
+      "id": "6d8f52b6-ca2f-4579-a10e-88e78274544f",
+      "name": "Agente recepcion"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener el output, puede venir de diferentes nodos\nconst aiOutput = $input.item.json.output || $input.item.json.aiResponse || '';\n\n// Validar que aiOutput existe y es string\nif (!aiOutput || typeof aiOutput !== 'string') {\n  return [{\n    json: {\n      cleanResponse: '',\n      intent: null,\n      sentiment: null,\n      intentConfidence: null,\n      error: 'No AI output found'\n    }\n  }];\n}\n\n// Extraer la respuesta limpia\nconst lines = aiOutput.split('\\n');\nlet cleanResponse = '';\nlet intent = null;\nlet sentiment = null;\n\nfor (const line of lines) {\n  if (line.startsWith('INTENT:')) {\n    intent = line.replace('INTENT:', '').trim();\n  } else if (line.startsWith('SENTIMENT:')) {\n    sentiment = parseFloat(line.replace('SENTIMENT:', '').trim());\n  } else if (line.trim()) {\n    cleanResponse += line + '\\n';\n  }\n}\n\nreturn [{\n  json: {\n    cleanResponse: cleanResponse.trim(),\n    intent: intent,\n    sentiment: sentiment,\n    intentConfidence: intent ? 0.85 : null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3936,
+        592
+      ],
+      "id": "9c6dd296-7ce4-4c06-9098-a94b7bceead1",
+      "name": "Parse AI Response"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://7e0738e08503.ngrok-free.app/api/projects/{{ $('Extract Message Data').item.json.projectId }}/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"projectId\": \"{{ $('Get project').first().json.id }}\",\n  \"customerPhone\": \"{{ $('Extract Message Data').first().json.tonumber }}\",\n  \"customerName\": \"Unknown\",\n  \"customerMessage\": \"{{ $('Extract Message Data').first().json.mensaje }}\",\n  \"botResponse\": \"¡Perfecto! Vamos a agendar tu cita.\",\n  \"botType\": \"transactional\",\n  \"intent\": \"agendar_cita\",\n  \"metadataJson\": \"{\\\"step\\\":\\\"ask_service\\\",\\\"selectedService\\\":null,\\\"selectedServiceId\\\":null,\\\"selectedDate\\\":null,\\\"selectedTime\\\":null,\\\"selectedEmployeeId\\\":null,\\\"selectedEmployeeName\\\":null}\",\n  \"lastMessage\": \"{{ $('Extract Message Data').first().json.mensaje }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -3760,
+        592
+      ],
+      "id": "6179c908-ca9e-421c-8dcb-2809df10cab1",
+      "name": "guardar conversacion",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "7xzvYiTLUbiNIgOp",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener respuesta de OpenAI del input actual\nconst aiResponse = ($input.first().json.output || '').toLowerCase();\n\n// Obtener mensaje del usuario del nodo Extract Message Data\nlet userMessage = '';\n\n// Buscar en todos los items del input\nconst allItems = $input.all();\nfor (const item of allItems) {\n  if (item.json.mensaje) {\n    userMessage = item.json.mensaje.toLowerCase();\n    break;\n  }\n}\n\n// Si no está en el input actual, intentar acceder directamente al nodo\nif (!userMessage) {\n  try {\n    userMessage = ($('Extract Message Data').first().json.mensaje || '').toLowerCase();\n  } catch (e) {\n    userMessage = '';\n  }\n}\n\n// Keywords de agendamiento - SOLO en mensaje del USUARIO\nconst bookingKeywords = [\n  'quiero agendar',\n  'necesito agendar',\n  'quiero reservar',\n  'necesito reservar',\n  'quiero una cita',\n  'necesito una cita',\n  'agendar cita',\n  'reservar cita',\n  'sacar cita',\n  'pedir cita',\n  'hacer cita'\n];\n\n// SOLO detectar si el USUARIO menciona agendamiento explícitamente\nconst userHasIntent = bookingKeywords.some(k => userMessage.includes(k));\n\n// NO detectar en respuesta de AI (eso causa falsos positivos)\nconst hasBookingIntent = userHasIntent;\n\nreturn {\n  json: {\n    intent: hasBookingIntent ? 'BOOKING' : 'GENERAL',\n    aiResponse: $input.first().json.output,\n    userMessage: userMessage,\n    detectedIn: userHasIntent ? 'user_message' : 'none'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3616,
+        592
+      ],
+      "id": "0744593d-554d-499e-8d31-78aa9c9d409b",
+      "name": "Detect Booking Intent"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "BOOKING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0a610296-5de5-499b-af69-457b99f54280"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d52d149a-5268-49e5-b9a4-ff9a3d84688d",
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "GENERAL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -3408,
+        592
+      ],
+      "id": "c47d6c33-cde8-4b15-b949-f35530b7e2e7",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rojascrew.app.n8n.cloud/webhook/webhook/transactional-bot",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"{{$('Extract Message Data').first().json.tonumber}}\",\n  \"message\": \"{{$('Extract Message Data').first().json.mensaje}}\",\n  \"projectId\": \"{{$('Extract Message Data').first().json.projectId}}\",\n  \"phoneNumberId\": \"{{$('Extract Message Data').first().json.projectId}}\",\n  \"conversationId\": \"{{$json.conversationId || $('guardar conversacion').first().json.id}}\",\n  \"triggeredBy\": \"reception_bot\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2832,
+        384
+      ],
+      "id": "9561ae52-bfdf-489c-bc40-59aca29a7055",
+      "name": "Trigger Bot 2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://7e0738e08503.ngrok-free.app/api/telegram/send-message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "=X-Project-Id",
+              "value": "={{ $('Extract Message Data').item.json.projectId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"toChatId\": \"{{ $('Extract Message Data').item.json.tonumber }}\",\n  \"messageText\": \"{{ $('Parse AI Response').item.json.cleanResponse }}\"\n}",
+        "options": {}
+      },
+      "id": "984b3dc8-d879-433d-9eb1-3e42352dfcaa",
+      "name": "Send Telegram Message Bot recepcion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2992,
+        672
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://7e0738e08503.ngrok-free.app/api/telegram/send-message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "=X-Project-Id",
+              "value": "={{ $('Extract Message Data').item.json.projectId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"toChatId\": \"{{$('Extract Message Data').first().json.tonumber}}\",\n  \"messageText\": \"¡Perfecto! 📅 Te ayudaré a agendar tu cita. Un momento...\"\n}",
+        "options": {}
+      },
+      "id": "632e5477-2244-4537-a56b-cd8109aac898",
+      "name": "Send Telegram Message route bot Transaction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -3008,
+        496
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Message Data').item.json.tonumber }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -4112,
+        896
+      ],
+      "id": "03ea4ef5-002a-4330-94c9-8d9fd8172500",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst conversations = response.body || response; // Si viene en body, úsalo, sino usa response directo\nconst webhookData = $('Extract Message Data').first().json;\n\nconst now = new Date();\nconst oneDayAgo = new Date(now.getTime() - 24*60*60*1000);\n\nlet hasActiveConversation = false;\nlet conversationId = null;\n\nif (Array.isArray(conversations) && conversations.length > 0) {\n  const transactionalConvs = conversations\n    .filter(c => c.botType === 'transactional')\n    .filter(c => {\n      const created = new Date(c.createdAt);\n      return created > oneDayAgo;\n    })\n    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));\n  \n  if (transactionalConvs.length > 0) {\n    const latest = transactionalConvs[0];\n    \n    let isDone = false;\n    if (latest.metadataJson) {\n      try {\n        const metadata = JSON.parse(latest.metadataJson);\n        isDone = metadata.step === 'done';\n      } catch (e) {}\n    }\n    \n    if (!isDone) {\n      hasActiveConversation = true;\n      conversationId = latest.id;\n    }\n  }\n}\n\nreturn [{\n  json: {\n    hasActiveConversation,\n    conversationId,\n    ...webhookData\n  },\n  pairedItem: 0\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -5104,
+        736
+      ],
+      "id": "dda73e93-a999-4473-ad75-2dcccff21ade",
+      "name": "Parse Active Conversation"
+    },
+    {
+      "parameters": {
+        "url": "=https://7e0738e08503.ngrok-free.app/api/projects/{{$('Extract Message Data').first().json.projectId}}/conversations/customer/{{$('Extract Message Data').first().json.tonumber}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -5264,
+        736
+      ],
+      "id": "c1cbe4a7-33a4-4023-9c59-8de30c6ea90a",
+      "name": "Check Active Conversation",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "7xzvYiTLUbiNIgOp",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.hasActiveConversation }}",
+                    "rightValue": false,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    },
+                    "id": "cc6cb8bf-e86e-4dfb-8430-97f538785515"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -4896,
+        672
+      ],
+      "id": "40593621-e082-4940-a0e5-2b9f168308fb",
+      "name": "has Active Conversation"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://7e0738e08503.ngrok-free.app/api/projects/{{ $('Get project').item.json.id }}/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"projectId\": \"{{ $('Get project').first().json.id }}\",\n  \"customerPhone\": \"{{ $('Extract Message Data').first().json.tonumber }}\",\n  \"customerName\": \"Unknown\",\n  \"customerMessage\": \"{{ $('Extract Message Data').first().json.mensaje }}\",\n  \"botResponse\": \"¡Perfecto! Vamos a agendar tu cita.\",\n  \"botType\": \"transactional\",\n  \"intent\": \"agendar_cita\",\n  \"metadataJson\": \"{\\\"step\\\":\\\"ask_service\\\",\\\"selectedService\\\":null,\\\"selectedServiceId\\\":null,\\\"selectedDate\\\":null,\\\"selectedTime\\\":null,\\\"selectedEmployeeId\\\":null,\\\"selectedEmployeeName\\\":null}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -3232,
+        544
+      ],
+      "id": "4db3f0c6-bb06-47ab-9f4b-b30f8f2b4ecc",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "7xzvYiTLUbiNIgOp",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        -4304,
+        816
+      ],
+      "id": "85fcfd9b-e5ab-4ee4-a5d5-44bc64770dea",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "iwKj54bMuqT4S83f",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message Data": {
+      "main": [
+        [
+          {
+            "node": "Check Active Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get project": {
+      "main": [
+        [
+          {
+            "node": "get bot config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get respuestas": {
+      "main": [
+        [
+          {
+            "node": "Agente recepcion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get bot config": {
+      "main": [
+        [
+          {
+            "node": "get respuestas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente recepcion": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "guardar conversacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "guardar conversacion": {
+      "main": [
+        [
+          {
+            "node": "Detect Booking Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Booking Intent": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Telegram Message Bot recepcion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente recepcion",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Active Conversation": {
+      "main": [
+        [
+          {
+            "node": "has Active Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Active Conversation": {
+      "main": [
+        [
+          {
+            "node": "Parse Active Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "has Active Conversation": {
+      "main": [
+        [
+          {
+            "node": "Get project",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Trigger Bot 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send Telegram Message route bot Transaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Telegram Message route bot Transaction": {
+      "main": [
+        [
+          {
+            "node": "Trigger Bot 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente recepcion",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "13ceb75d-29c0-4c57-b487-7cbe57d74701",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "6a99983c5c90dd99bc97a6ac4aeb4042f3342ff3c213dd96a373584027e31ffe"
+  },
+  "id": "lGGk9lfJk0tCB1O2",
+  "tags": []
+}

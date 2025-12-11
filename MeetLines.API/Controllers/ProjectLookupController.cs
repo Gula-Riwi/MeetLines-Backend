@@ -70,6 +70,54 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Gets project by Telegram Bot Token
+        /// Used by n8n to identify which project a Telegram message belongs to
+        /// Requires header: Authorization: Bearer {INTEGRATIONS_API_KEY}
+        /// </summary>
+        [HttpGet("by-telegram-token/{botToken}")]
+        public async Task<ActionResult> GetByTelegramBotToken(string botToken, CancellationToken ct = default)
+        {
+            try
+            {
+                // Validate API key
+                if (!ValidateApiKey())
+                {
+                    _logger.LogWarning("Unauthorized access attempt to project lookup by Telegram token");
+                    return Unauthorized(new { error = "Invalid or missing API key" });
+                }
+
+                // Query directly without tenant filter
+                var project = await _context.Projects
+                    .AsNoTracking()
+                    .IgnoreQueryFilters()
+                    .FirstOrDefaultAsync(p => p.TelegramBotToken == botToken, ct);
+
+                if (project == null)
+                {
+                    _logger.LogWarning("Project not found for Telegram Bot Token: {TokenPrefix}...", botToken.Length > 10 ? botToken.Substring(0, 10) : botToken);
+                    return NotFound(new { message = "No project found for the provided Telegram bot token" });
+                }
+
+                _logger.LogInformation("Project {ProjectId} found for Telegram Bot Token", project.Id);
+
+                return Ok(new
+                {
+                    projectId = project.Id,
+                    projectName = project.Name,
+                    subdomain = project.Subdomain,
+                    industry = project.Industry,
+                    telegramBotUsername = project.TelegramBotUsername,
+                    userId = project.UserId
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving project by Telegram Bot Token");
+                return StatusCode(500, new { error = "Internal server error" });
+            }
+        }
+
+        /// <summary>
         /// Gets project by subdomain
         /// Alternative method for project lookup
         /// Requires header: Authorization: Bearer {INTEGRATIONS_API_KEY}
