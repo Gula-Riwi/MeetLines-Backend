@@ -12,10 +12,6 @@ namespace MeetLines.Domain.Entities
         public string? WhatsappPhoneNumberId { get; private set; }
         public string? WhatsappAccessToken { get; private set; }
         public string? WhatsappForwardWebhook { get; private set; }
-        // Telegram integration fields
-        public string? TelegramBotToken { get; private set; }
-        public string? TelegramBotUsername { get; private set; }
-        public string? TelegramForwardWebhook { get; private set; }
         public string? Industry { get; private set; }
         public string? Description { get; private set; }
         public string? WorkingHours { get; private set; } // jsonb
@@ -68,17 +64,7 @@ namespace MeetLines.Domain.Entities
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        public void UpdateTelegramIntegration(string? botToken, string? botUsername, string? forwardWebhook)
-        {
-            TelegramBotToken = string.IsNullOrWhiteSpace(botToken) ? null : botToken;
-            TelegramBotUsername = string.IsNullOrWhiteSpace(botUsername) ? null : botUsername;
-            TelegramForwardWebhook = string.IsNullOrWhiteSpace(forwardWebhook) ? null : forwardWebhook;
-            UpdatedAt = DateTimeOffset.UtcNow;
-        }
-
-
         public void UpdateDetails(string name, string? industry, string? description, string? address, string? city, string? country, double? latitude = null, double? longitude = null)
-          
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name cannot be empty", nameof(name));
             Name = name;

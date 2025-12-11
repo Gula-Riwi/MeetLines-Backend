@@ -6,7 +6,6 @@ using MeetLines.Application.Validators;
 using MeetLines.Application.UseCases.Auth;
 using MeetLines.Application.UseCases.HealthCheck;
 using MeetLines.Application.UseCases.Projects;
-using MeetLines.Application.UseCases.Projects.Interfaces;
 using MeetLines.Application.UseCases.Channels;
 
 namespace MeetLines.Application.IoC
@@ -55,7 +54,6 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IUpdateProjectUseCase, UpdateProjectUseCase>();
             services.AddScoped<IDeleteProjectUseCase, DeleteProjectUseCase>();
             services.AddScoped<IConfigureWhatsappUseCase, ConfigureWhatsappUseCase>();
-            services.AddScoped<IConfigureTelegramUseCase, ConfigureTelegramUseCase>();
             services.AddScoped<IGetPublicProjectsUseCase, GetPublicProjectsUseCase>();
             services.AddScoped<IGetPublicProjectEmployeesUseCase, GetPublicProjectEmployeesUseCase>();
 

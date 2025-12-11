@@ -87,15 +87,10 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.WhatsappPhoneNumberId).HasColumnName("whatsapp_phone_number_id").HasMaxLength(100);
                 b.Property(x => x.WhatsappAccessToken).HasColumnName("whatsapp_access_token");
                 b.Property(x => x.WhatsappForwardWebhook).HasColumnName("whatsapp_forward_webhook");
-                // Telegram Integration
-                b.Property(x => x.TelegramBotToken).HasColumnName("telegram_bot_token").HasMaxLength(100);
-                b.Property(x => x.TelegramBotUsername).HasColumnName("telegram_bot_username").HasMaxLength(100);
-                b.Property(x => x.TelegramForwardWebhook).HasColumnName("telegram_forward_webhook");
                 b.HasOne<SaasUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.UserId).HasDatabaseName("idx_projects_user");
                 b.HasIndex(x => x.Subdomain).IsUnique().HasDatabaseName("idx_projects_subdomain");
                 b.HasIndex(x => x.WhatsappPhoneNumberId).HasDatabaseName("idx_projects_whatsapp_phone_number_id");
-                b.HasIndex(x => x.TelegramBotToken).HasDatabaseName("idx_projects_telegram_bot_token");
             });
 
             // Channels
