@@ -27,6 +27,7 @@ namespace MeetLines.Infrastructure.Data
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<AppUser> AppUsers { get; set; }
+        public DbSet<Payment> Payments { get; set; }
         
         // WhatsApp Bot System
         public DbSet<ProjectBotConfig> ProjectBotConfigs { get; set; }
@@ -104,6 +105,18 @@ namespace MeetLines.Infrastructure.Data
                 b.HasOne<Project>().WithMany().HasForeignKey(c => c.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_channels_project");
                 b.HasIndex(x => x.Type).HasDatabaseName("idx_channels_type");
+            });
+            
+            // Payments
+            modelBuilder.Entity<Payment>(b =>
+            {
+                b.ToTable("payments");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.Amount).HasColumnType("numeric(10,2)");
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.HasOne<SaasUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => x.UserId).HasDatabaseName("idx_payments_user");
             });
             
 

@@ -23,6 +23,7 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IProfileService, ProfileService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<IMercadoPagoService, MercadoPagoService>();
 
             // WhatsApp Bot System Services
             services.AddScoped<IProjectBotConfigService, ProjectBotConfigService>();
@@ -65,6 +66,7 @@ namespace MeetLines.Application.IoC
 
             // Registrar validadores de FluentValidation
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+            
 
             return services;
         }
