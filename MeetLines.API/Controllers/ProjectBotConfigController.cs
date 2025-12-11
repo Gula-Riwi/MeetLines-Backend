@@ -97,7 +97,8 @@ namespace MeetLines.API.Controllers
                 var config = await _service.GetByProjectIdAsync(projectId, ct);
                 if (config == null)
                 {
-                    return NotFound(new { message = "Bot configuration not found" });
+                    // Return 204 No Content to avoid browser 404 error
+                    return NoContent();
                 }
                 return Ok(config);
             }
