@@ -51,6 +51,8 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IUpdateProjectUseCase, UpdateProjectUseCase>();
             services.AddScoped<IDeleteProjectUseCase, DeleteProjectUseCase>();
             services.AddScoped<IConfigureWhatsappUseCase, ConfigureWhatsappUseCase>();
+            services.AddScoped<IGetPublicProjectsUseCase, GetPublicProjectsUseCase>();
+            services.AddScoped<IGetPublicProjectEmployeesUseCase, GetPublicProjectEmployeesUseCase>();
 
             // Registrar validadores de FluentValidation
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
