@@ -73,6 +73,51 @@ namespace MeetLines.API.Controllers
             }
         }
 
+        /// <summary>
+        /// Obtiene las credenciales de Telegram de un proyecto.
+        /// Requiere header: Authorization: Bearer {INTEGRATIONS_API_KEY}
+        /// GET: /api/project-credentials/{projectId}/telegram
+        /// </summary>
+        [HttpGet("{projectId}/telegram")]
+        [ProducesResponseType(typeof(TelegramCredentialsResponse), 200)]
+        [ProducesResponseType(typeof(ErrorResponse), 401)]
+        [ProducesResponseType(typeof(ErrorResponse), 404)]
+        [ProducesResponseType(typeof(ErrorResponse), 500)]
+        public async Task<IActionResult> GetTelegramCredentials(Guid projectId, CancellationToken ct)
+        {
+            try
+            {
+                // Validate API key
+                if (!ValidateApiKey())
+                    return Unauthorized(new ErrorResponse { Error = "Invalid or missing API key" });
+
+                if (projectId == Guid.Empty)
+                    return BadRequest(new ErrorResponse { Error = "Invalid project ID" });
+
+                var project = await _projectRepository.GetAsync(projectId, ct);
+                if (project == null)
+                    return NotFound(new ErrorResponse { Error = "Project not found" });
+
+                // Only return credentials if Telegram integration is configured
+                if (string.IsNullOrWhiteSpace(project.TelegramBotToken))
+                    return NotFound(new ErrorResponse { Error = "Telegram integration not configured for this project" });
+
+                var response = new TelegramCredentialsResponse
+                {
+                    ProjectId = project.Id,
+                    BotToken = project.TelegramBotToken,
+                    Subdomain = project.Subdomain
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving Telegram credentials for project {ProjectId}", projectId);
+                return StatusCode(500, new ErrorResponse { Error = "Internal server error" });
+            }
+        }
+
         private bool ValidateApiKey()
         {
             if (string.IsNullOrWhiteSpace(_apiKey))
@@ -95,6 +140,13 @@ namespace MeetLines.API.Controllers
         public Guid ProjectId { get; set; }
         public string PhoneNumberId { get; set; } = string.Empty;
         public string AccessToken { get; set; } = string.Empty;
+        public string Subdomain { get; set; } = string.Empty;
+    }
+
+    public class TelegramCredentialsResponse
+    {
+        public Guid ProjectId { get; set; }
+        public string BotToken { get; set; } = string.Empty;
         public string Subdomain { get; set; } = string.Empty;
     }
 
