@@ -1,0 +1,871 @@
+{
+  "name": "Recepcion Bot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "webhook-test/whatsapp",
+        "options": {}
+      },
+      "id": "f6daa7ca-07a7-4ece-922d-ee447a7b6f06",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -3248,
+        400
+      ],
+      "webhookId": "meetlines-whatsapp-webhook"
+    },
+    {
+      "parameters": {
+        "url": "={{ \"https://services.meet-lines.com/api/project-credentials/\" + $('Webhook').item.json.headers['x-project-id'] + \"/whatsapp\" }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "644ad988-dfc2-4326-a350-b759fc598001",
+      "name": "Fetch WhatsApp Credentials",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -2960,
+        400
+      ],
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "80z9OTIpJEBIaX4v",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5ed0c4e8-4f03-40dc-81d6-277ae6c20c27",
+              "name": "projectId",
+              "value": "={{ $('Get idproject').item.json.projectId }}",
+              "type": "string"
+            },
+            {
+              "id": "e3a2bfba-9612-4490-bb3c-616c09dc3050",
+              "name": "phoneNumberId",
+              "value": "={{ $('Webhook').item.json.body.entry[0].changes[0].value.metadata.phone_number_id }}",
+              "type": "string"
+            },
+            {
+              "id": "9983be08-29f6-4d8c-90e3-f34526691b5d",
+              "name": "mensaje",
+              "value": "={{ $('Webhook').item.json.body.entry[0].changes[0].value.messages[0].text.body }}",
+              "type": "string"
+            },
+            {
+              "id": "936d593a-8231-4528-8905-73dc58a25840",
+              "name": "tonumber",
+              "value": "={{ $('Webhook').item.json.body.entry[0].changes[0].value.messages[0].from }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "24bd6097-592a-404a-bd47-8c6dd3d87d78",
+      "name": "Extract Message Data",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.3,
+      "position": [
+        -2720,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "url": "=https://services.meet-lines.com/api/projects/by-whatsapp-id/{{ $json.body.entry[0].changes[0].value.metadata.phone_number_id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -3104,
+        400
+      ],
+      "id": "c3fbabca-c6ab-4dec-9eb0-1155d43a63f4",
+      "name": "Get idproject",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "80z9OTIpJEBIaX4v",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://services.meet-lines.com/api/Projects/{{ $json.projectId }}/public",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1904,
+        240
+      ],
+      "id": "defb486c-16ad-4c10-a6f3-7eb660e297c4",
+      "name": "Get project",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "80z9OTIpJEBIaX4v",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.meet-lines.com/api/projects/{{ $('Get idproject').item.json.projectId }}/knowledge-base/search",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"projectId\": \"{{ $('Get idproject').item.json.projectId }}\",\n  \"query\": \"{{ $('Extract Message Data').item.json.mensaje }}\",\n  \"activeOnly\": true,\n  \"limit\": 3\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1616,
+        240
+      ],
+      "id": "b72f83f6-29bc-4e0a-b8fc-4f796670d4d0",
+      "name": "get respuestas",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "80z9OTIpJEBIaX4v",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        -1584,
+        512
+      ],
+      "id": "79cc8c55-4d60-4f72-8e83-3ba889ed3ad6",
+      "name": "OpenAI Chat Model1"
+    },
+    {
+      "parameters": {
+        "url": "=https://services.meet-lines.com/api/projects/{{ $json.id }}/bot-config",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1760,
+        240
+      ],
+      "id": "a6578090-82c7-40d8-ab8c-7d7ef399e30d",
+      "name": "get bot config",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "80z9OTIpJEBIaX4v",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Extract Message Data').item.json.mensaje }}",
+        "options": {
+          "systemMessage": "=Eres {{ $('get bot config').item.json.botName || 'el asistente virtual' }} de {{ $('Get project').item.json.name }}.\n\nCONTEXTO:\n- Industria: {{ $('get bot config').item.json.industry }}\n- Tono: {{ $('get bot config').item.json.tone }}\n- Tu rol: Asistente de atención al cliente\n\nINFORMACIÓN DE LA BASE DE CONOCIMIENTO:\n{{ $('get respuestas').item.json.answer || 'No se encontró información específica en la base de conocimiento.' }}\n\nMENSAJE DEL CLIENTE:\n{{ $('Extract Message Data').item.json.mensaje }}\n\nINSTRUCCIONES DE RESPUESTA:\n\n1. SI LA BASE DE CONOCIMIENTO TIENE INFORMACIÓN (arriba):\n   - Usa ESA información para responder\n   - Sé preciso y específico\n   - No inventes ni agregues información extra\n\n2. SI LA BASE DE CONOCIMIENTO ESTÁ VACÍA:\n   - Responde con información general sobre {{ $('get bot config').item.json.industry }}\n   - Ofrece contactar directamente para detalles específicos\n   - Ejemplo: \"Para información específica sobre [tema], te recomiendo contactarnos directamente. ¿Hay algo más en lo que pueda ayudarte? 😊\"\n\n3. TEMAS PERMITIDOS:\n   ✅ Servicios de {{ $('Get project').item.json.name }}\n   ✅ Precios y promociones\n   ✅ Horarios de atención\n   ✅ Ubicación y contacto\n\n4. TEMAS PROHIBIDOS:\n   ❌ Temas generales (clima, noticias, política)\n   ❌ Otros negocios\n   ❌ Temas fuera de {{ $('get bot config').item.json.industry }}\n   \n   Si preguntan algo prohibido: \"Lo siento, solo puedo ayudarte con información sobre {{ $('Get project').item.json.name }}. ¿Tienes alguna pregunta sobre nuestros servicios? 😊\"\n\n5. ESTILO:\n   - Máximo 2-3 líneas\n   - Tono: {{ $('get bot config').item.json.tone }}\n   - Usa emojis ocasionalmente\n   - Sé natural y conversacional\n   - NO menciones palabras como \"agendar\", \"reservar\", \"cita\"\n\nResponde ahora:"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3,
+      "position": [
+        -1472,
+        240
+      ],
+      "id": "38e71562-57b9-4ad5-9edb-414c7e927e6e",
+      "name": "Agente recepcion"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener el output, puede venir de diferentes nodos\nconst aiOutput = $input.item.json.output || $input.item.json.aiResponse || '';\n\n// Validar que aiOutput existe y es string\nif (!aiOutput || typeof aiOutput !== 'string') {\n  return [{\n    json: {\n      cleanResponse: '',\n      intent: null,\n      sentiment: null,\n      intentConfidence: null,\n      error: 'No AI output found'\n    }\n  }];\n}\n\n// Extraer la respuesta limpia\nconst lines = aiOutput.split('\\n');\nlet cleanResponse = '';\nlet intent = null;\nlet sentiment = null;\n\nfor (const line of lines) {\n  if (line.startsWith('INTENT:')) {\n    intent = line.replace('INTENT:', '').trim();\n  } else if (line.startsWith('SENTIMENT:')) {\n    sentiment = parseFloat(line.replace('SENTIMENT:', '').trim());\n  } else if (line.trim()) {\n    cleanResponse += line + '\\n';\n  }\n}\n\nreturn [{\n  json: {\n    cleanResponse: cleanResponse.trim(),\n    intent: intent,\n    sentiment: sentiment,\n    intentConfidence: intent ? 0.85 : null\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1184,
+        240
+      ],
+      "id": "9c5b74a4-6ba2-4cc9-8c1a-8c7b37d12d00",
+      "name": "Parse AI Response"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.meet-lines.com/api/projects/{{ $('Extract Message Data').item.json.projectId }}/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"projectId\": \"{{ $('Get project').first().json.id }}\",\n  \"customerPhone\": \"{{ $('Extract Message Data').first().json.tonumber }}\",\n  \"customerName\": \"Unknown\",\n  \"customerMessage\": \"{{ $('Extract Message Data').first().json.mensaje }}\",\n  \"botResponse\": \"¡Perfecto! Vamos a agendar tu cita.\",\n  \"botType\": \"transactional\",\n  \"intent\": \"agendar_cita\",\n  \"metadataJson\": \"{\\\"step\\\":\\\"ask_service\\\",\\\"selectedService\\\":null,\\\"selectedServiceId\\\":null,\\\"selectedDate\\\":null,\\\"selectedTime\\\":null,\\\"selectedEmployeeId\\\":null,\\\"selectedEmployeeName\\\":null}\",\n  \"lastMessage\": \"{{ $('Extract Message Data').first().json.mensaje }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -1008,
+        240
+      ],
+      "id": "068f5451-471a-480a-868e-64b0daee6a94",
+      "name": "guardar conversacion",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "80z9OTIpJEBIaX4v",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Obtener respuesta de OpenAI del input actual\nconst aiResponse = ($input.first().json.output || '').toLowerCase();\n\n// Obtener mensaje del usuario del nodo Extract Message Data\nlet userMessage = '';\n\n// Buscar en todos los items del input\nconst allItems = $input.all();\nfor (const item of allItems) {\n  if (item.json.mensaje) {\n    userMessage = item.json.mensaje.toLowerCase();\n    break;\n  }\n}\n\n// Si no está en el input actual, intentar acceder directamente al nodo\nif (!userMessage) {\n  try {\n    userMessage = ($('Extract Message Data').first().json.mensaje || '').toLowerCase();\n  } catch (e) {\n    userMessage = '';\n  }\n}\n\n// Keywords de agendamiento - SOLO en mensaje del USUARIO\nconst bookingKeywords = [\n  'quiero agendar',\n  'necesito agendar',\n  'quiero reservar',\n  'necesito reservar',\n  'quiero una cita',\n  'necesito una cita',\n  'agendar cita',\n  'reservar cita',\n  'sacar cita',\n  'pedir cita',\n  'hacer cita'\n];\n\n// SOLO detectar si el USUARIO menciona agendamiento explícitamente\nconst userHasIntent = bookingKeywords.some(k => userMessage.includes(k));\n\n// NO detectar en respuesta de AI (eso causa falsos positivos)\nconst hasBookingIntent = userHasIntent;\n\nreturn {\n  json: {\n    intent: hasBookingIntent ? 'BOOKING' : 'GENERAL',\n    aiResponse: $input.first().json.output,\n    userMessage: userMessage,\n    detectedIn: userHasIntent ? 'user_message' : 'none'\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -864,
+        240
+      ],
+      "id": "6619e7f0-8719-4eda-9af1-34b031f62c6b",
+      "name": "Detect Booking Intent"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "BOOKING",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "0a610296-5de5-499b-af69-457b99f54280"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "d52d149a-5268-49e5-b9a4-ff9a3d84688d",
+                    "leftValue": "={{$json.intent}}",
+                    "rightValue": "GENERAL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -656,
+        240
+      ],
+      "id": "3a5b73ba-89f9-4acf-ad8f-0a4a7fed1d21",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://rojascrew.app.n8n.cloud/webhook/webhook/transactional-bot",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "{\n  \"Content-Type\": \"application/json\"\n}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"{{$('Extract Message Data').first().json.tonumber}}\",\n  \"message\": \"{{$('Extract Message Data').first().json.mensaje}}\",\n  \"projectId\": \"{{$('Extract Message Data').first().json.projectId}}\",\n  \"phoneNumberId\": \"{{$('Extract Message Data').first().json.phoneNumberId}}\",\n  \"conversationId\": \"{{$json.conversationId || $('guardar conversacion').first().json.id}}\",\n  \"triggeredBy\": \"reception_bot\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -80,
+        32
+      ],
+      "id": "c0cf1a19-16d1-42f5-b499-b99452d85de7",
+      "name": "Trigger Bot 2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.meet-lines.com/api/whatsapp/send-message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "=X-Project-Id",
+              "value": "={{ $('Get idproject').item.json.projectId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"toPhoneNumber\": \"{{ $('Extract Message Data').item.json.tonumber }}\",\n  \"messageText\": \"{{ $('Parse AI Response').item.json.cleanResponse }}\"\n}",
+        "options": {}
+      },
+      "id": "119cae0d-38e0-4458-87b3-697feaa66bab",
+      "name": "Send WhatsApp Message Bot recepcion",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -240,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.meet-lines.com/api/whatsapp/send-message",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "=X-Project-Id",
+              "value": "={{ $('Get idproject').item.json.projectId }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"toPhoneNumber\": \"{{$('Extract Message Data').first().json.tonumber}}\",\n  \"messageText\": \"¡Perfecto! 📅 Te ayudaré a agendar tu cita. Un momento...\"\n}",
+        "options": {}
+      },
+      "id": "99089fa6-a84f-4f70-8ce6-54f09b4518d9",
+      "name": "Send WhatsApp Message route bot Transaction",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.1,
+      "position": [
+        -256,
+        144
+      ]
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Extract Message Data').item.json.tonumber }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        -1360,
+        544
+      ],
+      "id": "65811f77-87a3-4809-83bc-a29640c049a8",
+      "name": "Simple Memory"
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\nconst conversations = response.body || response; // Si viene en body, úsalo, sino usa response directo\nconst webhookData = $('Extract Message Data').first().json;\n\nconst now = new Date();\nconst oneDayAgo = new Date(now.getTime() - 24*60*60*1000);\n\nlet hasActiveConversation = false;\nlet conversationId = null;\n\nif (Array.isArray(conversations) && conversations.length > 0) {\n  const transactionalConvs = conversations\n    .filter(c => c.botType === 'transactional')\n    .filter(c => {\n      const created = new Date(c.createdAt);\n      return created > oneDayAgo;\n    })\n    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));\n  \n  if (transactionalConvs.length > 0) {\n    const latest = transactionalConvs[0];\n    \n    let isDone = false;\n    if (latest.metadataJson) {\n      try {\n        const metadata = JSON.parse(latest.metadataJson);\n        isDone = metadata.step === 'done';\n      } catch (e) {}\n    }\n    \n    if (!isDone) {\n      hasActiveConversation = true;\n      conversationId = latest.id;\n    }\n  }\n}\n\nreturn [{\n  json: {\n    hasActiveConversation,\n    conversationId,\n    ...webhookData\n  },\n  pairedItem: 0\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2352,
+        384
+      ],
+      "id": "0b595fca-67f0-42df-a439-2abdb52e4db2",
+      "name": "Parse Active Conversation"
+    },
+    {
+      "parameters": {
+        "url": "=https://services.meet-lines.com/api/projects/{{$('Extract Message Data').first().json.projectId}}/conversations/customer/{{$('Extract Message Data').first().json.tonumber}}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -2512,
+        384
+      ],
+      "id": "af33a80e-ffc8-4cfb-bf8a-4864a4f1739b",
+      "name": "Check Active Conversation",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "80z9OTIpJEBIaX4v",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.hasActiveConversation }}",
+                    "rightValue": false,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    },
+                    "id": "cc6cb8bf-e86e-4dfb-8430-97f538785515"
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -2144,
+        320
+      ],
+      "id": "648c6693-4b05-4c27-8853-dfe0a192cfd2",
+      "name": "has Active Conversation"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://services.meet-lines.com/api/projects/{{ $('Get project').item.json.id }}/conversations",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "httpMultipleHeadersAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"projectId\": \"{{ $('Get project').first().json.id }}\",\n  \"customerPhone\": \"{{ $('Extract Message Data').first().json.tonumber }}\",\n  \"customerName\": \"Unknown\",\n  \"customerMessage\": \"{{ $('Extract Message Data').first().json.mensaje }}\",\n  \"botResponse\": \"¡Perfecto! Vamos a agendar tu cita.\",\n  \"botType\": \"transactional\",\n  \"intent\": \"agendar_cita\",\n  \"metadataJson\": \"{\\\"step\\\":\\\"ask_service\\\",\\\"selectedService\\\":null,\\\"selectedServiceId\\\":null,\\\"selectedDate\\\":null,\\\"selectedTime\\\":null,\\\"selectedEmployeeId\\\":null,\\\"selectedEmployeeName\\\":null}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -480,
+        192
+      ],
+      "id": "621515ff-8e91-4b92-b8a0-51f88e577ecd",
+      "name": "HTTP Request",
+      "credentials": {
+        "httpMultipleHeadersAuth": {
+          "id": "80z9OTIpJEBIaX4v",
+          "name": "Multiple Headers Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatMistralCloud",
+      "typeVersion": 1,
+      "position": [
+        -1472,
+        464
+      ],
+      "id": "cb463abd-54d7-4bf8-9703-89671d33b223",
+      "name": "Mistral Cloud Chat Model",
+      "credentials": {
+        "mistralCloudApi": {
+          "id": "uLUWU56ZTWIgNJF5",
+          "name": "Mistral Cloud account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Webhook": [
+      {
+        "json": {
+          "headers": {
+            "host": "zoxtecnology.app.n8n.cloud",
+            "content-length": "494",
+            "accept-encoding": "gzip, br",
+            "cdn-loop": "cloudflare; loops=1; subreqs=1",
+            "cf-connecting-ip": "46.224.13.157",
+            "cf-ew-via": "15",
+            "cf-ipcountry": "DE",
+            "cf-ray": "9abefdff8774dc7d-FRA",
+            "cf-visitor": "{\"scheme\":\"https\"}",
+            "cf-worker": "n8n.cloud",
+            "content-type": "application/json; charset=utf-8",
+            "traceparent": "00-bf2ccfd28f59c999242ae784c75e7452-e25e4c6493c1f8af-00",
+            "x-forwarded-for": "46.224.13.157, 172.71.148.8",
+            "x-forwarded-host": "zoxtecnology.app.n8n.cloud",
+            "x-forwarded-port": "443",
+            "x-forwarded-proto": "https",
+            "x-forwarded-server": "traefik-prod-users-gwc-96-57f65f45bd-8jt4k",
+            "x-is-trusted": "yes",
+            "x-project-id": "1ede30b1-366e-4c61-b648-b68cf3930d40",
+            "x-real-ip": "46.224.13.157"
+          },
+          "params": {},
+          "query": {},
+          "body": {
+            "object": "whatsapp_business_account",
+            "entry": [
+              {
+                "id": "1574166706935003",
+                "changes": [
+                  {
+                    "value": {
+                      "messaging_product": "whatsapp",
+                      "metadata": {
+                        "display_phone_number": "15551288345",
+                        "phone_number_id": "868288436372312"
+                      },
+                      "contacts": [
+                        {
+                          "profile": {
+                            "name": "Jhon"
+                          },
+                          "wa_id": "573015629567"
+                        }
+                      ],
+                      "messages": [
+                        {
+                          "from": "573015629567",
+                          "id": "wamid.HBgMNTczMDE1NjI5NTY3FQIAEhggQUM5QjQ0MkVGNjNENDUxMzNCNjVBM0JDMDBDMUQ3ODQA",
+                          "timestamp": "1765393298",
+                          "text": {
+                            "body": "Quiero una cita"
+                          },
+                          "type": "text"
+                        }
+                      ]
+                    },
+                    "field": "messages"
+                  }
+                ]
+              }
+            ]
+          },
+          "webhookUrl": "https://zoxtecnology.app.n8n.cloud/webhook/webhook-test/whatsapp",
+          "executionMode": "production"
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get idproject",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch WhatsApp Credentials": {
+      "main": [
+        [
+          {
+            "node": "Extract Message Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Message Data": {
+      "main": [
+        [
+          {
+            "node": "Check Active Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get idproject": {
+      "main": [
+        [
+          {
+            "node": "Fetch WhatsApp Credentials",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get project": {
+      "main": [
+        [
+          {
+            "node": "get bot config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get respuestas": {
+      "main": [
+        [
+          {
+            "node": "Agente recepcion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get bot config": {
+      "main": [
+        [
+          {
+            "node": "get respuestas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente recepcion": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "guardar conversacion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "guardar conversacion": {
+      "main": [
+        [
+          {
+            "node": "Detect Booking Intent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect Booking Intent": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send WhatsApp Message Bot recepcion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente recepcion",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Active Conversation": {
+      "main": [
+        [
+          {
+            "node": "has Active Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Active Conversation": {
+      "main": [
+        [
+          {
+            "node": "Parse Active Conversation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "has Active Conversation": {
+      "main": [
+        [
+          {
+            "node": "Get project",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Trigger Bot 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Send WhatsApp Message route bot Transaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mistral Cloud Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente recepcion",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send WhatsApp Message route bot Transaction": {
+      "main": [
+        [
+          {
+            "node": "Trigger Bot 2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "ead95fbb-4f12-4b41-b3ab-ecb008fb6a11",
+  "meta": {
+    "instanceId": "e1a92e037b42e3e58ec1916118fb8d1143bbd92dbcd07e15d71d480a3f9117e4"
+  },
+  "id": "xoF6YMjHkFK2ugsi",
+  "tags": []
+}

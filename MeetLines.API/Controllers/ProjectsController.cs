@@ -223,6 +223,116 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Configura la integración de Telegram para un proyecto
+        /// POST /api/projects/{projectId}/telegram/configure
+        /// 
+        /// FLUJO:
+        /// 1. Valida que el usuario sea dueño del proyecto
+        /// 2. Actualiza el proyecto con el bot_token, username y forward_webhook
+        /// 3. Configura el webhook en Telegram API apuntando a nuestro backend
+        /// 4. Telegram enviará mensajes a: https://services.meet-lines.com/webhook/telegram/{botToken}
+        /// </summary>
+        [HttpPost("{projectId}/telegram/configure")]
+        public async Task<IActionResult> ConfigureTelegram(
+            Guid projectId,
+            [FromBody] ConfigureTelegramRequest request,
+            [FromServices] IProjectRepository projectRepository,
+            [FromServices] IHttpClientFactory httpClientFactory,
+            [FromServices] IConfiguration configuration,
+            CancellationToken ct)
+        {
+            try
+            {
+                var userId = GetUserId();
+
+                // 1️⃣ Verificar que el usuario sea dueño del proyecto
+                var isOwner = await projectRepository.IsUserProjectOwnerAsync(userId, projectId, ct);
+                if (!isOwner)
+                {
+                    return Forbid();
+                }
+
+                var project = await projectRepository.GetAsync(projectId, ct);
+                if (project == null)
+                {
+                    return NotFound(new { error = "Project not found" });
+                }
+
+                // 2️⃣ Construir URL del webhook
+                // Si viene customWebhookUrl, usarla (útil para testing en local con VPS)
+                // Si no, construir automáticamente
+                string webhookUrl;
+                if (!string.IsNullOrWhiteSpace(request.CustomWebhookUrl))
+                {
+                    webhookUrl = request.CustomWebhookUrl;
+                }
+                else
+                {
+                    // Construir automáticamente (siempre HTTPS para Telegram)
+                    var baseDomain = configuration["Multitenancy:BaseDomain"] ?? "meet-lines.com";
+                    webhookUrl = $"https://{baseDomain}/webhook/telegram/{request.BotToken}";
+                }
+
+                // URL de n8n (si no viene en el request, usar por defecto)
+                var forwardWebhook = request.ForwardWebhook;
+                if (string.IsNullOrWhiteSpace(forwardWebhook))
+                {
+                    // Por defecto: mismo dominio pero puerto 5678 (n8n típico)
+                    // En VPS ajustarás esto con variable de entorno
+                    forwardWebhook = configuration["Webhooks:N8nBaseUrl"] ?? $"http://localhost:5678/webhook/telegram-bot";
+                }
+
+                // 3️⃣ Configurar webhook en Telegram
+                var client = httpClientFactory.CreateClient();
+                var telegramApiUrl = $"https://api.telegram.org/bot{request.BotToken}/setWebhook";
+                
+                var telegramRequest = new
+                {
+                    url = webhookUrl
+                };
+
+                var response = await client.PostAsJsonAsync(telegramApiUrl, telegramRequest, ct);
+                var responseBody = await response.Content.ReadAsStringAsync(ct);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return BadRequest(new
+                    {
+                        error = "Failed to configure Telegram webhook",
+                        details = responseBody,
+                        message = "Verifica que el bot token sea válido"
+                    });
+                }
+
+                // 4️⃣ Actualizar proyecto con los datos de Telegram
+                project.UpdateTelegramIntegration(
+                    request.BotToken,
+                    request.BotUsername,
+                    forwardWebhook
+                );
+
+                await projectRepository.UpdateAsync(project, ct);
+
+                return Ok(new
+                {
+                    message = "Telegram integration configured successfully",
+                    webhook_url = webhookUrl,
+                    forward_to = forwardWebhook,
+                    bot_username = request.BotUsername,
+                    telegram_response = responseBody
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    error = "Internal server error",
+                    message = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
         /// Extrae el ID del usuario del JWT token
         /// </summary>
         private Guid GetUserId()
