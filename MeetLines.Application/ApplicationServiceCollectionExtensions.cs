@@ -34,8 +34,9 @@ namespace MeetLines.Application.IoC
 
             // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
-            services.AddScoped<ILoginUserUseCase, LoginUserUseCase>();
-            services.AddScoped<IOAuthLoginUseCase, OAuthLoginUseCase>();
+            services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
+            // services.AddScoped<IChannelUseCases, ChannelUseCases>(); // Removed as it uses individual Use Cases
+            // services.AddScoped<IAppointmentUseCases, AppointmentUseCases>(); // Removed as it uses Service pattern
             services.AddScoped<IRefreshTokenUseCase, RefreshTokenUseCase>();
             services.AddScoped<MeetLines.Application.Services.Interfaces.ITransferUseCases, MeetLines.Application.UseCases.Auth.TransferUseCases>();
             services.AddScoped<IVerifyEmailUseCase, VerifyEmailUseCase>();

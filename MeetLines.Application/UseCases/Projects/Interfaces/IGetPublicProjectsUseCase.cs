@@ -8,6 +8,6 @@ namespace MeetLines.Application.UseCases.Projects
 {
     public interface IGetPublicProjectsUseCase
     {
-        Task<Result<IEnumerable<ProjectPublicSummaryDto>>> ExecuteAsync(CancellationToken ct = default);
+        Task<Result<IEnumerable<ProjectPublicSummaryDto>>> ExecuteAsync(double? latitude = null, double? longitude = null, CancellationToken ct = default);
     }
 }

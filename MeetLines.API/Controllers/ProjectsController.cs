@@ -160,9 +160,9 @@ namespace MeetLines.API.Controllers
         /// </summary>
         [HttpGet("public")]
         [AllowAnonymous]
-        public async Task<IActionResult> GetPublicProjects(CancellationToken ct)
+        public async Task<IActionResult> GetPublicProjects([FromQuery] double? latitude, [FromQuery] double? longitude, CancellationToken ct)
         {
-            var result = await _getPublicProjectsUseCase.ExecuteAsync(ct);
+            var result = await _getPublicProjectsUseCase.ExecuteAsync(latitude, longitude, ct);
             if (!result.IsSuccess)
                 return BadRequest(new { error = result.Error });
             return Ok(result.Value);
