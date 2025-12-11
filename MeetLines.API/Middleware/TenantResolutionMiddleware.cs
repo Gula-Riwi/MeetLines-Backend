@@ -108,7 +108,15 @@ namespace MeetLines.API.Middleware
             // Validar si es un subdominio reservado o inválido
             if (!SubdomainValidator.IsValid(subdomainPart, out _))
             {
-                // Si es inválido, simplemente continuamos sin tenant (o podríamos retornar 404)
+                // Si es inválido, simplemente continuamos sin tenant
+                await _next(context);
+                return;
+            }
+
+            // Excluir subdominios técnicos/reservados explícitos que podrían estar en DNS
+            var reservedSubdomains = new[] { "api", "www", "mail", "ftp", "cpanel", "webmail", "admin", "dashboard" };
+            if (reservedSubdomains.Contains(subdomainPart.ToLowerInvariant()))
+            {
                 await _next(context);
                 return;
             }
