@@ -115,10 +115,41 @@ namespace MeetLines.API.Middleware
 
             // Excluir subdominios técnicos/reservados explícitos que podrían estar en DNS
             var reservedSubdomains = new[] { "api", "www", "mail", "ftp", "cpanel", "webmail", "admin", "dashboard", "services" };
+            string? subdomainToResolve = null;
+
             if (reservedSubdomains.Contains(subdomainPart.ToLowerInvariant()))
             {
-                await _next(context);
-                return;
+                // Si el Host es un dominio reservado (ej: services.meet-lines.com),
+                // intentamos resolver el Tenant desde el header 'Origin' (CORS)
+                // Esto permite que el Frontend en 'cliente.meet-lines.com' llame a 'services.meet-lines.com'
+                // y el Backend sepa de qué tenant viene.
+                if (context.Request.Headers.TryGetValue("Origin", out var originValues))
+                {
+                    var origin = originValues.ToString();
+                    if (Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+                    {
+                         var originHost = uri.Host;
+                         if (originHost.EndsWith(baseDomain, StringComparison.OrdinalIgnoreCase) &&
+                             !originHost.Equals(baseDomain, StringComparison.OrdinalIgnoreCase))
+                         {
+                             var originSub = originHost.Substring(0, originHost.Length - baseDomain.Length - 1);
+                             if (SubdomainValidator.IsValid(originSub, out _) && !reservedSubdomains.Contains(originSub.ToLowerInvariant()))
+                             {
+                                 subdomainToResolve = originSub;
+                             }
+                         }
+                    }
+                }
+
+                if (subdomainToResolve == null)
+                {
+                    await _next(context);
+                    return;
+                }
+            }
+            else
+            {
+                subdomainToResolve = subdomainPart;
             }
 
             // Resolver tenant desde base de datos
@@ -126,7 +157,7 @@ namespace MeetLines.API.Middleware
             var tenantService = context.RequestServices.GetRequiredService<ITenantService>();
             var projectRepository = context.RequestServices.GetRequiredService<IProjectRepository>();
 
-            var project = await projectRepository.GetBySubdomainAsync(subdomainPart);
+            var project = await projectRepository.GetBySubdomainAsync(subdomainToResolve);
 
             if (project != null && project.Status == "active")
             {
