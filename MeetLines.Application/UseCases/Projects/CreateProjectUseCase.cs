@@ -125,10 +125,12 @@ namespace MeetLines.Application.UseCases.Projects
 
         private int GetMaxProjectsByPlan(string plan) => plan?.ToLower() switch
         {
+            "free" => 1,
+            "trial" => 1,
             "beginner" => 1,
             "intermediate" => 2,
             "complete" => int.MaxValue,
-            _ => 0
+            _ => 1 // Default to 1 to avoid '0' quota blocking everything for unknown plans
         };
 
         private ProjectResponse MapToResponse(Domain.Entities.Project project)
