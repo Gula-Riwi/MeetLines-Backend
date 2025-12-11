@@ -47,12 +47,12 @@ namespace MeetLines.Application.Services
                 industry: request.Industry,
                 tone: request.Tone ?? defaults.Tone,
                 timezone: request.Timezone ?? defaults.Timezone,
-                receptionConfigJson: JsonSerializer.Serialize(defaults.ReceptionConfig, _jsonOptions),
-                transactionalConfigJson: JsonSerializer.Serialize(defaults.TransactionalConfig, _jsonOptions),
-                feedbackConfigJson: JsonSerializer.Serialize(defaults.FeedbackConfig, _jsonOptions),
-                reactivationConfigJson: JsonSerializer.Serialize(defaults.ReactivationConfig, _jsonOptions),
-                integrationsConfigJson: JsonSerializer.Serialize(defaults.IntegrationsConfig, _jsonOptions),
-                advancedConfigJson: JsonSerializer.Serialize(defaults.AdvancedConfig, _jsonOptions),
+                receptionConfigJson: JsonSerializer.Serialize(request.ReceptionConfig ?? defaults.ReceptionConfig, _jsonOptions),
+                transactionalConfigJson: JsonSerializer.Serialize(request.TransactionalConfig ?? defaults.TransactionalConfig, _jsonOptions),
+                feedbackConfigJson: JsonSerializer.Serialize(request.FeedbackConfig ?? defaults.FeedbackConfig, _jsonOptions),
+                reactivationConfigJson: JsonSerializer.Serialize(request.ReactivationConfig ?? defaults.ReactivationConfig, _jsonOptions),
+                integrationsConfigJson: JsonSerializer.Serialize(request.IntegrationsConfig ?? defaults.IntegrationsConfig, _jsonOptions),
+                advancedConfigJson: JsonSerializer.Serialize(request.AdvancedConfig ?? defaults.AdvancedConfig, _jsonOptions),
                 createdBy: createdBy
             );
 
@@ -124,8 +124,8 @@ namespace MeetLines.Application.Services
                     Enabled = true,
                     WelcomeMessage = GetWelcomeMessage(industry),
                     IntentTriggerKeywords = GetIntentKeywords(industry),
-                    HandoffMessage = "¡Perfecto! Te ayudo con eso enseguida 📅",
-                    OutOfHoursMessage = "Gracias por contactarnos. Nuestro horario es {hours}. Te responderemos pronto."
+                    HandoffMessage = "¡Perfecto! Te ayudo con eso enseguida.",
+                    OutOfHoursMessage = "Gracias por contactarnos. Nuestro horario de atención ha terminado. Te responderemos pronto."
                 },
                 TransactionalConfig = new TransactionalBotConfig
                 {
@@ -134,10 +134,10 @@ namespace MeetLines.Application.Services
                     BufferMinutes = 0,
                     MaxAdvanceBookingDays = 30,
                     MinAdvanceBookingDays = 0,
-                    ConfirmationMessage = "✅ ¡Listo! Tu cita está confirmada para el {date} a las {time}.",
+                    ConfirmationMessage = "✅ ¡Listo! Tu cita está confirmada.",
                     SendReminder = true,
                     ReminderHoursBefore = 24,
-                    ReminderMessage = "Hola {customerName}, te recordamos tu cita mañana a las {time}.",
+                    ReminderMessage = "Hola, te recordamos tu cita mañana.",
                     AllowCancellation = true,
                     MinCancellationHours = 24
                 },
@@ -145,7 +145,7 @@ namespace MeetLines.Application.Services
                 {
                     Enabled = true,
                     DelayHours = 24,
-                    RequestMessage = "Hola {customerName}, ¿cómo calificarías tu experiencia del 1 al 5?",
+                    RequestMessage = "Hola, ¿cómo calificarías tu experiencia del 1 al 5?",
                     NegativeFeedbackMessage = "Lamentamos eso. ¿Qué podemos mejorar?",
                     NotifyOwnerOnNegative = true
                 },
@@ -157,9 +157,9 @@ namespace MeetLines.Application.Services
                     DaysBetweenAttempts = 30,
                     Messages = new System.Collections.Generic.List<string>
                     {
-                        "Hola {customerName}, hace {days} días no te vemos. ¿Te gustaría agendar?",
-                        "Hola {customerName}, ¿cómo has estado? Tenemos disponibilidad esta semana.",
-                        "Hola {customerName}, te extrañamos. ¿Podemos ayudarte en algo?"
+                        "Hola, hace días no te vemos. ¿Te gustaría agendar?",
+                        "Hola, ¿cómo has estado? Tenemos disponibilidad esta semana.",
+                        "Hola, te extrañamos. ¿Podemos ayudarte en algo?"
                     },
                     OfferDiscount = false,
                     DiscountPercentage = 10,
@@ -192,12 +192,12 @@ namespace MeetLines.Application.Services
         {
             return industry.ToLower() switch
             {
-                "barbershop" => "¡Hola! Soy {botName}, el asistente de {businessName}. ¿Quieres agendar un corte? 💈",
-                "lawyer" => "Hola, soy {botName} de {businessName}. ¿En qué podemos asesorarte? ⚖️",
-                "spa" => "¡Hola! Soy {botName} de {businessName}. ¿Te gustaría reservar un tratamiento? 🧖",
-                "clinic" => "Hola, soy {botName} de {businessName}. ¿Necesitas agendar una consulta? 🏥",
-                "gym" => "¡Hola! Soy {botName} de {businessName}. ¿Quieres información sobre nuestras clases? 💪",
-                _ => "¡Hola! Soy {botName}, el asistente virtual de {businessName}. ¿En qué puedo ayudarte?"
+                "barbershop" => "¡Hola! Soy el asistente virtual. ¿Quieres agendar un corte?",
+                "lawyer" => "Hola, soy el asistente virtual. ¿En qué podemos asesorarte?",
+                "spa" => "¡Hola! Soy el asistente virtual. ¿Te gustaría reservar un tratamiento?",
+                "clinic" => "Hola, soy el asistente virtual. ¿Necesitas agendar una consulta?",
+                "gym" => "¡Hola! Soy el asistente virtual. ¿Quieres información sobre nuestras clases?",
+                _ => "¡Hola! Soy el asistente virtual. ¿En qué puedo ayudarte?"
             };
         }
 
