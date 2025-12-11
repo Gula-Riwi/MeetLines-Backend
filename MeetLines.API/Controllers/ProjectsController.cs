@@ -23,7 +23,6 @@ namespace MeetLines.API.Controllers
         private readonly IGetProjectByIdUseCase _getProjectByIdUseCase;
         private readonly IUpdateProjectUseCase _updateProjectUseCase;
         private readonly IDeleteProjectUseCase _deleteProjectUseCase;
-        private readonly IDeleteProjectUseCase _deleteProjectUseCase;
         private readonly IConfigureWhatsappUseCase _configureWhatsappUseCase;
         private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
         private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
@@ -33,7 +32,6 @@ namespace MeetLines.API.Controllers
             IGetUserProjectsUseCase getUserProjectsUseCase,
             IGetProjectByIdUseCase getProjectByIdUseCase,
             IUpdateProjectUseCase updateProjectUseCase,
-            IDeleteProjectUseCase deleteProjectUseCase,
             IDeleteProjectUseCase deleteProjectUseCase,
             IConfigureWhatsappUseCase configureWhatsappUseCase,
             IGetPublicProjectsUseCase getPublicProjectsUseCase,
