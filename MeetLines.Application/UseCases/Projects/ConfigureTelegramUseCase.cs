@@ -53,13 +53,22 @@ namespace MeetLines.Application.UseCases.Projects
             if (!string.IsNullOrWhiteSpace(request.CustomWebhookUrl))
             {
                 webhookUrl = request.CustomWebhookUrl;
+                // Si no incluye el token, agregarlo (Telegram requiere el token en la URL si usas nuestro Controller, pero si es custom total, asumimos que está bien)
+                // En nuestro caso: /webhook/telegram/{botToken}
+                if (!webhookUrl.Contains(request.BotToken))
+                {
+                   webhookUrl = $"{webhookUrl.TrimEnd('/')}/webhook/telegram/{request.BotToken}";
+                }
             }
             else
             {
-                // Construir URL apuntando directamente a n8n con botToken
-                var n8nWebhookBase = _configuration["TELEGRAM_WEBHOOK_BASE"] 
-                    ?? "https://n8n.meet-lines.com/webhook-test/webhook-test/Telegram";
-                webhookUrl = $"{n8nWebhookBase}?botToken={request.BotToken}";
+                // Construir URL apuntando al BACKEND (TelegramWebhookController)
+                // Se asume que existe una config "Global:ApiBaseUrl" o se construye
+                var apiBaseUrl = _configuration["Global:ApiBaseUrl"] 
+                                 ?? _configuration["Multitenancy:ApiUrl"]
+                                 ?? "https://services.meet-lines.com";
+                                 
+                webhookUrl = $"{apiBaseUrl.TrimEnd('/')}/webhook/telegram/{request.BotToken}";
             }
 
             // 2️⃣ Configurar webhook en Telegram API
