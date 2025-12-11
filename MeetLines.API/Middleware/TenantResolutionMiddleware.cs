@@ -114,7 +114,7 @@ namespace MeetLines.API.Middleware
             }
 
             // Excluir subdominios técnicos/reservados explícitos que podrían estar en DNS
-            var reservedSubdomains = new[] { "api", "www", "mail", "ftp", "cpanel", "webmail", "admin", "dashboard" };
+            var reservedSubdomains = new[] { "api", "www", "mail", "ftp", "cpanel", "webmail", "admin", "dashboard", "services" };
             if (reservedSubdomains.Contains(subdomainPart.ToLowerInvariant()))
             {
                 await _next(context);
