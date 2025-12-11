@@ -26,6 +26,7 @@ namespace MeetLines.API.Controllers
         private readonly IConfigureWhatsappUseCase _configureWhatsappUseCase;
         private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
         private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
+        private readonly IConfiguration _configuration;
 
         public ProjectsController(
             ICreateProjectUseCase createProjectUseCase,
@@ -35,7 +36,8 @@ namespace MeetLines.API.Controllers
             IDeleteProjectUseCase deleteProjectUseCase,
             IConfigureWhatsappUseCase configureWhatsappUseCase,
             IGetPublicProjectsUseCase getPublicProjectsUseCase,
-            IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase)
+            IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase,
+            IConfiguration configuration)
         {
             _createProjectUseCase = createProjectUseCase ?? throw new ArgumentNullException(nameof(createProjectUseCase));
             _getUserProjectsUseCase = getUserProjectsUseCase ?? throw new ArgumentNullException(nameof(getUserProjectsUseCase));
@@ -45,6 +47,22 @@ namespace MeetLines.API.Controllers
             _configureWhatsappUseCase = configureWhatsappUseCase ?? throw new ArgumentNullException(nameof(configureWhatsappUseCase));
             _getPublicProjectsUseCase = getPublicProjectsUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectsUseCase));
             _getPublicProjectEmployeesUseCase = getPublicProjectEmployeesUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectEmployeesUseCase));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
+
+        private bool ValidateApiKey()
+        {
+            try 
+            {
+                var authHeader = Request.Headers["Authorization"].ToString();
+                var apiKey = authHeader.Replace("Bearer ", "").Replace("Bearer", "").Trim();
+                var expectedApiKey = _configuration["INTEGRATIONS_API_KEY"];
+                return !string.IsNullOrEmpty(apiKey) && apiKey == expectedApiKey;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -177,7 +195,6 @@ namespace MeetLines.API.Controllers
         public async Task<IActionResult> GetProjectPublic(
             [FromRoute] Guid projectId,
             [FromServices] IProjectRepository projectRepository,
-            [FromServices] IConfiguration configuration,
             [FromServices] ILogger<ProjectsController> logger,
             CancellationToken ct = default)
         {
@@ -186,14 +203,7 @@ namespace MeetLines.API.Controllers
                 logger.LogInformation("🔍 GetProjectPublic called for ProjectId: {ProjectId}", projectId);
                 
                 // Validar API Key
-                var authHeader = Request.Headers["Authorization"].ToString();
-                var apiKey = authHeader.Replace("Bearer ", "").Replace("Bearer", "").Trim();
-                var expectedApiKey = configuration["INTEGRATIONS_API_KEY"];
-
-                logger.LogInformation("🔑 API Key present: {HasKey}, Expected key configured: {HasExpected}", 
-                    !string.IsNullOrEmpty(apiKey), !string.IsNullOrEmpty(expectedApiKey));
-
-                if (string.IsNullOrEmpty(apiKey) || apiKey != expectedApiKey)
+                if (!ValidateApiKey())
                 {
                     logger.LogWarning("⚠️ Invalid API Key for ProjectId: {ProjectId}", projectId);
                     return Unauthorized(new { error = "Invalid API Key" });
@@ -242,6 +252,12 @@ namespace MeetLines.API.Controllers
             [FromServices] IProjectRepository projectRepository,
             CancellationToken ct = default)
         {
+            // Validar API Key
+            if (!ValidateApiKey())
+            {
+                return Unauthorized(new { error = "Invalid API Key" });
+            }
+
             try
             {
                 if (string.IsNullOrWhiteSpace(phoneNumberId))

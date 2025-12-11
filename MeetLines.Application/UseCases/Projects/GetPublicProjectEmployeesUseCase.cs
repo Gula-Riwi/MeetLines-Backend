@@ -37,7 +37,7 @@ namespace MeetLines.Application.UseCases.Projects
             var dtos = employees.Select(e => new EmployeePublicDto
             {
                 Name = e.Name,
-                Area = e.Area
+                Role = e.Role
             }).ToList();
 
             return Result<IEnumerable<EmployeePublicDto>>.Ok(dtos);
