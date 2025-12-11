@@ -94,6 +94,8 @@ namespace MeetLines.Infrastructure.IoC
             
             // Servicio de Discord Webhooks con HttpClient
             services.AddHttpClient<IDiscordWebhookService, DiscordWebhookService>();
+            
+            services.AddScoped<IPaymentRepository, PaymentRepository>();
 
             return services;
         }
