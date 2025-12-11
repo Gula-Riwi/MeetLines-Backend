@@ -51,6 +51,17 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IEnumerable<Employee>> GetActiveByProjectIdAsync(Guid projectId, CancellationToken ct = default)
+        {
+            var tenantId = _tenantFilter.GetCurrentTenantId();
+            if (tenantId.HasValue && tenantId.Value != projectId)
+                return Enumerable.Empty<Employee>();
+            return await _context.Employees
+                .Where(e => e.ProjectId == projectId && e.IsActive)
+                .OrderBy(e => e.Name)
+                .ToListAsync(ct);
+        }
+
         public async Task<IEnumerable<Employee>> GetByAreaAsync(Guid projectId, string area, CancellationToken ct = default)
         {
             var tenantId = _tenantFilter.GetCurrentTenantId();

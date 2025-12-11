@@ -23,7 +23,10 @@ namespace MeetLines.API.Controllers
         private readonly IGetProjectByIdUseCase _getProjectByIdUseCase;
         private readonly IUpdateProjectUseCase _updateProjectUseCase;
         private readonly IDeleteProjectUseCase _deleteProjectUseCase;
+        private readonly IDeleteProjectUseCase _deleteProjectUseCase;
         private readonly IConfigureWhatsappUseCase _configureWhatsappUseCase;
+        private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
+        private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
 
         public ProjectsController(
             ICreateProjectUseCase createProjectUseCase,
@@ -31,7 +34,10 @@ namespace MeetLines.API.Controllers
             IGetProjectByIdUseCase getProjectByIdUseCase,
             IUpdateProjectUseCase updateProjectUseCase,
             IDeleteProjectUseCase deleteProjectUseCase,
-            IConfigureWhatsappUseCase configureWhatsappUseCase)
+            IDeleteProjectUseCase deleteProjectUseCase,
+            IConfigureWhatsappUseCase configureWhatsappUseCase,
+            IGetPublicProjectsUseCase getPublicProjectsUseCase,
+            IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase)
         {
             _createProjectUseCase = createProjectUseCase ?? throw new ArgumentNullException(nameof(createProjectUseCase));
             _getUserProjectsUseCase = getUserProjectsUseCase ?? throw new ArgumentNullException(nameof(getUserProjectsUseCase));
@@ -39,6 +45,8 @@ namespace MeetLines.API.Controllers
             _updateProjectUseCase = updateProjectUseCase ?? throw new ArgumentNullException(nameof(updateProjectUseCase));
             _deleteProjectUseCase = deleteProjectUseCase ?? throw new ArgumentNullException(nameof(deleteProjectUseCase));
             _configureWhatsappUseCase = configureWhatsappUseCase ?? throw new ArgumentNullException(nameof(configureWhatsappUseCase));
+            _getPublicProjectsUseCase = getPublicProjectsUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectsUseCase));
+            _getPublicProjectEmployeesUseCase = getPublicProjectEmployeesUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectEmployeesUseCase));
         }
 
         /// <summary>
@@ -128,6 +136,32 @@ namespace MeetLines.API.Controllers
             if (!result.IsSuccess)
                 return BadRequest(new { error = result.Error });
 
+            return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Obtiene todos los proyectos públicos (activos)
+        /// </summary>
+        [HttpGet("public")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicProjects(CancellationToken ct)
+        {
+            var result = await _getPublicProjectsUseCase.ExecuteAsync(ct);
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.Error });
+            return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Obtiene los empleados públicos (activos) de un proyecto
+        /// </summary>
+        [HttpGet("{projectId}/employees/public")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicProjectEmployees(Guid projectId, CancellationToken ct)
+        {
+            var result = await _getPublicProjectEmployeesUseCase.ExecuteAsync(projectId, ct);
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.Error });
             return Ok(result.Value);
         }
 

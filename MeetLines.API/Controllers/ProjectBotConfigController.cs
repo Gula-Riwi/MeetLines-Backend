@@ -64,6 +64,47 @@ namespace MeetLines.API.Controllers
                 return NotFound(new { message = "Bot configuration not found" });
             }
             return Ok(config);
+            if (config == null)
+            {
+                return NotFound(new { message = "Bot configuration not found" });
+            }
+            return Ok(config);
+        }
+
+        /// <summary>
+        /// Gets bot configuration for a project (For authenticated users/dashboard)
+        /// Requires JWT Authentication
+        /// </summary>
+        [HttpGet("my-config")]
+        public async Task<ActionResult<ProjectBotConfigDto>> GetMyConfig(Guid projectId, CancellationToken ct)
+        {
+            try
+            {
+                // Extract userId from JWT claims
+                var userId = Guid.Parse(
+                    User.FindFirst("sub")?.Value ?? 
+                    User.FindFirst("userId")?.Value ?? 
+                    User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? 
+                    throw new UnauthorizedAccessException("No user ID found in token"));
+
+                // Validate project ownership
+                var isOwner = await _projectRepository.IsUserProjectOwnerAsync(userId, projectId, ct);
+                if (!isOwner)
+                {
+                    return Unauthorized(new { message = "You don't have permission to view bot configuration for this project" });
+                }
+
+                var config = await _service.GetByProjectIdAsync(projectId, ct);
+                if (config == null)
+                {
+                    return NotFound(new { message = "Bot configuration not found" });
+                }
+                return Ok(config);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Unauthorized(new { message = "Invalid token or user ID" });
+            }
         }
 
         /// <summary>
