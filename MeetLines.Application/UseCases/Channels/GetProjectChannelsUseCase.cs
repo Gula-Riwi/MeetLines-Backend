@@ -37,8 +37,11 @@ namespace MeetLines.Application.UseCases.Channels
                 Id = c.Id,
                 ProjectId = c.ProjectId,
                 Type = c.Type,
+                ProjectId = c.ProjectId,
+                Type = c.Type,
                 Verified = c.Verified,
-                CreatedAt = c.CreatedAt
+                CreatedAt = c.CreatedAt,
+                Credentials = c.Credentials
             });
 
             return Result<IEnumerable<ChannelDto>>.Ok(dtos);

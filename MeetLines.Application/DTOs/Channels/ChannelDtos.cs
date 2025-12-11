@@ -19,6 +19,9 @@ namespace MeetLines.Application.DTOs.Channels
 
         [JsonPropertyName("createdAt")]
         public DateTimeOffset CreatedAt { get; set; }
+
+        [JsonPropertyName("credentials")]
+        public string? Credentials { get; set; }
     }
 
     public class CreateChannelRequest

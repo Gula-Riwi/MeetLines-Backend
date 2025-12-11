@@ -30,6 +30,7 @@ namespace MeetLines.Application.UseCases.Channels
                 return Result<ChannelDto>.Fail("Unauthorized access to project");
 
             var channel = new Channel(projectId, request.Type, request.Credentials);
+            channel.Verify(); // Auto-verify on creation per user request
             
             await _channelRepository.CreateAsync(channel, ct);
 
@@ -39,7 +40,8 @@ namespace MeetLines.Application.UseCases.Channels
                 ProjectId = channel.ProjectId,
                 Type = channel.Type,
                 Verified = channel.Verified,
-                CreatedAt = channel.CreatedAt
+                CreatedAt = channel.CreatedAt,
+                Credentials = channel.Credentials
             });
         }
     }
