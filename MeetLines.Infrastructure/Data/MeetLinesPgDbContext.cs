@@ -74,6 +74,11 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.WorkingHours).HasColumnType("jsonb");
                 b.Property(x => x.Config).HasColumnType("jsonb");
                 b.Property(x => x.Subdomain).IsRequired().HasMaxLength(63);
+                b.Property(x => x.Address).HasMaxLength(255).HasColumnName("address");
+                b.Property(x => x.City).HasMaxLength(100).HasColumnName("city");
+                b.Property(x => x.Country).HasMaxLength(100).HasColumnName("country");
+                b.Property(x => x.Latitude).HasColumnName("latitude");
+                b.Property(x => x.Longitude).HasColumnName("longitude");
                 b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
                 b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
                 // WhatsApp Integration
@@ -244,7 +249,6 @@ namespace MeetLines.Infrastructure.Data
                 b.HasIndex(x => x.Token).IsUnique().HasDatabaseName("idx_passreset_token");
             });
 
-            // EmployeePasswordResetTokens
             modelBuilder.Entity<EmployeePasswordResetToken>(b =>
             {
                 b.ToTable("employee_password_reset_tokens");
@@ -255,6 +259,8 @@ namespace MeetLines.Infrastructure.Data
                 b.HasIndex(x => x.EmployeeId).HasDatabaseName("idx_emp_passreset_employee");
                 b.HasIndex(x => x.Token).IsUnique().HasDatabaseName("idx_emp_passreset_token");
             });
+
+
 
             modelBuilder.Entity<TransferToken>(b =>
             {
