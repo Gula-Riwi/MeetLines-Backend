@@ -19,5 +19,9 @@ namespace MeetLines.Application.DTOs.Projects
         // Expose limited WhatsApp fields in response
         public string? WhatsappPhoneNumberId { get; set; }
         public string? WhatsappForwardWebhook { get; set; }
+        // Expose limited Telegram fields in response
+        public string? TelegramBotToken { get; set; }
+        public string? TelegramBotUsername { get; set; }
+        public string? TelegramForwardWebhook { get; set; }
     }
 }
