@@ -21,6 +21,7 @@ namespace MeetLines.Application.Services
         private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IDiscordWebhookService _discordService;
         private readonly IEmployeeRepository _employeeRepository;
+        private readonly IEmployeePasswordResetTokenRepository _employeePasswordResetTokenRepository;
         private readonly ITenantService _tenantService;
         private readonly MeetLines.Application.Services.Interfaces.ITransferUseCases _transferUseCases;
 
@@ -35,6 +36,7 @@ namespace MeetLines.Application.Services
             ISubscriptionRepository subscriptionRepository,
             IDiscordWebhookService discordService,
             IEmployeeRepository employeeRepository,
+            IEmployeePasswordResetTokenRepository employeePasswordResetTokenRepository,
             ITenantService tenantService)
         {
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
@@ -47,6 +49,7 @@ namespace MeetLines.Application.Services
             _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
             _discordService = discordService;
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
+            _employeePasswordResetTokenRepository = employeePasswordResetTokenRepository ?? throw new ArgumentNullException(nameof(employeePasswordResetTokenRepository));
             _tenantService = tenantService ?? throw new ArgumentNullException(nameof(tenantService));
             _transferUseCases = null!; // will be injected via DI by ApplicationServiceCollectionExtensions
         }
@@ -139,7 +142,9 @@ namespace MeetLines.Application.Services
 
                 // ✅ VALIDACIÓN: Verificar que el empleado pertenezca al tenant actual
                 var currentTenantId = _tenantService.GetCurrentTenantId();
-                if (currentTenantId != Guid.Empty && employee.ProjectId != currentTenantId)
+                // Solo validar si HAY un tenant resuelto (si es null, es dominio principal o reservado, permitir acceso o decidir política)
+                // En este caso, permitimos login desde dominio principal si se conocen las credenciales
+                if (currentTenantId.HasValue && currentTenantId.Value != Guid.Empty && employee.ProjectId != currentTenantId.Value)
                 {
                     // El empleado no pertenece a este tenant/proyecto
                     return Result<LoginResponse>.Fail("Usuario o contraseña incorrectos");
@@ -613,6 +618,104 @@ namespace MeetLines.Application.Services
             catch (Exception ex)
             {
                 return Result.Fail($"Error al cerrar sesión: {ex.Message}");
+            }
+        }
+        public async Task<Result> EmployeeForgotPasswordAsync(EmployeeForgotPasswordRequest request, CancellationToken ct = default)
+        {
+            try
+            {
+                // Buscamos empleado por username (email)
+                var employee = await _employeeRepository.GetByUsernameAsync(request.Email, ct);
+                if (employee == null)
+                {
+                    // Por seguridad, no revelar si existe
+                    return Result.Ok();
+                }
+
+                // Invalidar tokens anteriores
+                await _employeePasswordResetTokenRepository.InvalidateAllUserTokensAsync(employee.Id, ct);
+
+                // Crear nuevo token
+                var resetToken = Guid.NewGuid().ToString("N");
+                var token = new EmployeePasswordResetToken(employee.Id, resetToken);
+                await _employeePasswordResetTokenRepository.AddAsync(token, ct);
+
+                // Enviar email de recuperación
+                // Usamos el mismo método de email service, asumiendo que el texto es genérico o agregamos uno específico si se requiere
+                await _emailService.SendPasswordResetAsync(employee.Email, employee.Name, resetToken);
+
+                return Result.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail($"Error al solicitar recuperación de empleado: {ex.Message}");
+            }
+        }
+
+        public async Task<Result> EmployeeResetPasswordAsync(EmployeeResetPasswordRequest request, CancellationToken ct = default)
+        {
+            try
+            {
+                var token = await _employeePasswordResetTokenRepository.GetByTokenAsync(request.Token, ct);
+
+                if (token == null || !token.CanBeUsed())
+                {
+                    return Result.Fail("Token inválido o expirado");
+                }
+
+                var employee = await _employeeRepository.GetByIdAsync(token.EmployeeId, ct);
+                if (employee == null)
+                {
+                    return Result.Fail("Empleado no encontrado");
+                }
+
+                // Cambiar contraseña
+                var newPasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+                employee.ChangePassword(newPasswordHash);
+                await _employeeRepository.UpdateAsync(employee, ct);
+
+                // Marcar token como usado
+                token.MarkAsUsed();
+                await _employeePasswordResetTokenRepository.UpdateAsync(token, ct);
+                
+                // Opción: invalidar sesiones de login del empleado si existiera tabla de sesiones separada o compartida
+                // Por ahora no invalidamos sesiones activas de empleado explícitamente salvo que LoginSession soporte empleados (que sí lo hace mediante UserId)
+                // await _loginSessionRepository.DeleteAllUserSessionsAsync(employee.Id, ct); 
+
+                return Result.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail($"Error al restablecer contraseña de empleado: {ex.Message}");
+            }
+        }
+
+        public async Task<Result> EmployeeChangePasswordAsync(Guid employeeId, EmployeeChangePasswordRequest request, CancellationToken ct = default)
+        {
+            try
+            {
+                var employee = await _employeeRepository.GetByIdAsync(employeeId, ct);
+                if (employee == null)
+                {
+                    return Result.Fail("Empleado no encontrado");
+                }
+
+                // Verificar contraseña actual
+                if (!_passwordHasher.VerifyPassword(request.CurrentPassword, employee.PasswordHash))
+                {
+                    return Result.Fail("La contraseña actual es incorrecta");
+                }
+
+                // Cambiar contraseña
+                var newPasswordHash = _passwordHasher.HashPassword(request.NewPassword);
+                employee.ChangePassword(newPasswordHash);
+                await _employeeRepository.UpdateAsync(employee, ct);
+
+                return Result.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail($"Error al cambiar contraseña: {ex.Message}");
             }
         }
     }

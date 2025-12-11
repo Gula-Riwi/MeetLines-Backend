@@ -12,5 +12,8 @@ namespace MeetLines.Application.DTOs.Projects
         public string Name { get; set; } = null!;
         public string Industry { get; set; } = null!;
         public string Description { get; set; } = null!;
+        public string? Address { get; set; }
+        public string? City { get; set; }
+        public string? Country { get; set; }
     }
 }

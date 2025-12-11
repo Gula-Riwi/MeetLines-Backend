@@ -155,7 +155,10 @@ namespace MeetLines.API.Controllers
                     subdomain = project.Subdomain,
                     industry = project.Industry,
                     whatsappPhoneNumberId = project.WhatsappPhoneNumberId,
-                    userId = project.UserId
+                    userId = project.UserId,
+                    address = project.Address,
+                    city = project.City,
+                    country = project.Country
                 });
             }
             catch (Exception ex)

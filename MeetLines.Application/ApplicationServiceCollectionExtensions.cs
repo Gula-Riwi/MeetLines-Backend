@@ -7,6 +7,7 @@ using MeetLines.Application.UseCases.Auth;
 using MeetLines.Application.UseCases.HealthCheck;
 using MeetLines.Application.UseCases.Projects;
 using MeetLines.Application.UseCases.Projects.Interfaces;
+using MeetLines.Application.UseCases.Channels;
 
 namespace MeetLines.Application.IoC
 {
@@ -23,6 +24,7 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IProfileService, ProfileService>();
             services.AddScoped<IEmployeeService, EmployeeService>();
+            services.AddScoped<IMercadoPagoService, MercadoPagoService>();
 
             // WhatsApp Bot System Services
             services.AddScoped<IProjectBotConfigService, ProjectBotConfigService>();
@@ -34,8 +36,9 @@ namespace MeetLines.Application.IoC
 
             // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
-            services.AddScoped<ILoginUserUseCase, LoginUserUseCase>();
-            services.AddScoped<IOAuthLoginUseCase, OAuthLoginUseCase>();
+            services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
+            // services.AddScoped<IChannelUseCases, ChannelUseCases>(); // Removed as it uses individual Use Cases
+            // services.AddScoped<IAppointmentUseCases, AppointmentUseCases>(); // Removed as it uses Service pattern
             services.AddScoped<IRefreshTokenUseCase, RefreshTokenUseCase>();
             services.AddScoped<MeetLines.Application.Services.Interfaces.ITransferUseCases, MeetLines.Application.UseCases.Auth.TransferUseCases>();
             services.AddScoped<IVerifyEmailUseCase, VerifyEmailUseCase>();
@@ -53,9 +56,19 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IDeleteProjectUseCase, DeleteProjectUseCase>();
             services.AddScoped<IConfigureWhatsappUseCase, ConfigureWhatsappUseCase>();
             services.AddScoped<IConfigureTelegramUseCase, ConfigureTelegramUseCase>();
+            services.AddScoped<IGetPublicProjectsUseCase, GetPublicProjectsUseCase>();
+            services.AddScoped<IGetPublicProjectEmployeesUseCase, GetPublicProjectEmployeesUseCase>();
+
+            // Channels Use Cases
+            services.AddScoped<ICreateChannelUseCase, CreateChannelUseCase>();
+            services.AddScoped<IGetProjectChannelsUseCase, GetProjectChannelsUseCase>();
+            services.AddScoped<IDeleteChannelUseCase, DeleteChannelUseCase>();
+            services.AddScoped<IGetPublicProjectChannelsUseCase, GetPublicProjectChannelsUseCase>();
+            services.AddScoped<IUpdateChannelUseCase, UpdateChannelUseCase>();
 
             // Registrar validadores de FluentValidation
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
+            
 
             return services;
         }

@@ -18,6 +18,11 @@ namespace MeetLines.Application.Services.Interfaces
         Task<Result> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct = default);
         Task<Result> ResendVerificationEmailAsync(string email, CancellationToken ct = default);
         Task<Result> LogoutAsync(string refreshToken, CancellationToken ct = default);
+        
+        // Employee Password Management
+        Task<Result> EmployeeForgotPasswordAsync(EmployeeForgotPasswordRequest request, CancellationToken ct = default);
+        Task<Result> EmployeeResetPasswordAsync(EmployeeResetPasswordRequest request, CancellationToken ct = default);
+        Task<Result> EmployeeChangePasswordAsync(Guid employeeId, EmployeeChangePasswordRequest request, CancellationToken ct = default);
         Task<Result<LoginResponse>> EmployeeLoginAsync(EmployeeLoginRequest request, CancellationToken ct = default);
     }
 }

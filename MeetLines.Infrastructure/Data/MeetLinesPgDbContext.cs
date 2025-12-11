@@ -22,10 +22,12 @@ namespace MeetLines.Infrastructure.Data
         public DbSet<SystemSetting> SystemSettings { get; set; }
         public DbSet<EmailVerificationToken> EmailVerificationTokens { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        public DbSet<EmployeePasswordResetToken> EmployeePasswordResetTokens { get; set; }
         public DbSet<TransferToken> TransferTokens { get; set; }
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<AppUser> AppUsers { get; set; }
+        public DbSet<Payment> Payments { get; set; }
         
         // WhatsApp Bot System
         public DbSet<ProjectBotConfig> ProjectBotConfigs { get; set; }
@@ -73,6 +75,11 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.WorkingHours).HasColumnType("jsonb");
                 b.Property(x => x.Config).HasColumnType("jsonb");
                 b.Property(x => x.Subdomain).IsRequired().HasMaxLength(63);
+                b.Property(x => x.Address).HasMaxLength(255).HasColumnName("address");
+                b.Property(x => x.City).HasMaxLength(100).HasColumnName("city");
+                b.Property(x => x.Country).HasMaxLength(100).HasColumnName("country");
+                b.Property(x => x.Latitude).HasColumnName("latitude");
+                b.Property(x => x.Longitude).HasColumnName("longitude");
                 b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
                 b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
                 // WhatsApp Integration
@@ -103,6 +110,18 @@ namespace MeetLines.Infrastructure.Data
                 b.HasOne<Project>().WithMany().HasForeignKey(c => c.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_channels_project");
                 b.HasIndex(x => x.Type).HasDatabaseName("idx_channels_type");
+            });
+            
+            // Payments
+            modelBuilder.Entity<Payment>(b =>
+            {
+                b.ToTable("payments");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.Amount).HasColumnType("numeric(10,2)");
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.HasOne<SaasUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => x.UserId).HasDatabaseName("idx_payments_user");
             });
             
 
@@ -247,6 +266,19 @@ namespace MeetLines.Infrastructure.Data
                 b.HasIndex(x => x.UserId).HasDatabaseName("idx_passreset_user");
                 b.HasIndex(x => x.Token).IsUnique().HasDatabaseName("idx_passreset_token");
             });
+
+            modelBuilder.Entity<EmployeePasswordResetToken>(b =>
+            {
+                b.ToTable("employee_password_reset_tokens");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.HasOne<Employee>().WithMany().HasForeignKey(p => p.EmployeeId).OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => x.EmployeeId).HasDatabaseName("idx_emp_passreset_employee");
+                b.HasIndex(x => x.Token).IsUnique().HasDatabaseName("idx_emp_passreset_token");
+            });
+
+
 
             modelBuilder.Entity<TransferToken>(b =>
             {

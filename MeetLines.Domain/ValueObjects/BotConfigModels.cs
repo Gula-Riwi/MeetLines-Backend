@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace MeetLines.Domain.ValueObjects
 {
@@ -7,11 +8,22 @@ namespace MeetLines.Domain.ValueObjects
     /// </summary>
     public class ReceptionBotConfig
     {
+        [JsonPropertyName("enabled")]
         public bool Enabled { get; set; } = true;
-        public string WelcomeMessage { get; set; } = "¡Hola! Soy {botName}, el asistente virtual de {businessName}. ¿En qué puedo ayudarte?";
+        
+        [JsonPropertyName("welcomeMessage")]
+        public string WelcomeMessage { get; set; } = "¡Hola! Soy {botName}, el asistente virtual. ¿En qué puedo ayudarte?";
+        
+        [JsonPropertyName("intentTriggerKeywords")]
         public string IntentTriggerKeywords { get; set; } = "agendar,reservar,cita,comprar";
-        public string HandoffMessage { get; set; } = "¡Perfecto! Te ayudo con eso enseguida 📅";
-        public string OutOfHoursMessage { get; set; } = "Gracias por contactarnos. Nuestro horario es {hours}. Te responderemos pronto.";
+        
+        [JsonPropertyName("handoffMessage")]
+        public string HandoffMessage { get; set; } = "¡Perfecto! Te ayudo con eso enseguida.";
+        
+        [JsonPropertyName("outOfHoursMessage")]
+        public string OutOfHoursMessage { get; set; } = "Gracias por contactarnos. Nuestro horario de atención ha terminado. Te responderemos pronto.";
+        
+        [JsonPropertyName("customPrompt")]
         public string? CustomPrompt { get; set; }
     }
     
@@ -20,30 +32,64 @@ namespace MeetLines.Domain.ValueObjects
     /// </summary>
     public class TransactionalBotConfig
     {
+        [JsonPropertyName("appointmentEnabled")]
         public bool Enabled { get; set; } = true;
-        public int AppointmentDurationMinutes { get; set; } = 60;
+        
+        [JsonPropertyName("slotDuration")]
+        public int AppointmentDurationMinutes { get; set; } = 30;
+        
+        [JsonPropertyName("bufferBetweenAppointments")]
         public int BufferMinutes { get; set; } = 0;
+        
+        [JsonPropertyName("businessHours")]
+        public Dictionary<string, DaySchedule> BusinessHours { get; set; } = new();
+
         public int MaxAdvanceBookingDays { get; set; } = 30;
         public int MinAdvanceBookingDays { get; set; } = 0;
-        public string ConfirmationMessage { get; set; } = "✅ ¡Listo! Tu cita está confirmada para el {date} a las {time}.";
+        public string ConfirmationMessage { get; set; } = "✅ ¡Listo! Tu cita está confirmada.";
         public bool SendReminder { get; set; } = true;
         public int ReminderHoursBefore { get; set; } = 24;
-        public string ReminderMessage { get; set; } = "Hola {customerName}, te recordamos tu cita mañana a las {time}.";
+        
+        [JsonPropertyName("reminderMessage")]
+        public string ReminderMessage { get; set; } = "Hola, te recordamos tu cita mañana.";
         public bool AllowCancellation { get; set; } = true;
         public int MinCancellationHours { get; set; } = 24;
         public string? CustomPrompt { get; set; }
     }
     
+    public class DaySchedule
+    {
+        [JsonPropertyName("start")]
+        public string Start { get; set; } = "09:00";
+        
+        [JsonPropertyName("end")]
+        public string End { get; set; } = "18:00";
+        
+        [JsonPropertyName("closed")]
+        public bool Closed { get; set; } = false;
+    }
+
     /// <summary>
     /// Configuración del Bot de Feedback
     /// </summary>
     public class FeedbackBotConfig
     {
+        [JsonPropertyName("enabled")]
         public bool Enabled { get; set; } = true;
+        
+        [JsonPropertyName("delayHours")]
         public int DelayHours { get; set; } = 24;
-        public string RequestMessage { get; set; } = "Hola {customerName}, ¿cómo calificarías tu experiencia del 1 al 5?";
+        
+        [JsonPropertyName("requestMessage")]
+        public string RequestMessage { get; set; } = "Hola, ¿cómo calificarías tu experiencia del 1 al 5?";
+        
+        [JsonPropertyName("negativeFeedbackMessage")]
         public string NegativeFeedbackMessage { get; set; } = "Lamentamos eso. ¿Qué podemos mejorar?";
+        
+        [JsonPropertyName("notifyOwnerOnNegative")]
         public bool NotifyOwnerOnNegative { get; set; } = true;
+        
+        [JsonPropertyName("customPrompt")]
         public string? CustomPrompt { get; set; }
     }
     
@@ -58,9 +104,9 @@ namespace MeetLines.Domain.ValueObjects
         public int DaysBetweenAttempts { get; set; } = 30;
         public List<string> Messages { get; set; } = new()
         {
-            "Hola {customerName}, hace {days} días no te vemos. ¿Te gustaría agendar?",
-            "Hola {customerName}, ¿cómo has estado? Tenemos disponibilidad esta semana.",
-            "Hola {customerName}, te extrañamos. ¿Podemos ayudarte en algo?"
+            "Hola, hace días no te vemos. ¿Te gustaría agendar?",
+            "Hola, ¿cómo has estado? Tenemos disponibilidad esta semana.",
+            "Hola, te extrañamos. ¿Podemos ayudarte en algo?"
         };
         public bool OfferDiscount { get; set; } = false;
         public int DiscountPercentage { get; set; } = 10;

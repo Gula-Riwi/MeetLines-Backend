@@ -36,6 +36,67 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IEnumerable<Project>> GetAllAsync(CancellationToken ct = default)
+        {
+            return await _context.Projects
+                .Where(p => p.Status == "active")
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync(ct);
+        }
+
+        public async Task<IEnumerable<Project>> GetPublicProjectsByDistanceAsync(double? latitude, double? longitude, CancellationToken ct = default)
+        {
+            if (!latitude.HasValue || !longitude.HasValue)
+            {
+                return await GetAllAsync(ct);
+            }
+
+            // Haversine formula for distance in Kilometers
+            // Formatos: 
+            // - Nearest (Non-null lat/lng) sorted by distance ASC
+            // - Remote (Null lat/lng) appended at the end? User asked for "y las que no tienen direccion porque son remotas"
+            // Let's union or just sort.
+            // Sorting: Remote first? Distance first? 
+            // "busque las mas cercanas y las que no tienen direccion" likely means: Show me things close to me, AND things that are remote (available everywhere).
+            
+            // Logic:
+            // 1. Calculate distance for all.
+            // 2. Sort by: HasCoordinates? 
+            // If I assume Remote (Null) means "Infinite Reach", maybe they should be mixed? 
+            // But typically, a user wants "Pizza near me". If none, maybe "Frozen Pizza online". 
+            // Let's sort: 
+            // 1st Priority: Distance (ASC). Nulls Last? Nulls First?
+            // If Nulls Last: Local stuff first, then remote stuff. (Recommended for "Near Me")
+            
+            // Raw SQL for performance and custom sorting
+            var lat = latitude.Value;
+            var lng = longitude.Value;
+
+            // Using standard SQL with Haversine formula
+            // 6371 * acos(cos(radians(lat)) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(lng)) + sin(radians(lat)) * sin(radians(p.latitude)))
+            
+            var query = $@"
+                SELECT *, 
+                (
+                    6371 * acos(
+                        least(1.0, greatest(-1.0, 
+                            cos(radians({lat})) * cos(radians(""latitude"")) * cos(radians(""longitude"") - radians({lng})) + 
+                            sin(radians({lat})) * sin(radians(""latitude""))
+                        ))
+                    )
+                ) as ""Distance""
+                FROM projects
+                WHERE status = 'active'
+                ORDER BY 
+                    CASE WHEN ""latitude"" IS DISTINCT FROM NULL AND ""longitude"" IS DISTINCT FROM NULL THEN 0 ELSE 1 END,
+                    ""Distance"" ASC
+            ";
+
+            return await _context.Projects
+                .FromSqlRaw(query)
+                .ToListAsync(ct);
+        }
+
         public async Task<int> GetActiveCountByUserAsync(Guid userId, CancellationToken ct = default)
         {
             return await _context.Projects

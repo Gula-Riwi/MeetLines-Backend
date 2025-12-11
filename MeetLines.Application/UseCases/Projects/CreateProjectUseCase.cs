@@ -98,7 +98,12 @@ namespace MeetLines.Application.UseCases.Projects
                     request.Name,
                     subdomain,
                     request.Industry,
-                    request.Description);
+                    request.Description,
+                    request.Address,
+                    request.City,
+                    request.Country,
+                    request.Latitude,
+                    request.Longitude);
 
                 await _projectRepository.AddAsync(project, ct);
 
@@ -125,10 +130,12 @@ namespace MeetLines.Application.UseCases.Projects
 
         private int GetMaxProjectsByPlan(string plan) => plan?.ToLower() switch
         {
+            "free" => 1,
+            "trial" => 1,
             "beginner" => 1,
             "intermediate" => 2,
             "complete" => int.MaxValue,
-            _ => 0
+            _ => 1 // Default to 1 to avoid '0' quota blocking everything for unknown plans
         };
 
         private ProjectResponse MapToResponse(Domain.Entities.Project project)
@@ -145,6 +152,11 @@ namespace MeetLines.Application.UseCases.Projects
                 FullUrl = fullUrl,
                 Industry = project.Industry,
                 Description = project.Description,
+                Address = project.Address,
+                City = project.City,
+                Country = project.Country,
+                Latitude = project.Latitude,
+                Longitude = project.Longitude,
                 Status = project.Status,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt

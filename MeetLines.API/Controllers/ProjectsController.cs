@@ -26,6 +26,10 @@ namespace MeetLines.API.Controllers
         private readonly IDeleteProjectUseCase _deleteProjectUseCase;
         private readonly IConfigureWhatsappUseCase _configureWhatsappUseCase;
         private readonly IConfigureTelegramUseCase _configureTelegramUseCase;
+        private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
+        private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
+        private readonly IConfiguration _configuration;
+
 
         public ProjectsController(
             ICreateProjectUseCase createProjectUseCase,
@@ -35,6 +39,10 @@ namespace MeetLines.API.Controllers
             IDeleteProjectUseCase deleteProjectUseCase,
             IConfigureWhatsappUseCase configureWhatsappUseCase,
             IConfigureTelegramUseCase configureTelegramUseCase)
+            IGetPublicProjectsUseCase getPublicProjectsUseCase,
+            IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase,
+            IConfiguration configuration)
+
         {
             _createProjectUseCase = createProjectUseCase ?? throw new ArgumentNullException(nameof(createProjectUseCase));
             _getUserProjectsUseCase = getUserProjectsUseCase ?? throw new ArgumentNullException(nameof(getUserProjectsUseCase));
@@ -43,6 +51,24 @@ namespace MeetLines.API.Controllers
             _deleteProjectUseCase = deleteProjectUseCase ?? throw new ArgumentNullException(nameof(deleteProjectUseCase));
             _configureWhatsappUseCase = configureWhatsappUseCase ?? throw new ArgumentNullException(nameof(configureWhatsappUseCase));
             _configureTelegramUseCase = configureTelegramUseCase ?? throw new ArgumentNullException(nameof(configureTelegramUseCase));
+            _getPublicProjectsUseCase = getPublicProjectsUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectsUseCase));
+            _getPublicProjectEmployeesUseCase = getPublicProjectEmployeesUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectEmployeesUseCase));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        }
+
+        private bool ValidateApiKey()
+        {
+            try 
+            {
+                var authHeader = Request.Headers["Authorization"].ToString();
+                var apiKey = authHeader.Replace("Bearer ", "").Replace("Bearer", "").Trim();
+                var expectedApiKey = _configuration["INTEGRATIONS_API_KEY"];
+                return !string.IsNullOrEmpty(apiKey) && apiKey == expectedApiKey;
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -136,6 +162,32 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Obtiene todos los proyectos públicos (activos)
+        /// </summary>
+        [HttpGet("public")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicProjects([FromQuery] double? latitude, [FromQuery] double? longitude, CancellationToken ct)
+        {
+            var result = await _getPublicProjectsUseCase.ExecuteAsync(latitude, longitude, ct);
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.Error });
+            return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Obtiene los empleados públicos (activos) de un proyecto
+        /// </summary>
+        [HttpGet("{projectId}/employees/public")]
+        [AllowAnonymous]
+        public async Task<IActionResult> GetPublicProjectEmployees(Guid projectId, CancellationToken ct)
+        {
+            var result = await _getPublicProjectEmployeesUseCase.ExecuteAsync(projectId, ct);
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.Error });
+            return Ok(result.Value);
+        }
+
+        /// <summary>
         /// Obtiene datos públicos de un proyecto específico usando INTEGRATIONS_API_KEY
         /// Este endpoint es usado por n8n para obtener datos del proyecto
         /// GET: api/projects/{projectId}/public
@@ -149,7 +201,6 @@ namespace MeetLines.API.Controllers
         public async Task<IActionResult> GetProjectPublic(
             [FromRoute] Guid projectId,
             [FromServices] IProjectRepository projectRepository,
-            [FromServices] IConfiguration configuration,
             [FromServices] ILogger<ProjectsController> logger,
             CancellationToken ct = default)
         {
@@ -158,14 +209,7 @@ namespace MeetLines.API.Controllers
                 logger.LogInformation("🔍 GetProjectPublic called for ProjectId: {ProjectId}", projectId);
                 
                 // Validar API Key
-                var authHeader = Request.Headers["Authorization"].ToString();
-                var apiKey = authHeader.Replace("Bearer ", "").Replace("Bearer", "").Trim();
-                var expectedApiKey = configuration["INTEGRATIONS_API_KEY"];
-
-                logger.LogInformation("🔑 API Key present: {HasKey}, Expected key configured: {HasExpected}", 
-                    !string.IsNullOrEmpty(apiKey), !string.IsNullOrEmpty(expectedApiKey));
-
-                if (string.IsNullOrEmpty(apiKey) || apiKey != expectedApiKey)
+                if (!ValidateApiKey())
                 {
                     logger.LogWarning("⚠️ Invalid API Key for ProjectId: {ProjectId}", projectId);
                     return Unauthorized(new { error = "Invalid API Key" });
@@ -214,6 +258,12 @@ namespace MeetLines.API.Controllers
             [FromServices] IProjectRepository projectRepository,
             CancellationToken ct = default)
         {
+            // Validar API Key
+            if (!ValidateApiKey())
+            {
+                return Unauthorized(new { error = "Invalid API Key" });
+            }
+
             try
             {
                 if (string.IsNullOrWhiteSpace(phoneNumberId))

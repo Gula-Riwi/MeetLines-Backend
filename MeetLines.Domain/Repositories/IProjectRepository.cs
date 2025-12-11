@@ -22,6 +22,16 @@ namespace MeetLines.Domain.Repositories
         Task<IEnumerable<Project>> GetByUserAsync(Guid userId, CancellationToken ct = default);
 
         /// <summary>
+        /// Obtiene todos los proyectos activos del sistema (Público)
+        /// </summary>
+        Task<IEnumerable<Project>> GetAllAsync(CancellationToken ct = default);
+
+        /// <summary>
+        /// Obtiene proyectos públicos ordenados por distancia (haversine) si se proporcionan coordenadas
+        /// </summary>
+        Task<IEnumerable<Project>> GetPublicProjectsByDistanceAsync(double? latitude, double? longitude, CancellationToken ct = default);
+
+        /// <summary>
         /// Obtiene la cantidad de proyectos activos de un usuario
         /// </summary>
         Task<int> GetActiveCountByUserAsync(Guid userId, CancellationToken ct = default);

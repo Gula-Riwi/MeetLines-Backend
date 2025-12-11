@@ -543,6 +543,77 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Solicita un email de recuperación de contraseña para un empleado.
+        /// POST: api/auth/employee-forgot-password
+        /// </summary>
+        [HttpPost("employee-forgot-password")]
+        public async Task<IActionResult> EmployeeForgotPassword([FromBody] EmployeeForgotPasswordRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var result = await _authService.EmployeeForgotPasswordAsync(request, ct);
+                if (!result.IsSuccess)
+                    return BadRequest(ApiResponse.Fail(result.Error ?? "Error al solicitar recuperación"));
+
+                return Ok(ApiResponse.Ok("Si el email existe, se ha enviado un enlace de recuperación."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Error interno: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Restablece la contraseña de un empleado usando un token válido.
+        /// POST: api/auth/employee-reset-password
+        /// </summary>
+        [HttpPost("employee-reset-password")]
+        public async Task<IActionResult> EmployeeResetPassword([FromBody] EmployeeResetPasswordRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var result = await _authService.EmployeeResetPasswordAsync(request, ct);
+                if (!result.IsSuccess)
+                    return BadRequest(ApiResponse.Fail(result.Error ?? "Error al restablecer contraseña"));
+
+                return Ok(ApiResponse.Ok("Contraseña restablecida exitosamente"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Error interno: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Cambia la contraseña de un empleado autenticado.
+        /// PUT: api/auth/employee-change-password
+        /// </summary>
+        [HttpPut("employee-change-password")]
+        public async Task<IActionResult> EmployeeChangePassword([FromBody] EmployeeChangePasswordRequest request, CancellationToken ct)
+        {
+            try
+            {
+                // Ensure user is authenticated
+                if (!User.Identity?.IsAuthenticated ?? true)
+                    return Unauthorized(ApiResponse.Fail("Unauthorized"));
+
+                var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var employeeId)) 
+                    return Unauthorized(ApiResponse.Fail("User id not found in token"));
+
+                var result = await _authService.EmployeeChangePasswordAsync(employeeId, request, ct);
+                if (!result.IsSuccess)
+                    return BadRequest(ApiResponse.Fail(result.Error ?? "Error al cambiar contraseña"));
+
+                return Ok(ApiResponse.Ok("Contraseña actualizada exitosamente"));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Error interno: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
         /// Cierra sesión invalidando el refresh token.
         /// POST: api/auth/logout
         /// </summary>
