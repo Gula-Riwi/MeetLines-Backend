@@ -36,6 +36,14 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IEnumerable<Project>> GetAllAsync(CancellationToken ct = default)
+        {
+            return await _context.Projects
+                .Where(p => p.Status == "active")
+                .OrderByDescending(p => p.CreatedAt)
+                .ToListAsync(ct);
+        }
+
         public async Task<int> GetActiveCountByUserAsync(Guid userId, CancellationToken ct = default)
         {
             return await _context.Projects
