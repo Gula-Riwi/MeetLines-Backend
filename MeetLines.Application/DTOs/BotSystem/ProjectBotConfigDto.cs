@@ -75,6 +75,24 @@ namespace MeetLines.Application.DTOs.BotSystem
         
         [JsonPropertyName("timezone")]
         public string? Timezone { get; set; }
+
+        [JsonPropertyName("receptionConfig")]
+        public ReceptionBotConfig? ReceptionConfig { get; set; }
+        
+        [JsonPropertyName("transactionalConfig")]
+        public TransactionalBotConfig? TransactionalConfig { get; set; }
+        
+        [JsonPropertyName("feedbackConfig")]
+        public FeedbackBotConfig? FeedbackConfig { get; set; }
+        
+        [JsonPropertyName("reactivationConfig")]
+        public ReactivationBotConfig? ReactivationConfig { get; set; }
+        
+        [JsonPropertyName("integrationsConfig")]
+        public IntegrationsConfig? IntegrationsConfig { get; set; }
+        
+        [JsonPropertyName("advancedConfig")]
+        public AdvancedBotConfig? AdvancedConfig { get; set; }
     }
 
     /// <summary>
