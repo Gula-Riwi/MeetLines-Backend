@@ -9,6 +9,7 @@ using Microsoft.Extensions.Configuration;
 using MeetLines.Application.DTOs.Projects;
 using MeetLines.Application.UseCases.Projects;
 using MeetLines.Domain.Repositories;
+using MeetLines.Application.UseCases.Projects.Interfaces;
 using System.Security.Claims;
 
 namespace MeetLines.API.Controllers
@@ -27,6 +28,7 @@ namespace MeetLines.API.Controllers
         private readonly IUpdateProjectUseCase _updateProjectUseCase;
         private readonly IDeleteProjectUseCase _deleteProjectUseCase;
         private readonly IConfigureWhatsappUseCase _configureWhatsappUseCase;
+        private readonly IConfigureTelegramUseCase _configureTelegramUseCase;
         private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
         private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
         private readonly IUploadProjectPhotoUseCase _uploadProjectPhotoUseCase;
@@ -39,6 +41,7 @@ namespace MeetLines.API.Controllers
             IUpdateProjectUseCase updateProjectUseCase,
             IDeleteProjectUseCase deleteProjectUseCase,
             IConfigureWhatsappUseCase configureWhatsappUseCase,
+            IConfigureTelegramUseCase configureTelegramUseCase,
             IGetPublicProjectsUseCase getPublicProjectsUseCase,
             IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase,
             IUploadProjectPhotoUseCase uploadProjectPhotoUseCase,
@@ -50,6 +53,7 @@ namespace MeetLines.API.Controllers
             _updateProjectUseCase = updateProjectUseCase ?? throw new ArgumentNullException(nameof(updateProjectUseCase));
             _deleteProjectUseCase = deleteProjectUseCase ?? throw new ArgumentNullException(nameof(deleteProjectUseCase));
             _configureWhatsappUseCase = configureWhatsappUseCase ?? throw new ArgumentNullException(nameof(configureWhatsappUseCase));
+            _configureTelegramUseCase = configureTelegramUseCase ?? throw new ArgumentNullException(nameof(configureTelegramUseCase));
             _getPublicProjectsUseCase = getPublicProjectsUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectsUseCase));
             _getPublicProjectEmployeesUseCase = getPublicProjectEmployeesUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectEmployeesUseCase));
             _uploadProjectPhotoUseCase = uploadProjectPhotoUseCase ?? throw new ArgumentNullException(nameof(uploadProjectPhotoUseCase));
@@ -227,6 +231,22 @@ namespace MeetLines.API.Controllers
             return Ok(result.Value);
         }
 
+        [HttpPatch("{projectId}/telegram")]
+        public async Task<IActionResult> ConfigureTelegram(
+            Guid projectId,
+            [FromBody] ConfigureTelegramRequest request,
+            CancellationToken ct)
+        {
+            var userId = GetUserId();
+            var result = await _configureTelegramUseCase.ExecuteAsync(userId, projectId, request, ct);
+
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.Error });
+
+            return Ok(result.Value);
+        }
+
+
         /// <summary>
         /// Obtiene datos públicos de un proyecto específico usando INTEGRATIONS_API_KEY
         /// Este endpoint es usado por n8n para obtener datos del proyecto
@@ -282,6 +302,45 @@ namespace MeetLines.API.Controllers
                 logger.LogError(ex, "❌ Error in GetProjectPublic for ProjectId: {ProjectId}", projectId);
                 return StatusCode(500, new { error = "Internal server error" });
             }
+        }
+
+        
+
+        /// <summary>
+        /// Obtiene detalles públicos extendidos de un proyecto (sin autenticación)
+        /// Incluye ubicación e industria. Usado por clientes públicos.
+        /// GET: api/projects/{projectId}/details/public
+        /// </summary>
+        [HttpGet("{projectId}/details/public")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ProjectPublicDetailsDto), 200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetProjectPublicDetails(
+            [FromRoute] Guid projectId,
+            [FromServices] IProjectRepository projectRepository,
+            CancellationToken ct = default)
+        {
+             var project = await projectRepository.GetAsync(projectId, ct);
+             
+             if (project == null || project.Status != "active")
+             {
+                 return NotFound(new { error = "Project not found or not active" });
+             }
+
+             var dto = new ProjectPublicDetailsDto
+             {
+                 Id = project.Id.ToString(),
+                 Name = project.Name,
+                 Industry = project.Industry ?? string.Empty,
+                 Description = project.Description ?? string.Empty,
+                 Address = project.Address ?? string.Empty,
+                 City = project.City ?? string.Empty,
+                 Country = project.Country ?? string.Empty,
+                 Latitude = project.Latitude,
+                 Longitude = project.Longitude
+             };
+
+             return Ok(dto);
         }
 
         /// <summary>

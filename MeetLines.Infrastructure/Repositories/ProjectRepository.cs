@@ -69,32 +69,68 @@ namespace MeetLines.Infrastructure.Repositories
             // If Nulls Last: Local stuff first, then remote stuff. (Recommended for "Near Me")
             
             // Raw SQL for performance and custom sorting
-            var lat = latitude.Value;
-            var lng = longitude.Value;
+            // Using parameters to avoid locale issues with decimal separators
+            var latParam = latitude.Value;
+            var lngParam = longitude.Value;
+            var maxDistanceKm = 50.0; // Filter threshold for "near enough to visit"
 
-            // Using standard SQL with Haversine formula
-            // 6371 * acos(cos(radians(lat)) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(lng)) + sin(radians(lat)) * sin(radians(p.latitude)))
-            
-            var query = $@"
-                SELECT *, 
-                (
-                    6371 * acos(
-                        least(1.0, greatest(-1.0, 
-                            cos(radians({lat})) * cos(radians(""latitude"")) * cos(radians(""longitude"") - radians({lng})) + 
-                            sin(radians({lat})) * sin(radians(""latitude""))
-                        ))
-                    )
-                ) as ""Distance""
-                FROM projects
-                WHERE status = 'active'
+            // Database schema: projects (lowercase), "Status" (Pascal quoted), latitude/longitude (lower)
+            // Logic: 
+            // 1. Calculate Distance
+            // 2. WHERE Status='active' AND ( (latitude IS NULL) OR (Distance <= 50) )
+            // 3. ORDER BY Distance ASC (Physical first), then Remote (Distance is null/infinite)
+            var query = @"
+                SELECT * FROM (
+                    SELECT *, 
+                    (
+                        6371 * acos(
+                            least(1.0, greatest(-1.0, 
+                                cos(radians({0})) * cos(radians(latitude)) * cos(radians(longitude) - radians({1})) + 
+                                sin(radians({0})) * sin(radians(latitude))
+                            ))
+                        )
+                    ) as ""Distance""
+                    FROM projects
+                    WHERE ""Status"" = 'active'
+                ) as ""DerivedProjects""
+                WHERE (latitude IS NULL OR longitude IS NULL) OR (""Distance"" <= {2})
                 ORDER BY 
-                    CASE WHEN ""latitude"" IS DISTINCT FROM NULL AND ""longitude"" IS DISTINCT FROM NULL THEN 0 ELSE 1 END,
+                    CASE WHEN latitude IS DISTINCT FROM NULL AND longitude IS DISTINCT FROM NULL THEN 0 ELSE 1 END,
                     ""Distance"" ASC
             ";
 
-            return await _context.Projects
-                .FromSqlRaw(query)
+            var projects = await _context.Projects
+                .FromSqlRaw(query, latParam, lngParam, maxDistanceKm)
+                .AsNoTracking()
                 .ToListAsync(ct);
+
+            // Calculate distance in memory since [NotMapped] property is ignored by FromSqlRaw
+            foreach (var p in projects)
+            {
+                if (p.Latitude.HasValue && p.Longitude.HasValue)
+                {
+                    p.Distance = CalculateDistance(latParam, lngParam, p.Latitude.Value, p.Longitude.Value);
+                }
+            }
+
+            return projects;
+        }
+
+        private double CalculateDistance(double lat1, double lon1, double lat2, double lon2)
+        {
+            var R = 6371d; // Radius of the earth in km
+            var dLat = ToRadians(lat2 - lat1);
+            var dLon = ToRadians(lon2 - lon1);
+            var a = Math.Sin(dLat / 2) * Math.Sin(dLat / 2) +
+                    Math.Cos(ToRadians(lat1)) * Math.Cos(ToRadians(lat2)) *
+                    Math.Sin(dLon / 2) * Math.Sin(dLon / 2);
+            var c = 2 * Math.Atan2(Math.Sqrt(a), Math.Sqrt(1 - a));
+            return R * c;
+        }
+
+        private double ToRadians(double deg)
+        {
+            return deg * (Math.PI / 180);
         }
 
         public async Task<int> GetActiveCountByUserAsync(Guid userId, CancellationToken ct = default)

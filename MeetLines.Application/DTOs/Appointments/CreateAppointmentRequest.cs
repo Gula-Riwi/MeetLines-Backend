@@ -6,10 +6,12 @@ namespace MeetLines.Application.DTOs.Appointments
     {
         public Guid ProjectId { get; set; }
         public int ServiceId { get; set; }
+        public Guid? EmployeeId { get; set; }
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
         public string? UserNotes { get; set; }
         public string ClientName { get; set; } = string.Empty;
         public string ClientEmail { get; set; } = string.Empty;
+        public string? ClientPhone { get; set; }
     }
 }
