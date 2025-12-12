@@ -26,7 +26,12 @@ namespace MeetLines.Infrastructure.Services
             _templateBuilder = templateBuilder ?? throw new ArgumentNullException(nameof(templateBuilder));
             
             _smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-            _smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
+            
+            if (!int.TryParse(_configuration["Email:SmtpPort"], out _smtpPort))
+            {
+                _smtpPort = 587;
+            }
+
             _smtpUser = _configuration["Email:SmtpUser"] ?? throw new ArgumentException("Email:SmtpUser is missing");
             _smtpPassword = _configuration["Email:SmtpPassword"] ?? throw new ArgumentException("Email:SmtpPassword is missing");
             _fromEmail = _configuration["Email:FromEmail"] ?? _smtpUser;
