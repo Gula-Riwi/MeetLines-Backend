@@ -32,39 +32,32 @@ namespace MeetLines.API.Controllers
             _context = context ?? throw new ArgumentNullException(nameof(context));
         }
 
-        // --- DEBUG ENDPOINTS (Temporary for Setup) ---
+
 
         [HttpGet("debug-projects")]
         public ActionResult DebugListProjects()
         {
-             // Returns list of projects to find the ID
+            
              var projects = _context.Projects.IgnoreQueryFilters().ToList();
              return Ok(projects.Select(p => new { p.Id, p.Name, p.Subdomain, p.TelegramBotToken }));
         }
 
 
 
-        // --- END DEBUG ---
 
-        /// <summary>
-        /// Sends a message via Telegram Bot API using the project's configured bot token.
-        /// Used by n8n to send replies.
-        /// POST: api/telegram/send-message
-        /// Headers: X-Project-Id: {guid}
-        /// </summary>
         [HttpPost("send-message")]
         public async Task<IActionResult> SendMessage([FromBody] SendTelegramMessageRequest request)
         {
             try
             {
-                // 1. Validate Project ID from Header
+
                 if (!Guid.TryParse(Request.Headers["X-Project-Id"].ToString(), out var projectId))
                 {
                     _logger.LogWarning("Invalid or missing X-Project-Id header");
                     return BadRequest(new { error = "Invalid or missing X-Project-Id header" });
                 }
 
-                // 2. Get Project
+
                 var project = await _projectRepository.GetAsync(projectId);
                 if (project == null)
                 {
@@ -72,14 +65,14 @@ namespace MeetLines.API.Controllers
                     return NotFound(new { error = "Project not found" });
                 }
 
-                // 3. Validate Telegram Config
+     
                 if (string.IsNullOrWhiteSpace(project.TelegramBotToken))
                 {
                     _logger.LogWarning("Project {ProjectId} missing Telegram Bot Token", projectId);
                     return BadRequest(new { error = "Telegram integration not configured for this project" });
                 }
 
-                // 4. Send Message via Telegram API
+
                 var sent = await SendTelegramApiMessageAsync(
                     project.TelegramBotToken,
                     request.ToChatId,
@@ -105,7 +98,7 @@ namespace MeetLines.API.Controllers
             try
             {
                 var client = _httpClientFactory.CreateClient();
-                // Telegram Bot API URL
+          
                 var url = $"https://api.telegram.org/bot{botToken}/sendMessage";
 
                 var payload = new

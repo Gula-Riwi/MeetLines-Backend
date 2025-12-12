@@ -249,12 +249,12 @@ namespace MeetLines.Application.Services
                 user.UpdateLastLogin();
                 await _userRepository.UpdateAsync(user, ct);
 
-                // [DISCORD] Notificar Login
-                try
-                {
-                    await _discordService.SendInfoAsync("🔐 Inicio de Sesión", $"El usuario **{user.Email}** ha iniciado sesión.");
-                }
-                catch { }
+                // Actualizar último login
+                user.UpdateLastLogin();
+                await _userRepository.UpdateAsync(user, ct);
+
+                // [DISCORD] Login notification removed to reduce noise
+
 
                 return Result<LoginResponse>.Ok(new LoginResponse
                 {
@@ -354,15 +354,7 @@ namespace MeetLines.Application.Services
                 user.UpdateLastLogin();
                 await _userRepository.UpdateAsync(user, ct);
 
-                // [DISCORD] Notificar login OAuth (si no es nuevo usuario)
-                if (!isNewUser)
-                {
-                    try
-                    {
-                        await _discordService.SendInfoAsync("🔐 Login OAuth", $"Usuario: {user.Email} vía {request.Provider}");
-                    }
-                    catch { }
-                }
+                // [DISCORD] Login notification removed to reduce noise
 
                 return Result<LoginResponse>.Ok(new LoginResponse
                 {
@@ -462,12 +454,7 @@ namespace MeetLines.Application.Services
                 // Cambiaremos esto para usar el nuevo método específico
                 await _emailService.SendEmailVerifiedNotificationAsync(user.Email, user.Name);
 
-                // [DISCORD] Notificar verificación
-                try
-                {
-                    await _discordService.SendEmbedAsync("✅ Email Verificado", $"El usuario **{user.Email}** ha verificado su cuenta.", 5763719);
-                }
-                catch { }
+                // [DISCORD] Notification removed to reduce noise
 
                 return Result.Ok();
             }
@@ -505,12 +492,7 @@ namespace MeetLines.Application.Services
                 // Enviar email
                 await _emailService.SendPasswordResetAsync(user.Email, user.Name, resetToken);
                 
-                // [DISCORD] Log de seguridad (Opcional)
-                try
-                {
-                    await _discordService.SendInfoAsync("🔑 Solicitud Recuperación", $"Solicitud de password reset para {user.Email}");
-                }
-                catch { }
+                // [DISCORD] Notification removed to reduce noise
 
                 return Result.Ok();
             }
@@ -624,8 +606,8 @@ namespace MeetLines.Application.Services
         {
             try
             {
-                // Buscamos empleado por username (email)
-                var employee = await _employeeRepository.GetByUsernameAsync(request.Email, ct);
+                // Buscamos empleado por Email explícitamente para recuperación
+                var employee = await _employeeRepository.GetByEmailAsync(request.Email, ct);
                 if (employee == null)
                 {
                     // Por seguridad, no revelar si existe
