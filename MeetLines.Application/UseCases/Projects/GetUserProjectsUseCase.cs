@@ -85,6 +85,11 @@ namespace MeetLines.Application.UseCases.Projects
                 FullUrl = fullUrl,
                 Industry = project.Industry,
                 Description = project.Description,
+                Address = project.Address,
+                City = project.City,
+                Country = project.Country,
+                Latitude = project.Latitude,
+                Longitude = project.Longitude,
                 Status = project.Status,
                 CreatedAt = project.CreatedAt,
                 UpdatedAt = project.UpdatedAt
