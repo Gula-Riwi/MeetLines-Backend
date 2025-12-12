@@ -1,0 +1,15 @@
+  Determinando los proyectos que se van a restaurar...
+  Todos los proyectos están actualizados para la restauración.
+  SharedKernel -> C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\SharedKernel\bin\Debug\net8.0\SharedKernel.dll
+  MeetLines.Domain -> C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Domain\bin\Debug\net8.0\MeetLines.Domain.dll
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\ApplicationServiceCollectionExtensions.cs(58,32): error CS0246: El nombre del tipo o del espacio de nombres 'IUploadProjectPhotoUseCase' no se encontró (¿falta una directiva using o una referencia de ensamblado?) [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\MeetLines.Application.csproj]
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\ApplicationServiceCollectionExtensions.cs(58,60): error CS0246: El nombre del tipo o del espacio de nombres 'UploadProjectPhotoUseCase' no se encontró (¿falta una directiva using o una referencia de ensamblado?) [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\MeetLines.Application.csproj]
+
+ERROR al compilar.
+
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\ApplicationServiceCollectionExtensions.cs(58,32): error CS0246: El nombre del tipo o del espacio de nombres 'IUploadProjectPhotoUseCase' no se encontró (¿falta una directiva using o una referencia de ensamblado?) [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\MeetLines.Application.csproj]
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\ApplicationServiceCollectionExtensions.cs(58,60): error CS0246: El nombre del tipo o del espacio de nombres 'UploadProjectPhotoUseCase' no se encontró (¿falta una directiva using o una referencia de ensamblado?) [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\MeetLines.Application.csproj]
+    0 Advertencia(s)
+    2 Errores
+
+Tiempo transcurrido 00:00:01.91

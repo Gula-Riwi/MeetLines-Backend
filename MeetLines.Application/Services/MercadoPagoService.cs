@@ -19,6 +19,7 @@ namespace MeetLines.Application.Services
         private readonly IPaymentRepository _paymentRepository;
         private readonly ISaasUserRepository _userRepository;
         private readonly IConfiguration _configuration;
+        private readonly IDiscordWebhookService _discordService;
         private readonly string _frontendUrl;
 
         // PLANES CON PRECIO $0 PARA PRUEBAS
@@ -32,13 +33,23 @@ namespace MeetLines.Application.Services
         public MercadoPagoService(
             IPaymentRepository paymentRepository,
             ISaasUserRepository userRepository,
-            IConfiguration configuration)
+            IConfiguration configuration,
+            IDiscordWebhookService discordService)
         {
             _paymentRepository = paymentRepository ?? throw new ArgumentNullException(nameof(paymentRepository));
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+            _discordService = discordService ?? throw new ArgumentNullException(nameof(discordService));
             
             var accessToken = _configuration["MercadoPago:AccessToken"];
+            
+            // Resolver placeholder ${VAR} si existe, ya que IConfiguration no lo hace automático para estos valores
+            if (!string.IsNullOrEmpty(accessToken) && accessToken.StartsWith("${") && accessToken.EndsWith("}"))
+            {
+                var envVar = accessToken.Trim('$', '{', '}');
+                accessToken = Environment.GetEnvironmentVariable(envVar) ?? accessToken;
+            }
+
             if (string.IsNullOrEmpty(accessToken))
                 throw new ArgumentException("MercadoPago:AccessToken is missing in configuration");
             
@@ -72,6 +83,10 @@ namespace MeetLines.Application.Services
                 var payment = new Payment(userId, planKey, price);
                 await _paymentRepository.AddAsync(payment, ct);
 
+                var successUrl = $"{_frontendUrl}/payment/success?payment_id={payment.Id}";
+                var failureUrl = $"{_frontendUrl}/payment/failure?payment_id={payment.Id}";
+                var pendingUrl = $"{_frontendUrl}/payment/pending?payment_id={payment.Id}";
+
                 // Crear preferencia en Mercado Pago
                 var preferenceRequest = new PreferenceRequest
                 {
@@ -92,9 +107,9 @@ namespace MeetLines.Application.Services
                     },
                     BackUrls = new PreferenceBackUrlsRequest
                     {
-                        Success = $"{_frontendUrl}/payment/success?payment_id={payment.Id}",
-                        Failure = $"{_frontendUrl}/payment/failure?payment_id={payment.Id}",
-                        Pending = $"{_frontendUrl}/payment/pending?payment_id={payment.Id}"
+                        Success = successUrl,
+                        Failure = failureUrl,
+                        Pending = pendingUrl
                     },
                     AutoReturn = "approved",
                     ExternalReference = payment.Id.ToString(),
@@ -115,8 +130,15 @@ namespace MeetLines.Application.Services
 
                 return Result<CreatePaymentResponse>.Ok(response);
             }
+            catch (MercadoPago.Error.MercadoPagoApiException mpEx)
+            {
+                // Loguear error específico de Mercado Pago (usar ILogger en producción)
+                Console.WriteLine($"[Error] Mercado Pago API: {mpEx.Message} | StatusCode: {mpEx.StatusCode}");
+                return Result<CreatePaymentResponse>.Fail($"Error Mercado Pago: {mpEx.ApiError?.Message ?? mpEx.Message}");
+            }
             catch (Exception ex)
             {
+                Console.WriteLine($"[Error] CreatePayment: {ex.Message}");
                 return Result<CreatePaymentResponse>.Fail($"Error al crear pago: {ex.Message}");
             }
         }
