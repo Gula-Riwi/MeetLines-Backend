@@ -38,10 +38,10 @@ namespace MeetLines.API.Controllers
 
             var result = await _mercadoPagoService.CreatePaymentAsync(userId, request, ct);
 
-            if (!result.Success)
-                return BadRequest(ApiResponse<CreatePaymentResponse>.Fail(result.ErrorMessage ?? "Error al crear pago"));
+            if (!result.IsSuccess)
+                return BadRequest(ApiResponse<CreatePaymentResponse>.Fail(result.Error ?? "Error al crear pago"));
 
-            return Ok(ApiResponse<CreatePaymentResponse>.Ok(result.Data!, "Redirige al usuario a la URL de pago"));
+            return Ok(ApiResponse<CreatePaymentResponse>.Ok(result.Value!, "Redirige al usuario a la URL de pago"));
         }
 
         private Guid GetUserIdFromToken()

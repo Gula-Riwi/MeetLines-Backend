@@ -35,7 +35,6 @@ namespace MeetLines.Application.IoC
 
             // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
-            services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
             // services.AddScoped<IChannelUseCases, ChannelUseCases>(); // Removed as it uses individual Use Cases
             // services.AddScoped<IAppointmentUseCases, AppointmentUseCases>(); // Removed as it uses Service pattern
             services.AddScoped<IRefreshTokenUseCase, RefreshTokenUseCase>();
@@ -56,6 +55,7 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IConfigureWhatsappUseCase, ConfigureWhatsappUseCase>();
             services.AddScoped<IGetPublicProjectsUseCase, GetPublicProjectsUseCase>();
             services.AddScoped<IGetPublicProjectEmployeesUseCase, GetPublicProjectEmployeesUseCase>();
+            services.AddScoped<IUploadProjectPhotoUseCase, UploadProjectPhotoUseCase>();
 
             // Channels Use Cases
             services.AddScoped<ICreateChannelUseCase, CreateChannelUseCase>();
