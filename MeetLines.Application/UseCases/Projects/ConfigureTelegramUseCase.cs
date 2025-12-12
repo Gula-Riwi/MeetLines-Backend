@@ -64,7 +64,8 @@ namespace MeetLines.Application.UseCases.Projects
             {
                 // Construir URL apuntando al BACKEND (TelegramWebhookController)
                 // Se asume que existe una config "Global:ApiBaseUrl" o se construye
-                var apiBaseUrl = _configuration["Global:ApiBaseUrl"] 
+                var apiBaseUrl = _configuration["TELEGRAM_WEBHOOK_BASE"]
+                                 ?? _configuration["Global:ApiBaseUrl"] 
                                  ?? _configuration["Multitenancy:ApiUrl"]
                                  ?? "https://services.meet-lines.com";
                                  
