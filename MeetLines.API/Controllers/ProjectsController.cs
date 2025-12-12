@@ -239,6 +239,43 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Obtiene detalles públicos extendidos de un proyecto (sin autenticación)
+        /// Incluye ubicación e industria. Usado por clientes públicos.
+        /// GET: api/projects/{projectId}/details/public
+        /// </summary>
+        [HttpGet("{projectId}/details/public")]
+        [AllowAnonymous]
+        [ProducesResponseType(typeof(ProjectPublicDetailsDto), 200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetProjectPublicDetails(
+            [FromRoute] Guid projectId,
+            [FromServices] IProjectRepository projectRepository,
+            CancellationToken ct = default)
+        {
+             var project = await projectRepository.GetAsync(projectId, ct);
+             
+             if (project == null || project.Status != "active")
+             {
+                 return NotFound(new { error = "Project not found or not active" });
+             }
+
+             var dto = new ProjectPublicDetailsDto
+             {
+                 Id = project.Id.ToString(),
+                 Name = project.Name,
+                 Industry = project.Industry ?? string.Empty,
+                 Description = project.Description ?? string.Empty,
+                 Address = project.Address ?? string.Empty,
+                 City = project.City ?? string.Empty,
+                 Country = project.Country ?? string.Empty,
+                 Latitude = project.Latitude,
+                 Longitude = project.Longitude
+             };
+
+             return Ok(dto);
+        }
+
+        /// <summary>
         /// Obtiene credenciales de un proyecto por su phone_number_id de WhatsApp
         /// Este endpoint es usado por n8n para obtener las credenciales dinámicamente
         /// GET: api/projects/phone-number/{phoneNumberId}
