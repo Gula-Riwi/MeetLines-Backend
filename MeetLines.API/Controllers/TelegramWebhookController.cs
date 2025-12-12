@@ -85,7 +85,6 @@ namespace MeetLines.API.Controllers
                             
 
                             request.Headers.Add("X-Project-Id", projectId.ToString());
-                            request.Headers.Add("X-Project-Name", projectName);
                             request.Headers.Add("X-Telegram-Bot-Token", botToken);
 
 
