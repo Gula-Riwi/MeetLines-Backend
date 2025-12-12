@@ -14,8 +14,24 @@ namespace MeetLines.Infrastructure.Services
         public DiscordWebhookService(HttpClient httpClient, IConfiguration configuration)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
-            _webhookUrl = configuration["Discord:WebhookUrl"] ?? "";
+            
+            var originalUrl = configuration["Discord:WebhookUrl"];
+            
+            // Resolver placeholder ${VAR} si existe, igual que en MercadoPagoService
+            if (!string.IsNullOrEmpty(originalUrl) && originalUrl.StartsWith("${") && originalUrl.EndsWith("}"))
+            {
+                var envVar = originalUrl.Trim('$', '{', '}');
+                _webhookUrl = Environment.GetEnvironmentVariable(envVar) ?? "";
+            }
+            else
+            {
+                _webhookUrl = originalUrl ?? "";
+            }
+
             _isEnabled = !string.IsNullOrEmpty(_webhookUrl);
+            
+            if (_isEnabled)
+                Console.WriteLine($"🎮 Discord Webhook Configured: {_webhookUrl.Substring(0, Math.Min(20, _webhookUrl.Length))}...");
         }
 
         // ===== MÉTODOS GENÉRICOS (Necesarios para que compile AuthService) =====

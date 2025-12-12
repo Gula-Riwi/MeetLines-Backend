@@ -36,6 +36,7 @@ namespace MeetLines.Infrastructure.Data
         public DbSet<CustomerFeedback> CustomerFeedbacks { get; set; }
         public DbSet<CustomerReactivation> CustomerReactivations { get; set; }
         public DbSet<BotMetrics> BotMetrics { get; set; }
+        public DbSet<ProjectPhoto> ProjectPhotos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -110,11 +111,17 @@ namespace MeetLines.Infrastructure.Data
             // Payments
             modelBuilder.Entity<Payment>(b =>
             {
-                b.ToTable("payments");
+                b.ToTable("Payments");
                 b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.Amount).HasColumnType("numeric(10,2)");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+                b.Property(x => x.Id).HasColumnName("Id").HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.UserId).HasColumnName("User_Id");
+                b.Property(x => x.MercadoPagoPreferenceId).HasColumnName("Mercado_Pago_preference_Id");
+                b.Property(x => x.Plan).HasColumnName("Plan");
+                b.Property(x => x.Amount).HasColumnName("Amount").HasColumnType("numeric(10,2)");
+                b.Property(x => x.Currency).HasColumnName("Currency");
+                b.Property(x => x.Status).HasColumnName("Status");
+                b.Property(x => x.CreatedAt).HasColumnName("Created_At").HasDefaultValueSql("now()");
+
                 b.HasOne<SaasUser>().WithMany().HasForeignKey(p => p.UserId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.UserId).HasDatabaseName("idx_payments_user");
             });
@@ -450,6 +457,22 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
                 b.HasOne<Project>().WithMany().HasForeignKey(m => m.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => new { x.ProjectId, x.Date }).IsUnique().HasDatabaseName("idx_metrics_project_date");
+            });
+
+            // ProjectPhotos
+            modelBuilder.Entity<ProjectPhoto>(b =>
+            {
+                b.ToTable("project_photos");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.ProjectId).HasColumnName("project_id");
+                b.Property(x => x.Url).HasColumnName("url").IsRequired();
+                b.Property(x => x.PublicId).HasColumnName("public_id").IsRequired();
+                b.Property(x => x.IsMain).HasColumnName("is_main").HasDefaultValue(false);
+                b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+                
+                b.HasOne<Project>().WithMany().HasForeignKey(p => p.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_project_photos_project");
             });
 
             // Services
