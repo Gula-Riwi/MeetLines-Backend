@@ -72,30 +72,36 @@ namespace MeetLines.Infrastructure.Repositories
             // Using parameters to avoid locale issues with decimal separators
             var latParam = latitude.Value;
             var lngParam = longitude.Value;
+            var maxDistanceKm = 50.0; // Filter threshold for "near enough to visit"
 
-            // Database schema:
-            // Table: projects (lowercase)
-            // Columns: "Status" (PascalCase quoted), latitude/longitude (lowercase)
+            // Database schema: projects (lowercase), "Status" (Pascal quoted), latitude/longitude (lower)
+            // Logic: 
+            // 1. Calculate Distance
+            // 2. WHERE Status='active' AND ( (latitude IS NULL) OR (Distance <= 50) )
+            // 3. ORDER BY Distance ASC (Physical first), then Remote (Distance is null/infinite)
             var query = @"
-                SELECT *, 
-                (
-                    6371 * acos(
-                        least(1.0, greatest(-1.0, 
-                            cos(radians({0})) * cos(radians(latitude)) * cos(radians(longitude) - radians({1})) + 
-                            sin(radians({0})) * sin(radians(latitude))
-                        ))
-                    )
-                ) as ""Distance""
-                FROM projects
-                WHERE ""Status"" = 'active'
+                SELECT * FROM (
+                    SELECT *, 
+                    (
+                        6371 * acos(
+                            least(1.0, greatest(-1.0, 
+                                cos(radians({0})) * cos(radians(latitude)) * cos(radians(longitude) - radians({1})) + 
+                                sin(radians({0})) * sin(radians(latitude))
+                            ))
+                        )
+                    ) as ""Distance""
+                    FROM projects
+                    WHERE ""Status"" = 'active'
+                ) as ""DerivedProjects""
+                WHERE (latitude IS NULL OR longitude IS NULL) OR (""Distance"" <= {2})
                 ORDER BY 
                     CASE WHEN latitude IS DISTINCT FROM NULL AND longitude IS DISTINCT FROM NULL THEN 0 ELSE 1 END,
                     ""Distance"" ASC
             ";
 
             var projects = await _context.Projects
-                .FromSqlRaw(query, latParam, lngParam)
-                .AsNoTracking() // Good practice for read-only lists
+                .FromSqlRaw(query, latParam, lngParam, maxDistanceKm)
+                .AsNoTracking()
                 .ToListAsync(ct);
 
             // Calculate distance in memory since [NotMapped] property is ignored by FromSqlRaw
