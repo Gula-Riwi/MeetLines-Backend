@@ -57,6 +57,29 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Gets all active services for a project (Public endpoint)
+        /// Used by frontend widget - no authentication required
+        /// </summary>
+        [HttpGet("services/public")]
+        [AllowAnonymous]
+        public async Task<ActionResult> GetPublicServices(Guid projectId, CancellationToken ct = default)
+        {
+            var services = await _appointmentService.GetServicesAsync(projectId, ct);
+            
+            var publicServices = services.Select(s => new MeetLines.Application.DTOs.Appointments.ServicePublicDto
+            {
+                Id = s.Id,
+                Name = s.Name,
+                Description = s.Description,
+                Price = s.Price,
+                Currency = s.Currency,
+                DurationMinutes = s.DurationMinutes
+            });
+
+            return Ok(publicServices);
+        }
+
+        /// <summary>
         /// Gets available appointment slots for a specific date
         /// Used by n8n - requires API key authentication
         /// </summary>
