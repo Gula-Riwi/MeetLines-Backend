@@ -1,0 +1,23 @@
+  Determinando los proyectos que se van a restaurar...
+  Todos los proyectos están actualizados para la restauración.
+  SharedKernel -> C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\SharedKernel\bin\Debug\net8.0\SharedKernel.dll
+  MeetLines.Domain -> C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Domain\bin\Debug\net8.0\MeetLines.Domain.dll
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\DTOs\Projects\PhotoDto.cs(8,23): warning CS8618: El elemento propiedad "Url" que no acepta valores NULL debe contener un valor distinto de NULL al salir del constructor. Considere la posibilidad de agregar el modificador "required'"o declarar el propiedad como un valor que acepta valores NULL. [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\MeetLines.Application.csproj]
+  MeetLines.Application -> C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\bin\Debug\net8.0\MeetLines.Application.dll
+  MeetLines.Infrastructure -> C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Infrastructure\bin\Debug\net8.0\MeetLines.Infrastructure.dll
+  MeetLines.Tests -> C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Tests\bin\Debug\net8.0\MeetLines.Tests.dll
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\Controllers\PaymentController.cs(41,18): warning CS0618: 'Result<CreatePaymentResponse>.Success' está obsoleto: 'Use IsSuccess instead' [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\MeetLines.API.csproj]
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\Controllers\PaymentController.cs(42,75): warning CS0618: 'Result<CreatePaymentResponse>.ErrorMessage' está obsoleto: 'Use Error instead' [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\MeetLines.API.csproj]
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\Controllers\PaymentController.cs(44,61): warning CS0618: 'Result<CreatePaymentResponse>.Data' está obsoleto: 'Use Value instead' [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\MeetLines.API.csproj]
+  MeetLines.API -> C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\bin\Debug\net8.0\MeetLines.API.dll
+
+Compilación correcta.
+
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\DTOs\Projects\PhotoDto.cs(8,23): warning CS8618: El elemento propiedad "Url" que no acepta valores NULL debe contener un valor distinto de NULL al salir del constructor. Considere la posibilidad de agregar el modificador "required'"o declarar el propiedad como un valor que acepta valores NULL. [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.Application\MeetLines.Application.csproj]
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\Controllers\PaymentController.cs(41,18): warning CS0618: 'Result<CreatePaymentResponse>.Success' está obsoleto: 'Use IsSuccess instead' [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\MeetLines.API.csproj]
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\Controllers\PaymentController.cs(42,75): warning CS0618: 'Result<CreatePaymentResponse>.ErrorMessage' está obsoleto: 'Use Error instead' [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\MeetLines.API.csproj]
+C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\Controllers\PaymentController.cs(44,61): warning CS0618: 'Result<CreatePaymentResponse>.Data' está obsoleto: 'Use Value instead' [C:\Users\ESTEFANIA\RiderProjects\MeetLines-Backend\MeetLines.API\MeetLines.API.csproj]
+    4 Advertencia(s)
+    0 Errores
+
+Tiempo transcurrido 00:00:04.34

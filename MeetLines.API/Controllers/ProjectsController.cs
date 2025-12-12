@@ -3,6 +3,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Configuration;
 using MeetLines.Application.DTOs.Projects;
 using MeetLines.Application.UseCases.Projects;
 using MeetLines.Domain.Repositories;
@@ -28,6 +31,7 @@ namespace MeetLines.API.Controllers
         private readonly IConfigureTelegramUseCase _configureTelegramUseCase;
         private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
         private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
+        private readonly IUploadProjectPhotoUseCase _uploadProjectPhotoUseCase;
         private readonly IConfiguration _configuration;
 
         public ProjectsController(
@@ -40,6 +44,7 @@ namespace MeetLines.API.Controllers
             IConfigureTelegramUseCase configureTelegramUseCase,
             IGetPublicProjectsUseCase getPublicProjectsUseCase,
             IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase,
+            IUploadProjectPhotoUseCase uploadProjectPhotoUseCase,
             IConfiguration configuration)
         {
             _createProjectUseCase = createProjectUseCase ?? throw new ArgumentNullException(nameof(createProjectUseCase));
@@ -51,6 +56,7 @@ namespace MeetLines.API.Controllers
             _configureTelegramUseCase = configureTelegramUseCase ?? throw new ArgumentNullException(nameof(configureTelegramUseCase));
             _getPublicProjectsUseCase = getPublicProjectsUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectsUseCase));
             _getPublicProjectEmployeesUseCase = getPublicProjectEmployeesUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectEmployeesUseCase));
+            _uploadProjectPhotoUseCase = uploadProjectPhotoUseCase ?? throw new ArgumentNullException(nameof(uploadProjectPhotoUseCase));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
@@ -142,6 +148,46 @@ namespace MeetLines.API.Controllers
                 return BadRequest(new { error = result.Error });
 
             return NoContent();
+        }
+
+        /// <summary>
+        /// Sube una foto para un proyecto (Máximo 10 fotos)
+        /// </summary>
+        [HttpPost("{projectId}/photos")]
+        public async Task<IActionResult> UploadPhoto(Guid projectId, [FromForm] MeetLines.API.DTOs.UploadProjectPhotoRequest request, CancellationToken ct)
+        {
+            var userId = GetUserId();
+            var file = request.File;
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { error = "No file uploaded" });
+            }
+
+            // Validar tipo de archivo (solo imágenes)
+            if (!file.ContentType.StartsWith("image/"))
+            {
+                return BadRequest(new { error = "File must be an image" });
+            }
+
+            try 
+            {
+                using var stream = file.OpenReadStream();
+                var result = await _uploadProjectPhotoUseCase.ExecuteAsync(userId, projectId, stream, file.FileName, ct);
+                return Ok(result);
+            }
+            catch (InvalidOperationException ex) // Límite de 10 fotos alcanzado
+            {
+                return BadRequest(new { error = ex.Message });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
         }
 
         /// <summary>
