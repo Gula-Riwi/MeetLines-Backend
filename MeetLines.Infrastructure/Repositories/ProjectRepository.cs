@@ -69,31 +69,32 @@ namespace MeetLines.Infrastructure.Repositories
             // If Nulls Last: Local stuff first, then remote stuff. (Recommended for "Near Me")
             
             // Raw SQL for performance and custom sorting
-            var lat = latitude.Value;
-            var lng = longitude.Value;
+            // Using parameters to avoid locale issues with decimal separators
+            var latParam = latitude.Value;
+            var lngParam = longitude.Value;
 
-            // Using standard SQL with Haversine formula
-            // 6371 * acos(cos(radians(lat)) * cos(radians(p.latitude)) * cos(radians(p.longitude) - radians(lng)) + sin(radians(lat)) * sin(radians(p.latitude)))
-            
-            var query = $@"
+            // Database schema:
+            // Table: projects (lowercase)
+            // Columns: "Status" (PascalCase quoted), latitude/longitude (lowercase)
+            var query = @"
                 SELECT *, 
                 (
                     6371 * acos(
                         least(1.0, greatest(-1.0, 
-                            cos(radians({lat})) * cos(radians(""latitude"")) * cos(radians(""longitude"") - radians({lng})) + 
-                            sin(radians({lat})) * sin(radians(""latitude""))
+                            cos(radians({0})) * cos(radians(latitude)) * cos(radians(longitude) - radians({1})) + 
+                            sin(radians({0})) * sin(radians(latitude))
                         ))
                     )
                 ) as ""Distance""
                 FROM projects
-                WHERE status = 'active'
+                WHERE ""Status"" = 'active'
                 ORDER BY 
-                    CASE WHEN ""latitude"" IS DISTINCT FROM NULL AND ""longitude"" IS DISTINCT FROM NULL THEN 0 ELSE 1 END,
+                    CASE WHEN latitude IS DISTINCT FROM NULL AND longitude IS DISTINCT FROM NULL THEN 0 ELSE 1 END,
                     ""Distance"" ASC
             ";
 
             return await _context.Projects
-                .FromSqlRaw(query)
+                .FromSqlRaw(query, latParam, lngParam)
                 .ToListAsync(ct);
         }
 
