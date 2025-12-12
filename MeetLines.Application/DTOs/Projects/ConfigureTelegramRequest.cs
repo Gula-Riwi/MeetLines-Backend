@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace MeetLines.Application.DTOs.Projects
 {
@@ -9,8 +10,10 @@ namespace MeetLines.Application.DTOs.Projects
 
         public string? BotUsername { get; set; }
         
+        [JsonIgnore]
         public string? CustomWebhookUrl { get; set; }
         
+        [JsonIgnore]
         public string? ForwardWebhook { get; set; }
     }
 }
