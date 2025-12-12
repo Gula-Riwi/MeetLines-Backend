@@ -64,8 +64,7 @@ namespace MeetLines.Application.UseCases.Projects
             {
                 // Construir URL apuntando al BACKEND (TelegramWebhookController)
                 // Se asume que existe una config "Global:ApiBaseUrl" o se construye
-                var apiBaseUrl = _configuration["TELEGRAM_WEBHOOK_BASE"]
-                                 ?? _configuration["Global:ApiBaseUrl"] 
+                var apiBaseUrl = _configuration["Global:ApiBaseUrl"] 
                                  ?? _configuration["Multitenancy:ApiUrl"]
                                  ?? "https://services.meet-lines.com";
                                  
@@ -76,32 +75,35 @@ namespace MeetLines.Application.UseCases.Projects
             try
             {
                 var client = _httpClientFactory.CreateClient();
+                // Telegram Bot API URL setWebhook
                 var telegramApiUrl = $"https://api.telegram.org/bot{request.BotToken}/setWebhook";
                 
                 var telegramRequest = new { url = webhookUrl };
-                var response = await client.PostAsJsonAsync(telegramApiUrl, telegramRequest, ct);
-                var responseBody = await response.Content.ReadAsStringAsync(ct);
-
+                var response = await client.PostAsJsonAsync(telegramApiUrl, telegramRequest);
+                 
                 if (!response.IsSuccessStatusCode)
                 {
-                    return Result<ProjectResponse>.Fail(
-                        $"Failed to configure Telegram webhook: {responseBody}. Verify bot token is valid.");
+                    var errorBody = await response.Content.ReadAsStringAsync();
+                    return Result<ProjectResponse>.Fail($"Failed to set webhook in Telegram: {errorBody}");
                 }
             }
             catch (Exception ex)
             {
-                return Result<ProjectResponse>.Fail(
-                    $"Error calling Telegram API: {ex.Message}");
+                return Result<ProjectResponse>.Fail($"Error registering webhook: {ex.Message}");
             }
 
-            // 3️⃣ Obtener forward webhook de configuración o del request
-            var forwardWebhook = request.ForwardWebhook;
-            if (string.IsNullOrWhiteSpace(forwardWebhook))
+            // 3️⃣ Definir URL de Forward (n8n)
+            string forwardWebhook;
+            if (!string.IsNullOrWhiteSpace(request.ForwardWebhook))
             {
-                // Por defecto desde configuración (similar a WhatsApp)
+                forwardWebhook = request.ForwardWebhook;
+            }
+            else
+            {
+                // Por defecto desde configuración (similar a WhatsApp) - Actualizado a la URL por defecto de producción
                 forwardWebhook = _configuration["TELEGRAM_FORWARD_WEBHOOK"] 
                     ?? _configuration["Webhooks:N8nBaseUrl"] 
-                    ?? "https://services.meet-lines.com/webhook/telegram-bot";
+                    ?? "https://n8n.meet-lines.com/webhook-test/webhook-test/Telegram";
             }
 
             // 4️⃣ Actualizar proyecto con los datos de Telegram
