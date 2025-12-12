@@ -133,6 +133,13 @@ namespace MeetLines.API.Controllers
                     return Ok();
                 }
 
+                // Check if it's a status update (sent/delivered/read) to avoid infinite loops or unnecessary forwarding
+                if (IsStatusUpdate(body))
+                {
+                    _logger.LogInformation("Incoming webhook is a status update (sent/delivered/read). Skipping forward.");
+                    return Ok();
+                }
+
                 // If forward webhook is configured for the project, forward the raw payload in background (fire-and-forget)
                 if (!string.IsNullOrWhiteSpace(project.WhatsappForwardWebhook))
                 {
@@ -187,6 +194,45 @@ namespace MeetLines.API.Controllers
                 _logger.LogError(ex, "Error processing Whatsapp webhook");
                 return StatusCode(500, "Internal server error");
             }
+        }
+
+        private bool IsStatusUpdate(JsonElement body)
+        {
+            try
+            {
+                // Standard structure: entry[0].changes[0].value.statuses
+                if (body.TryGetProperty("entry", out var entry) && entry.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var e in entry.EnumerateArray())
+                    {
+                        if (e.TryGetProperty("changes", out var changes) && changes.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var change in changes.EnumerateArray())
+                            {
+                                if (change.TryGetProperty("value", out var value))
+                                {
+                                    if (value.ValueKind == JsonValueKind.Object && value.TryGetProperty("statuses", out _))
+                                    {
+                                        return true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Direct value structure (if applicable)
+                if (body.TryGetProperty("value", out var directValue))
+                {
+                     if (directValue.ValueKind == JsonValueKind.Object && directValue.TryGetProperty("statuses", out _))
+                     {
+                         return true;
+                     }
+                }
+            }
+            catch { /* safe ignore */ }
+
+            return false;
         }
 
         private string ExtractPhoneNumberId(JsonElement body)
