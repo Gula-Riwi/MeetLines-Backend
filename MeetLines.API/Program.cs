@@ -90,6 +90,9 @@ if (jwtSecret != null) builder.Configuration["Jwt:SecretKey"] = ExpandVariables(
 builder.Configuration["Email:SmtpUser"] = ExpandVariables(builder.Configuration["Email:SmtpUser"] ?? "");
 builder.Configuration["Email:SmtpPassword"] = ExpandVariables(builder.Configuration["Email:SmtpPassword"] ?? "");
 builder.Configuration["Email:FromEmail"] = ExpandVariables(builder.Configuration["Email:FromEmail"] ?? "");
+builder.Configuration["Email:SmtpHost"] = ExpandVariables(builder.Configuration["Email:SmtpHost"] ?? "");
+builder.Configuration["Email:SmtpPort"] = ExpandVariables(builder.Configuration["Email:SmtpPort"] ?? "");
+builder.Configuration["Email:FromName"] = ExpandVariables(builder.Configuration["Email:FromName"] ?? "");
 
 // 4. Auth (Social)
 builder.Configuration["Authentication:Google:ClientId"] = ExpandVariables(builder.Configuration["Authentication:Google:ClientId"] ?? "");
@@ -97,9 +100,17 @@ builder.Configuration["Authentication:Google:ClientSecret"] = ExpandVariables(bu
 builder.Configuration["Authentication:Facebook:AppId"] = ExpandVariables(builder.Configuration["Authentication:Facebook:AppId"] ?? "");
 builder.Configuration["Authentication:Facebook:AppSecret"] = ExpandVariables(builder.Configuration["Authentication:Facebook:AppSecret"] ?? "");
 
+// Frontend URL
+builder.Configuration["Frontend:Url"] = ExpandVariables(builder.Configuration["Frontend:Url"] ?? "http://localhost:3000");
+
 // 5. Multitenancy
 builder.Configuration["Multitenancy:BaseDomain"] = ExpandVariables(builder.Configuration["Multitenancy:BaseDomain"] ?? "");
 builder.Configuration["Multitenancy:Protocol"] = ExpandVariables(builder.Configuration["Multitenancy:Protocol"] ?? "");
+
+// 6. Cloudinary
+builder.Configuration["Cloudinary:CloudName"] = ExpandVariables(builder.Configuration["Cloudinary:CloudName"] ?? "");
+builder.Configuration["Cloudinary:ApiKey"] = ExpandVariables(builder.Configuration["Cloudinary:ApiKey"] ?? "");
+builder.Configuration["Cloudinary:ApiSecret"] = ExpandVariables(builder.Configuration["Cloudinary:ApiSecret"] ?? "");
 
 // 6. Integrations API Key
 var integrationsApiKey = Environment.GetEnvironmentVariable("INTEGRATIONS_API_KEY");

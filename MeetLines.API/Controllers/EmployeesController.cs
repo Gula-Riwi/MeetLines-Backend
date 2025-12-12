@@ -7,6 +7,7 @@ using MeetLines.API.DTOs;
 using MeetLines.Application.DTOs.Employees;
 using MeetLines.Application.Services.Interfaces;
 using System.Security.Claims;
+using MeetLines.Application.DTOs.Auth;
 
 namespace MeetLines.API.Controllers
 {
@@ -16,10 +17,12 @@ namespace MeetLines.API.Controllers
     public class EmployeesController : ControllerBase
     {
         private readonly IEmployeeService _employeeService;
+        private readonly IAuthService _authService;
 
-        public EmployeesController(IEmployeeService employeeService)
+        public EmployeesController(IEmployeeService employeeService, IAuthService authService)
         {
             _employeeService = employeeService ?? throw new ArgumentNullException(nameof(employeeService));
+            _authService = authService ?? throw new ArgumentNullException(nameof(authService));
         }
 
         /// <summary>
@@ -65,6 +68,30 @@ namespace MeetLines.API.Controllers
                     return BadRequest(ApiResponse.Fail(result.Error ?? "Error al obtener empleados"));
 
                 return Ok(ApiResponse<IEnumerable<EmployeeResponse>>.Ok(result.Value!));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Error interno: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Cierra sesión de empleado (invalida refresh token).
+        /// POST: api/employees/logout
+        /// </summary>
+        [HttpPost("logout")]
+        [ProducesResponseType(typeof(ApiResponse), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 500)]
+        public async Task<IActionResult> Logout([FromBody] RefreshTokenRequest request, CancellationToken ct)
+        {
+            try
+            {
+                var result = await _authService.LogoutAsync(request.RefreshToken, ct);
+                
+                if (!result.IsSuccess)
+                    return BadRequest(ApiResponse.Fail(result.Error ?? "Error al cerrar sesión"));
+                
+                return Ok(ApiResponse.Ok("Sesión cerrada exitosamente"));
             }
             catch (Exception ex)
             {

@@ -624,8 +624,8 @@ namespace MeetLines.Application.Services
         {
             try
             {
-                // Buscamos empleado por username (email)
-                var employee = await _employeeRepository.GetByUsernameAsync(request.Email, ct);
+                // Buscamos empleado por Email explícitamente para recuperación
+                var employee = await _employeeRepository.GetByEmailAsync(request.Email, ct);
                 if (employee == null)
                 {
                     // Por seguridad, no revelar si existe
