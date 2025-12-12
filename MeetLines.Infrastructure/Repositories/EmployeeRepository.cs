@@ -40,6 +40,15 @@ namespace MeetLines.Infrastructure.Repositories
             return employee;
         }
 
+        public async Task<Employee?> GetByEmailAsync(string email, CancellationToken ct = default)
+        {
+            var tenantId = _tenantFilter.GetCurrentTenantId();
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email, ct);
+            if (employee == null) return null;
+            if (tenantId.HasValue && employee.ProjectId != tenantId.Value) return null;
+            return employee;
+        }
+
         public async Task<IEnumerable<Employee>> GetByProjectIdAsync(Guid projectId, CancellationToken ct = default)
         {
             var tenantId = _tenantFilter.GetCurrentTenantId();
