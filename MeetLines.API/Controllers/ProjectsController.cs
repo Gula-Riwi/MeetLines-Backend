@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using MeetLines.Application.DTOs.Projects;
 using MeetLines.Application.UseCases.Projects;
 using MeetLines.Domain.Repositories;
+using MeetLines.Application.UseCases.Projects.Interfaces;
 using System.Security.Claims;
 
 namespace MeetLines.API.Controllers
@@ -24,6 +25,7 @@ namespace MeetLines.API.Controllers
         private readonly IUpdateProjectUseCase _updateProjectUseCase;
         private readonly IDeleteProjectUseCase _deleteProjectUseCase;
         private readonly IConfigureWhatsappUseCase _configureWhatsappUseCase;
+        private readonly IConfigureTelegramUseCase _configureTelegramUseCase;
         private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
         private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
         private readonly IConfiguration _configuration;
@@ -35,6 +37,7 @@ namespace MeetLines.API.Controllers
             IUpdateProjectUseCase updateProjectUseCase,
             IDeleteProjectUseCase deleteProjectUseCase,
             IConfigureWhatsappUseCase configureWhatsappUseCase,
+            IConfigureTelegramUseCase configureTelegramUseCase,
             IGetPublicProjectsUseCase getPublicProjectsUseCase,
             IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase,
             IConfiguration configuration)
@@ -45,6 +48,7 @@ namespace MeetLines.API.Controllers
             _updateProjectUseCase = updateProjectUseCase ?? throw new ArgumentNullException(nameof(updateProjectUseCase));
             _deleteProjectUseCase = deleteProjectUseCase ?? throw new ArgumentNullException(nameof(deleteProjectUseCase));
             _configureWhatsappUseCase = configureWhatsappUseCase ?? throw new ArgumentNullException(nameof(configureWhatsappUseCase));
+            _configureTelegramUseCase = configureTelegramUseCase ?? throw new ArgumentNullException(nameof(configureTelegramUseCase));
             _getPublicProjectsUseCase = getPublicProjectsUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectsUseCase));
             _getPublicProjectEmployeesUseCase = getPublicProjectEmployeesUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectEmployeesUseCase));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -181,6 +185,22 @@ namespace MeetLines.API.Controllers
             return Ok(result.Value);
         }
 
+        [HttpPatch("{projectId}/telegram")]
+        public async Task<IActionResult> ConfigureTelegram(
+            Guid projectId,
+            [FromBody] ConfigureTelegramRequest request,
+            CancellationToken ct)
+        {
+            var userId = GetUserId();
+            var result = await _configureTelegramUseCase.ExecuteAsync(userId, projectId, request, ct);
+
+            if (!result.IsSuccess)
+                return BadRequest(new { error = result.Error });
+
+            return Ok(result.Value);
+        }
+
+
         /// <summary>
         /// Obtiene datos públicos de un proyecto específico usando INTEGRATIONS_API_KEY
         /// Este endpoint es usado por n8n para obtener datos del proyecto
@@ -237,6 +257,8 @@ namespace MeetLines.API.Controllers
                 return StatusCode(500, new { error = "Internal server error" });
             }
         }
+
+        
 
         /// <summary>
         /// Obtiene detalles públicos extendidos de un proyecto (sin autenticación)
