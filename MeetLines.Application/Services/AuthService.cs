@@ -300,7 +300,6 @@ namespace MeetLines.Application.Services
                 // Buscar usuario por external provider ID
                 var user = await _userRepository.GetByExternalProviderIdAsync(request.ExternalProviderId, ct);
 
-
                 // Si no existe, buscar por email
                 if (user == null && !string.IsNullOrWhiteSpace(request.Email))
                 {
@@ -310,7 +309,6 @@ namespace MeetLines.Application.Services
                 // Si no existe, crear nuevo usuario
                 if (user == null)
                 {
-
                     user = SaasUser.CreateOAuthUser(
                         request.Name,
                         request.Email,
