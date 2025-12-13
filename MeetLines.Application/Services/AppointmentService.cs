@@ -275,13 +275,21 @@ namespace MeetLines.Application.Services
                                 service => service.SendAppointmentReminderAsync(appointment.Id),
                                 reminderTime
                             );
-                            _logger.LogInformation($"Scheduled reminder for Appt {appointment.Id} at {reminderTime}");
+                            _logger.LogInformation($"Scheduled reminder for Appt {appointment.Id} at {reminderTime} (UTC)");
                         }
                         else
                         {
-                            _logger.LogWarning($"Skipping reminder for Appt {appointment.Id}: Time {reminderTime} is in the past.");
+                            _logger.LogWarning($"Skipping reminder for Appt {appointment.Id}: Reminder Time {reminderTime} is in the past. Now is {DateTimeOffset.UtcNow}.");
                         }
                     }
+                    else
+                    {
+                        _logger.LogWarning($"Skipping reminder for Appt {appointment.Id}: Reminders disabled in config. Enabled: {trans?.AppointmentEnabled}, SendReminder: {trans?.SendReminder}");
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning($"Skipping reminder for Appt {appointment.Id}: BotConfig not found or empty for Project {request.ProjectId}");
                 }
             }
             catch (Exception ex) 
