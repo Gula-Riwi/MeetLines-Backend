@@ -58,7 +58,7 @@ namespace MeetLines.API.Controllers
         /// <summary>
         /// Get all services (active/inactive) for a project (Admin/User view)
         /// </summary>
-        [HttpGet("projects/{projectId}/services")]
+        [HttpGet("management/projects/{projectId}/services")]
         public async Task<IActionResult> GetProjectServices(Guid projectId, CancellationToken ct)
         {
             var userId = GetUserId();
