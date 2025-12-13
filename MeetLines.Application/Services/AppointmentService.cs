@@ -9,6 +9,7 @@ using MeetLines.Application.DTOs.Appointments;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Entities;
 using MeetLines.Domain.Repositories;
+using MeetLines.Application.DTOs.Config; // Unified DTO
 
 namespace MeetLines.Application.Services
 {
@@ -217,6 +218,35 @@ namespace MeetLines.Application.Services
                 CreatedAt = appointment.CreatedAt
             };
 
+            // === HANGFIRE SCHEDULING ===
+            try 
+            {
+                // 1. Get Config to check if reminders are enabled
+                var botConfig = await _botConfigRepository.GetByProjectIdAsync(request.ProjectId, ct);
+                if (botConfig != null && !string.IsNullOrEmpty(botConfig.TransactionalConfigJson))
+                {
+                    var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var trans = JsonSerializer.Deserialize<MeetLines.Application.DTOs.Config.TransactionalConfig>(botConfig.TransactionalConfigJson, opts);
+                    
+                    if (trans != null && trans.AppointmentEnabled && trans.SendReminder)
+                    {
+                        var hoursBefore = trans.ReminderHoursBefore > 0 ? trans.ReminderHoursBefore : 24;
+                        var reminderTime = request.StartTime.AddHours(-hoursBefore);
+
+                        if (reminderTime > DateTimeOffset.UtcNow)
+                        {
+                            // Schedule Job using Hangfire
+                            Hangfire.BackgroundJob.Schedule<INotificationService>(
+                                service => service.SendAppointmentReminderAsync(appointment.Id),
+                                reminderTime
+                            );
+                        }
+                    }
+                }
+            }
+            catch { /* non-blocking logic, ignore scheduling errors */ }
+            // ===========================
+
             return Result<AppointmentResponse>.Ok(response);
         }
 
@@ -239,21 +269,5 @@ namespace MeetLines.Application.Services
 
             return Result<IEnumerable<AppointmentResponse>>.Ok(responses);
         }
-    }
-
-    // Helper classes for JSON deserialization
-    public class TransactionalConfig
-    {
-        public bool AppointmentEnabled { get; set; }
-        public Dictionary<string, BusinessHours> BusinessHours { get; set; } = new();
-        public int SlotDuration { get; set; } = 30;
-        public int BufferBetweenAppointments { get; set; } = 0;
-    }
-
-    public class BusinessHours
-    {
-        public bool Closed { get; set; }
-        public string Start { get; set; } = "09:00";
-        public string End { get; set; } = "18:00";
     }
 }

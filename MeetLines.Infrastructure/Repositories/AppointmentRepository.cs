@@ -24,6 +24,16 @@ namespace MeetLines.Infrastructure.Repositories
             return await _context.Appointments
                 .AsNoTracking()
                 .FirstOrDefaultAsync(x => x.Id == id, ct);
+
+        }
+
+        public async Task<Appointment?> GetByIdWithDetailsAsync(int id, CancellationToken ct = default)
+        {
+            return await _context.Appointments
+                .Include(a => a.AppUser)
+                .Include(a => a.Project)
+                .AsNoTracking() // We will use UpdateAsync to save changes
+                .FirstOrDefaultAsync(x => x.Id == id, ct);
         }
 
         public async Task<IEnumerable<Appointment>> GetByProjectIdAsync(Guid projectId, CancellationToken ct = default)

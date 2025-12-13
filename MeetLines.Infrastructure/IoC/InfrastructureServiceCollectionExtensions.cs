@@ -74,6 +74,7 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<IAppointmentRepository, AppointmentRepository>();
             services.AddScoped<IAppUserRepository, AppUserRepository>();
             services.AddScoped<IProjectPhotoRepository, ProjectPhotoRepository>();
+            services.AddScoped<IAppUserPasswordResetTokenRepository, AppUserPasswordResetTokenRepository>();
 
             // WhatsApp Bot System Repositories
             services.AddScoped<IProjectBotConfigRepository, ProjectBotConfigRepository>();
