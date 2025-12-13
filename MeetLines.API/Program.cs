@@ -267,6 +267,9 @@ app.MapControllers();
 
 // Enable Hangfire Dashboard
 // Enable Hangfire Dashboard
-app.UseHangfireDashboard("/hangfire");
+app.UseHangfireDashboard("/hangfire", new DashboardOptions
+{
+    Authorization = new[] { new MeetLines.API.Filters.HangfireAuthorizationFilter() }
+});
 
 app.Run();
