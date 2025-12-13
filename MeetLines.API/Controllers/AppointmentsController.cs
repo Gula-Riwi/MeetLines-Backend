@@ -38,6 +38,7 @@ namespace MeetLines.API.Controllers
             return token == expectedApiKey;
         }
 
+        // Removed GetServices to avoid conflict with ServicesController - RESTORED FOR n8n
         /// <summary>
         /// Gets all active services for a project
         /// Used by n8n - requires API key authentication
