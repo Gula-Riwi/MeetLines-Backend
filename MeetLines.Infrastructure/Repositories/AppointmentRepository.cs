@@ -76,7 +76,7 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IEnumerable<Appointment>> GetEmployeeTasksAsync(Guid projectId, Guid? employeeId, DateTimeOffset? fromDate, CancellationToken ct = default)
+        public async Task<IEnumerable<Appointment>> GetEmployeeTasksAsync(Guid projectId, Guid? employeeId, DateTimeOffset? fromDate, DateTimeOffset? toDate = null, CancellationToken ct = default)
         {
             var query = _context.Appointments
                 .AsNoTracking()
@@ -90,6 +90,11 @@ namespace MeetLines.Infrastructure.Repositories
             if (fromDate.HasValue)
             {
                 query = query.Where(x => x.StartTime >= fromDate.Value);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(x => x.StartTime <= toDate.Value);
             }
 
             return await query
