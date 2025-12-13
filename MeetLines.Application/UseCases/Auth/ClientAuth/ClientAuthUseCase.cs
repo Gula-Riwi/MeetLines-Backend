@@ -157,5 +157,24 @@ namespace MeetLines.Application.UseCases.Auth.ClientAuth
 
             return Result.Ok();
         }
+
+        public async Task<Result<ClientProfileDto>> GetProfileAsync(Guid userId, CancellationToken ct = default)
+        {
+            var user = await _appUserRepository.GetByIdAsync(userId, ct);
+            if (user == null)
+            {
+                return Result<ClientProfileDto>.Fail("Usuario no encontrado");
+            }
+
+            return Result<ClientProfileDto>.Ok(new ClientProfileDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FullName = user.FullName,
+                Phone = user.Phone,
+                IsEmailVerified = user.IsEmailVerified,
+                IsPhoneVerified = user.IsPhoneVerified
+            });
+        }
     }
 }
