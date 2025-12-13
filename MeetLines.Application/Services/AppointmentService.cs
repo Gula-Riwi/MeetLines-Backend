@@ -258,11 +258,18 @@ namespace MeetLines.Application.Services
             {
                 // 1. Get Config to check if reminders are enabled
                 var botConfig = await _botConfigRepository.GetByProjectIdAsync(request.ProjectId, ct);
+                
+                // DEBUG LOGGING
+                if (botConfig == null) _logger.LogWarning($"[Hangfire] BotConfig is NULL for Project {request.ProjectId}");
+                else _logger.LogWarning($"[Hangfire] BotConfig found. JSON: {botConfig.TransactionalConfigJson}");
+
                 if (botConfig != null && !string.IsNullOrEmpty(botConfig.TransactionalConfigJson))
                 {
                     var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                     var trans = JsonSerializer.Deserialize<MeetLines.Application.DTOs.Config.TransactionalConfig>(botConfig.TransactionalConfigJson, opts);
                     
+                    _logger.LogWarning($"[Hangfire] Deserialized Config: Enabled={trans?.AppointmentEnabled}, SendReminder={trans?.SendReminder}, Hours={trans?.ReminderHoursBefore}");
+
                     if (trans != null && trans.AppointmentEnabled && trans.SendReminder)
                     {
                         var hoursBefore = trans.ReminderHoursBefore > 0 ? trans.ReminderHoursBefore : 24;
@@ -271,25 +278,25 @@ namespace MeetLines.Application.Services
                         if (reminderTime > DateTimeOffset.UtcNow)
                         {
                             // Schedule Job using Hangfire
-                            Hangfire.BackgroundJob.Schedule<INotificationService>(
+                            var jobId = Hangfire.BackgroundJob.Schedule<INotificationService>(
                                 service => service.SendAppointmentReminderAsync(appointment.Id),
                                 reminderTime
                             );
-                            _logger.LogInformation($"Scheduled reminder for Appt {appointment.Id} at {reminderTime} (UTC)");
+                            _logger.LogWarning($"[Hangfire] SUCCESS. Scheduled Job {jobId} for Appt {appointment.Id} at {reminderTime} (UTC)");
                         }
                         else
                         {
-                            _logger.LogWarning($"Skipping reminder for Appt {appointment.Id}: Reminder Time {reminderTime} is in the past. Now is {DateTimeOffset.UtcNow}.");
+                            _logger.LogWarning($"[Hangfire] SKIPPED. Reminder Time {reminderTime} is in the past. Now is {DateTimeOffset.UtcNow}.");
                         }
                     }
                     else
                     {
-                        _logger.LogWarning($"Skipping reminder for Appt {appointment.Id}: Reminders disabled in config. Enabled: {trans?.AppointmentEnabled}, SendReminder: {trans?.SendReminder}");
+                        _logger.LogWarning($"[Hangfire] DISABLED. Conditions verified: ApptEnabled={trans?.AppointmentEnabled}, SendReminder={trans?.SendReminder}");
                     }
                 }
                 else
                 {
-                    _logger.LogWarning($"Skipping reminder for Appt {appointment.Id}: BotConfig not found or empty for Project {request.ProjectId}");
+                   _logger.LogWarning($"[Hangfire] SKIPPED. Config JSON is empty."); 
                 }
             }
             catch (Exception ex) 
