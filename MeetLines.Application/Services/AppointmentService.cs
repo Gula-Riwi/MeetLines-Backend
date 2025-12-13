@@ -151,6 +151,8 @@ namespace MeetLines.Application.Services
 
         public async Task<Result<AppointmentResponse>> CreateAppointmentAsync(CreateAppointmentRequest request, CancellationToken ct = default)
         {
+            _logger.LogInformation($"[CreateAppt] Received Request. StartTime: {request.StartTime} (Offset: {request.StartTime.Offset}). UTC: {request.StartTime.ToUniversalTime()}");
+
             // Get service details
             var service = await _serviceRepository.GetAsync(request.ServiceId, ct);
             if (service == null)
