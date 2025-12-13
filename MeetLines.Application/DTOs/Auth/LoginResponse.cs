@@ -11,5 +11,6 @@ namespace MeetLines.Application.DTOs.Auth
         public string Name { get; set; } = string.Empty;
         public bool IsEmailVerified { get; set; }
         public DateTimeOffset ExpiresAt { get; set; }
+        public bool RequiresTwoFactor { get; set; }
     }
 }
