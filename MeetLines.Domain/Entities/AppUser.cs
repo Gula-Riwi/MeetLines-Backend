@@ -1,5 +1,4 @@
 using System;
-
 namespace MeetLines.Domain.Entities
 {
     public class AppUser
@@ -20,14 +19,14 @@ namespace MeetLines.Domain.Entities
         
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset UpdatedAt { get; private set; }
-
+        
         private AppUser() { } // EF Core
-
+        
         public AppUser(string email, string fullName, string? phone = null, string authProvider = "bot")
         {
             if (string.IsNullOrWhiteSpace(email)) throw new ArgumentException("Email cannot be empty", nameof(email));
             if (string.IsNullOrWhiteSpace(fullName)) throw new ArgumentException("FullName cannot be empty", nameof(fullName));
-
+            
             Id = Guid.NewGuid();
             Email = email.ToLowerInvariant();
             FullName = fullName;
@@ -38,7 +37,7 @@ namespace MeetLines.Domain.Entities
             CreatedAt = DateTimeOffset.UtcNow;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
-
+        
         public void UpdateInfo(string fullName, string? phone)
         {
             if (string.IsNullOrWhiteSpace(fullName)) throw new ArgumentException("FullName cannot be empty", nameof(fullName));
@@ -47,13 +46,19 @@ namespace MeetLines.Domain.Entities
             Phone = phone;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
-
+        
         public void VerifyEmail()
         {
             IsEmailVerified = true;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
-
+        
+        public void SetPassword(string passwordHash)
+        {
+            PasswordHash = passwordHash;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+        
         public void EnableTwoFactor(string secret)
         {
             if (string.IsNullOrWhiteSpace(secret))
@@ -63,7 +68,7 @@ namespace MeetLines.Domain.Entities
             TwoFactorEnabled = true;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
-
+        
         public void DisableTwoFactor()
         {
             TwoFactorEnabled = false;

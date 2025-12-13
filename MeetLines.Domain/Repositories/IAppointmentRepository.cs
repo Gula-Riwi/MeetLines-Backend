@@ -9,6 +9,7 @@ namespace MeetLines.Domain.Repositories
     public interface IAppointmentRepository
     {
         Task<Appointment?> GetByIdAsync(int id, CancellationToken ct = default);
+        Task<Appointment?> GetByIdWithDetailsAsync(int id, CancellationToken ct = default);
         Task<IEnumerable<Appointment>> GetByProjectIdAsync(Guid projectId, CancellationToken ct = default);
         Task<IEnumerable<Appointment>> GetByEmployeeIdAsync(Guid employeeId, CancellationToken ct = default);
         Task AddAsync(Appointment appointment, CancellationToken ct = default);
