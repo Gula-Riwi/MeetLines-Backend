@@ -4,6 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using MeetLines.Application.Common;
 using MeetLines.Application.DTOs.Appointments;
+using MeetLines.Application.DTOs.Services;
 
 namespace MeetLines.Application.Services.Interfaces
 {
