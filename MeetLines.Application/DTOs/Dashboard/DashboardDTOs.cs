@@ -28,4 +28,9 @@ namespace MeetLines.Application.DTOs.Dashboard
         public decimal Total { get; set; }
         public string Currency { get; set; } = "COP";
     }
+    public class UpdateTaskStatusRequest
+    {
+        public string Status { get; set; } = null!; // "completed", "cancelled"
+        public string? Reason { get; set; }
+    }
 }
