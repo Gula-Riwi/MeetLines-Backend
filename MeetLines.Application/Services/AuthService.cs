@@ -225,9 +225,25 @@ namespace MeetLines.Application.Services
 
                 if (!_passwordHasher.VerifyPassword(request.Password, user.PasswordHash))
                 {
-                    // [DISCORD] Opcional: Notificar intento fallido (útil para seguridad)
-                    // await _discordService.SendInfoAsync("⚠️ Login Fallido", $"Intento fallido para {request.Email}");
                     return Result<LoginResponse>.Fail("Email o contraseña incorrectos");
+                }
+
+                // Verificar 2FA
+                if (user.TwoFactorEnabled)
+                {
+                    // Generar token temporal con rol "Pending2FA"
+                    // Este token NO permite acceso a los endpoints protegidos normales
+                    var tempToken = _jwtTokenService.GenerateAccessToken(user.Id, user.Email, "Pending2FA");
+                    
+                    return Result<LoginResponse>.Ok(new LoginResponse
+                    {
+                        RequiresTwoFactor = true,
+                        AccessToken = tempToken,
+                        UserId = user.Id,
+                        Email = user.Email,
+                        Name = user.Name,
+                        IsEmailVerified = user.IsEmailVerified
+                    });
                 }
 
                 // Generar tokens
@@ -249,12 +265,9 @@ namespace MeetLines.Application.Services
                 user.UpdateLastLogin();
                 await _userRepository.UpdateAsync(user, ct);
 
-                // Actualizar último login
-                user.UpdateLastLogin();
-                await _userRepository.UpdateAsync(user, ct);
-
-                // [DISCORD] Login notification removed to reduce noise
-
+                // Actualizar último login (Duplicate removal)
+                // user.UpdateLastLogin();
+                // await _userRepository.UpdateAsync(user, ct);
 
                 return Result<LoginResponse>.Ok(new LoginResponse
                 {
@@ -264,7 +277,8 @@ namespace MeetLines.Application.Services
                     Email = user.Email,
                     Name = user.Name,
                     IsEmailVerified = user.IsEmailVerified,
-                    ExpiresAt = session.ExpiresAt!.Value
+                    ExpiresAt = session.ExpiresAt!.Value,
+                    RequiresTwoFactor = false
                 });
             }
             catch (Exception ex)
@@ -286,7 +300,6 @@ namespace MeetLines.Application.Services
                 // Buscar usuario por external provider ID
                 var user = await _userRepository.GetByExternalProviderIdAsync(request.ExternalProviderId, ct);
 
-
                 // Si no existe, buscar por email
                 if (user == null && !string.IsNullOrWhiteSpace(request.Email))
                 {
@@ -296,7 +309,6 @@ namespace MeetLines.Application.Services
                 // Si no existe, crear nuevo usuario
                 if (user == null)
                 {
-
                     user = SaasUser.CreateOAuthUser(
                         request.Name,
                         request.Email,

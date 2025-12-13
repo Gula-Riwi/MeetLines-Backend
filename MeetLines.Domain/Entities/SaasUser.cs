@@ -21,6 +21,10 @@ namespace MeetLines.Domain.Entities
         public string? ExternalProviderId { get; private set; }
         public string? ProfilePictureUrl { get; private set; }
         public DateTimeOffset? LastLoginAt { get; private set; }
+        
+        // Two-Factor Authentication
+        public bool TwoFactorEnabled { get; private set; }
+        public string? TwoFactorSecret { get; private set; }
 
         // Constructor para EF Core (Soluciona CS8618)
         // Usamos null! (null-forgiving operator) porque EF Core asignará los valores vía reflexión.
@@ -140,6 +144,23 @@ namespace MeetLines.Domain.Entities
         public void UpdateLastLogin()
         {
             LastLoginAt = DateTimeOffset.UtcNow;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void EnableTwoFactor(string secret)
+        {
+            if (string.IsNullOrWhiteSpace(secret))
+                throw new ArgumentException("Two-factor secret cannot be empty", nameof(secret));
+            
+            TwoFactorSecret = secret;
+            TwoFactorEnabled = true;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void DisableTwoFactor()
+        {
+            TwoFactorEnabled = false;
+            TwoFactorSecret = null;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
