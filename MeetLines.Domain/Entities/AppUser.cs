@@ -48,5 +48,11 @@ namespace MeetLines.Domain.Entities
             IsEmailVerified = true;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
+
+        public void SetPassword(string passwordHash)
+        {
+            PasswordHash = passwordHash;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
     }
 }

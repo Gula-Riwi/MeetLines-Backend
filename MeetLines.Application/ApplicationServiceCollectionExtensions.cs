@@ -33,6 +33,7 @@ namespace MeetLines.Application.IoC
             services.AddScoped<ICustomerFeedbackService, CustomerFeedbackService>();
             services.AddScoped<IBotMetricsService, BotMetricsService>();
             services.AddScoped<IAppointmentService, AppointmentService>();
+            services.AddScoped<INotificationService, NotificationService>();
 
             // Registrar casos de uso de autenticación
             services.AddScoped<IRegisterUserUseCase, RegisterUserUseCase>();
@@ -45,6 +46,7 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IResetPasswordUseCase, ResetPasswordUseCase>();
             services.AddScoped<IResendVerificationEmailUseCase, ResendVerificationEmailUseCase>();
             services.AddScoped<ILogoutUseCase, LogoutUseCase>();
+            services.AddScoped<MeetLines.Application.UseCases.Auth.ClientAuth.Interfaces.IClientAuthUseCase, MeetLines.Application.UseCases.Auth.ClientAuth.ClientAuthUseCase>();
             services.AddScoped<IHealthCheckUseCase, HealthCheckUseCase>();
 
             // Registrar casos de uso de proyectos

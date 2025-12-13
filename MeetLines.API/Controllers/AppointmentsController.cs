@@ -129,11 +129,17 @@ namespace MeetLines.API.Controllers
             [FromBody] CreateAppointmentRequest request,
             CancellationToken ct = default)
         {
-            // Validate API key for n8n integration
-            if (!ValidateApiKey())
+            // Security Check: Allow if API Key is valid OR User is Authenticated (JWT)
+            bool isApiKeyValid = ValidateApiKey();
+            bool isUserAuthenticated = User.Identity?.IsAuthenticated == true;
+
+            if (!isApiKeyValid && !isUserAuthenticated)
             {
-                return Unauthorized(new { error = "Invalid or missing API key" });
+                return Unauthorized(new { error = "Unauthorized: Missing valid API Key or JWT Token" });
             }
+
+            // Optional: If user is authenticated, we could force UserId from token into request logic
+            // But service handles lookups by Email nicely.
 
             if (request.ProjectId != projectId)
             {

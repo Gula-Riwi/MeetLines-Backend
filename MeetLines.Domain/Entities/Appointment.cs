@@ -21,6 +21,12 @@ namespace MeetLines.Domain.Entities
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset UpdatedAt { get; private set; }
 
+        // Navigation Properties
+
+        public virtual Project? Project { get; private set; }
+        public virtual AppUser? AppUser { get; private set; }
+        public virtual Employee? Employee { get; private set; }
+
         private Appointment() { Status = null!; CurrencySnapshot = null!; } // EF Core
 
         public Appointment(
@@ -51,6 +57,7 @@ namespace MeetLines.Domain.Entities
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
+        public bool ReminderSent { get; private set; }
         public void Confirm(string meetingLink)
         {
             Status = "confirmed";
@@ -75,6 +82,12 @@ namespace MeetLines.Domain.Entities
         public void UpdateAdminNotes(string notes)
         {
             AdminNotes = notes;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void MarkReminderAsSent() 
+        { 
+            ReminderSent = true; 
             UpdatedAt = DateTimeOffset.UtcNow;
         }
     }

@@ -27,6 +27,7 @@ namespace MeetLines.Infrastructure.Data
         public DbSet<Employee> Employees { get; set; }
         public DbSet<Service> Services { get; set; }
         public DbSet<AppUser> AppUsers { get; set; }
+        public DbSet<AppUserPasswordResetToken> AppUserPasswordResetTokens { get; set; }
         public DbSet<Payment> Payments { get; set; }
         
         // WhatsApp Bot System
@@ -149,6 +150,7 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.MeetingLink).HasColumnName("meeting_link");
                 b.Property(x => x.UserNotes).HasColumnName("user_notes");
                 b.Property(x => x.AdminNotes).HasColumnName("admin_notes");
+                b.Property(x => x.ReminderSent).HasColumnName("reminder_sent").HasDefaultValue(false);
 
                 b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
                 b.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
@@ -510,6 +512,23 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 b.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 b.HasIndex(x => x.Email).IsUnique().HasDatabaseName("app_users_email_key");
+            });
+
+            // AppUserPasswordResetToken
+            modelBuilder.Entity<AppUserPasswordResetToken>(b =>
+            {
+                b.ToTable("app_user_password_reset_tokens");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.AppUserId).HasColumnName("app_user_id");
+                b.Property(x => x.Token).HasColumnName("token").HasMaxLength(512);
+                b.Property(x => x.ExpiresAt).HasColumnName("expires_at");
+                b.Property(x => x.IsUsed).HasColumnName("is_used").HasDefaultValue(false);
+                b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+
+                b.HasOne<AppUser>().WithMany().HasForeignKey(x => x.AppUserId).OnDelete(DeleteBehavior.Cascade);
+                b.HasIndex(x => x.AppUserId).HasDatabaseName("idx_appuser_passreset_user");
+                b.HasIndex(x => x.Token).IsUnique().HasDatabaseName("app_user_password_reset_tokens_token_key");
             });
         }
     }

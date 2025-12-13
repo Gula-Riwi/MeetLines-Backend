@@ -7,6 +7,8 @@ using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Mvc;
 using MeetLines.API.Middleware;
 using MeetLines.API.Middlewares;
+using Hangfire;
+using Hangfire.PostgreSql;
 
 // Determine environment
 var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production";
@@ -128,6 +130,17 @@ builder.Services.AddInfrastructure(builder.Configuration);
 
 // Add Controllers
 builder.Services.AddControllers();
+
+// ===== HANGFIRE CONFIGURATION =====
+builder.Services.AddHangfire(configuration => configuration
+    .SetDataCompatibilityLevel(CompatibilityLevel.Version_180)
+    .UseSimpleAssemblyNameTypeSerializer()
+    .UseRecommendedSerializerSettings()
+    .UsePostgreSqlStorage(options => options.UseNpgsqlConnection(connectionString)));
+
+// Add the processing server as IHostedService
+builder.Services.AddHangfireServer();
+// ==================================
 
 // ===== CONFIGURAR FLUENTVALIDATION =====
 builder.Services.AddFluentValidationAutoValidation();
@@ -251,5 +264,8 @@ app.UseAuthorization();
 
 // Map controllers
 app.MapControllers();
+
+// Enable Hangfire Dashboard
+app.UseHangfireDashboard("/hangfire");
 
 app.Run();
