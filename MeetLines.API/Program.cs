@@ -266,6 +266,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Enable Hangfire Dashboard
+// Enable Hangfire Dashboard
 app.UseHangfireDashboard("/hangfire");
 
 app.Run();

@@ -63,5 +63,23 @@ namespace MeetLines.API.Controllers
             }
             return Ok(new { message = "Contraseña actualizada exitosamente." });
         }
+
+        [HttpGet("me")]
+        [Authorize(AuthenticationSchemes = "Bearer")]
+        public async Task<IActionResult> GetMe(CancellationToken ct)
+        {
+             var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+             if (userIdClaim == null || !Guid.TryParse(userIdClaim.Value, out var userId))
+             {
+                 return Unauthorized(new { error = "Token inválido o expirado" });
+             }
+
+             var result = await _clientAuthUseCase.GetProfileAsync(userId, ct);
+             if (!result.IsSuccess)
+             {
+                 return NotFound(new { error = result.Error });
+             }
+             return Ok(result.Value);
+        }
     }
 }

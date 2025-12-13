@@ -11,5 +11,6 @@ namespace MeetLines.Application.UseCases.Auth.ClientAuth.Interfaces
         Task<Result<ClientAuthResponse>> RegisterAsync(ClientRegisterRequest request, CancellationToken ct = default);
         Task<Result> ForgotPasswordAsync(ClientForgotPasswordRequest request, CancellationToken ct = default);
         Task<Result> ResetPasswordAsync(ClientResetPasswordRequest request, CancellationToken ct = default);
+        Task<Result<ClientProfileDto>> GetProfileAsync(Guid userId, CancellationToken ct = default);
     }
 }

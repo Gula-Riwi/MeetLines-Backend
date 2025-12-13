@@ -52,4 +52,14 @@ namespace MeetLines.Application.DTOs.Auth
         [MinLength(6)]
         public string NewPassword { get; set; } = string.Empty;
     }
+
+    public class ClientProfileDto
+    {
+        public Guid Id { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string FullName { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public bool IsEmailVerified { get; set; }
+        public bool IsPhoneVerified { get; set; }
+    }
 }
