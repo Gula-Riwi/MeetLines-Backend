@@ -160,8 +160,9 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
                 b.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("now()");
 
-                b.HasOne<Project>().WithMany().HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.Cascade);
-                b.HasOne<Employee>().WithMany().HasForeignKey(a => a.EmployeeId).OnDelete(DeleteBehavior.SetNull); // Set Null if employee deleted
+                b.HasOne(a => a.Project).WithMany().HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.Cascade);
+                b.HasOne(a => a.Employee).WithMany().HasForeignKey(a => a.EmployeeId).OnDelete(DeleteBehavior.SetNull); 
+                b.HasOne(a => a.AppUser).WithMany().HasForeignKey(a => a.AppUserId).OnDelete(DeleteBehavior.SetNull);
 
                 b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_appointments_project");
                 b.HasIndex(x => x.AppUserId).HasDatabaseName("idx_appointments_appuser");

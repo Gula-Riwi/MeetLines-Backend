@@ -93,6 +93,11 @@ namespace MeetLines.Application.UseCases.Auth.ClientAuth
 
                 await _appUserRepository.AddAsync(newUser, ct);
 
+                // Send Welcome Email (Non-blocking ideally, but kept simple here)
+                try {
+                    await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.FullName);
+                } catch { /* log error but don't fail registration */ }
+
                 var token = _jwtTokenService.GenerateAccessToken(newUser.Id, newUser.Email, "Client");
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
 
@@ -151,6 +156,25 @@ namespace MeetLines.Application.UseCases.Auth.ClientAuth
             await _resetTokenRepo.UpdateAsync(tokenEntity, ct);
 
             return Result.Ok();
+        }
+
+        public async Task<Result<ClientProfileDto>> GetProfileAsync(Guid userId, CancellationToken ct = default)
+        {
+            var user = await _appUserRepository.GetByIdAsync(userId, ct);
+            if (user == null)
+            {
+                return Result<ClientProfileDto>.Fail("Usuario no encontrado");
+            }
+
+            return Result<ClientProfileDto>.Ok(new ClientProfileDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                FullName = user.FullName,
+                Phone = user.Phone,
+                IsEmailVerified = user.IsEmailVerified,
+                IsPhoneVerified = user.IsPhoneVerified
+            });
         }
     }
 }

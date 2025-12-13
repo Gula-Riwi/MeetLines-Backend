@@ -34,6 +34,18 @@ namespace MeetLines.Infrastructure.Repositories
                 .Include(a => a.Project)
                 .AsNoTracking() // We will use UpdateAsync to save changes
                 .FirstOrDefaultAsync(x => x.Id == id, ct);
+
+        }
+
+        public async Task<Appointment?> FindDuplicateAsync(Guid projectId, Guid appUserId, DateTimeOffset startTime, CancellationToken ct = default)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Where(x => x.ProjectId == projectId && 
+                            x.AppUserId == appUserId && 
+                            x.StartTime == startTime && 
+                            x.Status != "cancelled")
+                .FirstOrDefaultAsync(ct);
         }
 
         public async Task<IEnumerable<Appointment>> GetByProjectIdAsync(Guid projectId, CancellationToken ct = default)

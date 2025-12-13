@@ -10,6 +10,7 @@ using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Entities;
 using MeetLines.Domain.Repositories;
 using MeetLines.Application.DTOs.Config; // Unified DTO
+using Microsoft.Extensions.Logging;
 
 namespace MeetLines.Application.Services
 {
@@ -20,19 +21,22 @@ namespace MeetLines.Application.Services
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IProjectBotConfigRepository _botConfigRepository;
         private readonly IAppUserRepository _appUserRepository;
+        private readonly ILogger<AppointmentService> _logger;
 
         public AppointmentService(
             IAppointmentRepository appointmentRepository,
             IServiceRepository serviceRepository,
             IEmployeeRepository employeeRepository,
             IProjectBotConfigRepository botConfigRepository,
-            IAppUserRepository appUserRepository)
+            IAppUserRepository appUserRepository,
+            ILogger<AppointmentService> logger)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _botConfigRepository = botConfigRepository ?? throw new ArgumentNullException(nameof(botConfigRepository));
             _appUserRepository = appUserRepository ?? throw new ArgumentNullException(nameof(appUserRepository));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<IEnumerable<ServiceDto>> GetServicesAsync(Guid projectId, CancellationToken ct = default)
@@ -164,6 +168,7 @@ namespace MeetLines.Application.Services
                 }
             }
 
+
             // Get or create AppUser
             var appUser = await _appUserRepository.GetByEmailAsync(request.ClientEmail, ct);
             if (appUser == null)
@@ -183,6 +188,28 @@ namespace MeetLines.Application.Services
                 appUser.UpdateInfo(appUser.FullName, request.ClientPhone);
                 await _appUserRepository.UpdateAsync(appUser, ct);
             }
+
+            // === IDEMPOTENCY CHECK ===
+            var existingAppt = await _appointmentRepository.FindDuplicateAsync(request.ProjectId, appUser.Id, request.StartTime, ct);
+            if (existingAppt != null)
+            {
+                _logger.LogInformation($"Idempotency: Returning existing appointment {existingAppt.Id} for User {appUser.Id} at {request.StartTime}.");
+                return Result<AppointmentResponse>.Ok(new AppointmentResponse
+                {
+                    Id = existingAppt.Id,
+                    ProjectId = existingAppt.ProjectId,
+                    ServiceId = existingAppt.ServiceId,
+                    EmployeeId = existingAppt.EmployeeId,
+                    StartTime = existingAppt.StartTime,
+                    EndTime = existingAppt.EndTime,
+                    Status = existingAppt.Status,
+                    ClientName = appUser.FullName,
+                    ClientEmail = appUser.Email,
+                    ClientPhone = appUser.Phone,
+                    MeetingLink = existingAppt.MeetingLink
+                });
+            }
+            // =========================
 
             // Create appointment with the AppUser
             var appointment = new Appointment(
@@ -240,11 +267,19 @@ namespace MeetLines.Application.Services
                                 service => service.SendAppointmentReminderAsync(appointment.Id),
                                 reminderTime
                             );
+                            _logger.LogInformation($"Scheduled reminder for Appt {appointment.Id} at {reminderTime}");
+                        }
+                        else
+                        {
+                            _logger.LogWarning($"Skipping reminder for Appt {appointment.Id}: Time {reminderTime} is in the past.");
                         }
                     }
                 }
             }
-            catch { /* non-blocking logic, ignore scheduling errors */ }
+            catch (Exception ex) 
+            { 
+                 _logger.LogError(ex, $"Failed to schedule Hangfire reminder for Appointment {appointment.Id}");
+            }
             // ===========================
 
             return Result<AppointmentResponse>.Ok(response);
