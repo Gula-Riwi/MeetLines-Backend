@@ -152,10 +152,11 @@ namespace MeetLines.Application.Services
                 return Result<AppointmentResponse>.Fail($"Service {request.ServiceId} not found");
             }
 
+            Employee? employee = null;
             // Validate Employee if provided
             if (request.EmployeeId.HasValue)
             {
-                var employee = await _employeeRepository.GetByIdAsync(request.EmployeeId.Value, ct);
+                employee = await _employeeRepository.GetByIdAsync(request.EmployeeId.Value, ct);
                 if (employee == null)
                 {
                      return Result<AppointmentResponse>.Fail($"Employee {request.EmployeeId} not found");
@@ -208,6 +209,7 @@ namespace MeetLines.Application.Services
                 ProjectId = appointment.ProjectId,
                 ServiceId = appointment.ServiceId,
                 EmployeeId = appointment.EmployeeId,
+                EmployeeName = employee?.Name,
                 StartTime = appointment.StartTime,
                 EndTime = appointment.EndTime,
                 Status = appointment.Status,
