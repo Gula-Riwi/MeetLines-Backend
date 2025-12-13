@@ -10,6 +10,9 @@ using MeetLines.Application.UseCases.Channels;
 using MeetLines.Application.UseCases.TwoFactor;
 using MeetLines.Application.UseCases.Projects.Interfaces;
 
+using MeetLines.Application.UseCases.Services;
+using MeetLines.Application.UseCases.Services.Interfaces;
+
 namespace MeetLines.Application.IoC
 {
     /// <summary>
@@ -75,10 +78,16 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IGetPublicProjectChannelsUseCase, GetPublicProjectChannelsUseCase>();
             services.AddScoped<IUpdateChannelUseCase, UpdateChannelUseCase>();
 
+            // Services Use Cases (CRUD)
+            services.AddScoped<ICreateServiceUseCase, CreateServiceUseCase>();
+            services.AddScoped<IUpdateServiceUseCase, UpdateServiceUseCase>();
+            services.AddScoped<IDeleteServiceUseCase, DeleteServiceUseCase>();
+            services.AddScoped<IGetProjectServicesUseCase, GetProjectServicesUseCase>();
+            services.AddScoped<IGetServiceByIdUseCase, GetServiceByIdUseCase>();
+
             // Registrar validadores de FluentValidation
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             
-
             return services;
         }
     }
