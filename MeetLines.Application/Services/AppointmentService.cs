@@ -189,8 +189,11 @@ namespace MeetLines.Application.Services
                 await _appUserRepository.UpdateAsync(appUser, ct);
             }
 
+
             // === IDEMPOTENCY CHECK ===
-            var existingAppt = await _appointmentRepository.FindDuplicateAsync(request.ProjectId, appUser.Id, request.StartTime, ct);
+            // Npgsql 6.0+ requires UTC for DateTimeOffset comparisons
+            var searchTimeUtc = request.StartTime.ToUniversalTime();
+            var existingAppt = await _appointmentRepository.FindDuplicateAsync(request.ProjectId, appUser.Id, searchTimeUtc, ct);
             if (existingAppt != null)
             {
                 _logger.LogInformation($"Idempotency: Returning existing appointment {existingAppt.Id} for User {appUser.Id} at {request.StartTime}.");
