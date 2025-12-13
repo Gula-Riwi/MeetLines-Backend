@@ -26,6 +26,7 @@ namespace MeetLines.Domain.Entities
         public virtual Project? Project { get; private set; }
         public virtual AppUser? AppUser { get; private set; }
         public virtual Employee? Employee { get; private set; }
+        public virtual Service? Service { get; private set; }
 
         private Appointment() { Status = null!; CurrencySnapshot = null!; } // EF Core
 
