@@ -9,6 +9,7 @@ using MeetLines.Application.UseCases.Projects;
 using MeetLines.Application.UseCases.Channels;
 using MeetLines.Application.UseCases.TwoFactor;
 using MeetLines.Application.UseCases.Projects.Interfaces;
+using MeetLines.Application.UseCases.Dashboard;
 
 using MeetLines.Application.UseCases.Services;
 using MeetLines.Application.UseCases.Services.Interfaces;
@@ -70,6 +71,10 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IGetPublicProjectEmployeesUseCase, GetPublicProjectEmployeesUseCase>();
             services.AddScoped<IUploadProjectPhotoUseCase, UploadProjectPhotoUseCase>();
             services.AddScoped<IConfigureTelegramUseCase, ConfigureTelegramUseCase>();
+            
+            // Dashboard Use Cases
+            services.AddScoped<GetDashboardStatsUseCase>();
+            services.AddScoped<GetDashboardTasksUseCase>();
 
             // Channels Use Cases
             services.AddScoped<ICreateChannelUseCase, CreateChannelUseCase>();
