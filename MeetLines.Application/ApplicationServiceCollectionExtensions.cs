@@ -7,6 +7,7 @@ using MeetLines.Application.UseCases.Auth;
 using MeetLines.Application.UseCases.HealthCheck;
 using MeetLines.Application.UseCases.Projects;
 using MeetLines.Application.UseCases.Channels;
+using MeetLines.Application.UseCases.TwoFactor;
 using MeetLines.Application.UseCases.Projects.Interfaces;
 
 namespace MeetLines.Application.IoC
@@ -46,6 +47,12 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IResendVerificationEmailUseCase, ResendVerificationEmailUseCase>();
             services.AddScoped<ILogoutUseCase, LogoutUseCase>();
             services.AddScoped<IHealthCheckUseCase, HealthCheckUseCase>();
+            
+            // 2FA Use Cases
+            services.AddScoped<Enable2FAUseCase>();
+            services.AddScoped<Disable2FAUseCase>();
+            services.AddScoped<Verify2FACodeUseCase>();
+            services.AddScoped<Validate2FALoginUseCase>();
 
             // Registrar casos de uso de proyectos
             services.AddScoped<ICreateProjectUseCase, CreateProjectUseCase>();

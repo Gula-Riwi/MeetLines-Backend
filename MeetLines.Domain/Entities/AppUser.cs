@@ -13,6 +13,11 @@ namespace MeetLines.Domain.Entities
         public bool IsPhoneVerified { get; private set; }
         public string AuthProvider { get; private set; } = "email";
         public string? ExternalProviderId { get; private set; }
+        
+        // Two-Factor Authentication
+        public bool TwoFactorEnabled { get; private set; }
+        public string? TwoFactorSecret { get; private set; }
+        
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset UpdatedAt { get; private set; }
 
@@ -46,6 +51,23 @@ namespace MeetLines.Domain.Entities
         public void VerifyEmail()
         {
             IsEmailVerified = true;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void EnableTwoFactor(string secret)
+        {
+            if (string.IsNullOrWhiteSpace(secret))
+                throw new ArgumentException("Two-factor secret cannot be empty", nameof(secret));
+            
+            TwoFactorSecret = secret;
+            TwoFactorEnabled = true;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public void DisableTwoFactor()
+        {
+            TwoFactorEnabled = false;
+            TwoFactorSecret = null;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
     }

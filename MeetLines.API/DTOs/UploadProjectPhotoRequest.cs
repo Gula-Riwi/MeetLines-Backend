@@ -4,6 +4,6 @@ namespace MeetLines.API.DTOs
 {
     public class UploadProjectPhotoRequest
     {
-        public IFormFile? File { get; set; }
+        public IFormFile File { get; set; } = default!;
     }
 }

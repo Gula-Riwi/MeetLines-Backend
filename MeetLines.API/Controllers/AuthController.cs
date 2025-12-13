@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using MeetLines.Application.DTOs.Auth;
+using MeetLines.Application.DTOs.TwoFactor;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.API.DTOs;
 using FluentValidation;
@@ -7,6 +9,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using System.Text;
+
+using MeetLines.Application.UseCases.TwoFactor;
 
 namespace MeetLines.API.Controllers
 {
@@ -19,10 +23,12 @@ namespace MeetLines.API.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly Validate2FALoginUseCase _validate2FALoginUseCase;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, Validate2FALoginUseCase validate2FALoginUseCase)
         {
             _authService = authService ?? throw new ArgumentNullException(nameof(authService));
+            _validate2FALoginUseCase = validate2FALoginUseCase ?? throw new ArgumentNullException(nameof(validate2FALoginUseCase));
         }
 
         /// <summary>
@@ -344,6 +350,46 @@ namespace MeetLines.API.Controllers
                     return BadRequest(ApiResponse<LoginResponse>.Fail(result.Error ?? "Error en login"));
 
                 return Ok(ApiResponse<LoginResponse>.Ok(result.Value ?? new LoginResponse()));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse.Fail($"Error interno: {ex.Message}"));
+            }
+        }
+
+        /// <summary>
+        /// Verifica el código 2FA y completa el login.
+        /// Requiere token temporal (tempToken) obtenido en /login.
+        /// POST: api/auth/login-2fa
+        /// </summary>
+        [HttpPost("login-2fa")]
+        [Authorize] // Requiere el tempToken que tiene un rol especial
+        [ProducesResponseType(typeof(ApiResponse<LoginResponse>), 200)]
+        [ProducesResponseType(typeof(ApiResponse), 400)]
+        public async Task<IActionResult> Login2FA([FromBody] Login2FARequest request, CancellationToken ct)
+        {
+            try
+            {
+                // Extraer UserId del token temporal
+                var userIdStr = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out var userId))
+                    return Unauthorized(ApiResponse.Fail("Token inválido"));
+
+                request.IpAddress = GetClientIp();
+                request.DeviceInfo = GetUserAgent();
+
+                var result = await _validate2FALoginUseCase.ExecuteAsync(
+                    userId, 
+                    request.TwoFactorCode, // Puede ser TOTP o Backup Code
+                    request.DeviceInfo ?? "Unknown", 
+                    request.IpAddress ?? "Unknown", 
+                    ct
+                );
+
+                if (!result.IsSuccess)
+                    return BadRequest(ApiResponse<LoginResponse>.Fail(result.Error ?? "Código 2FA inválido"));
+
+                return Ok(ApiResponse<LoginResponse>.Ok(result.Value!));
             }
             catch (Exception ex)
             {
