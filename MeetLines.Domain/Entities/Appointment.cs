@@ -41,8 +41,8 @@ namespace MeetLines.Domain.Entities
             LeadId = leadId;
             AppUserId = appUserId;
             ServiceId = serviceId;
-            StartTime = startTime;
-            EndTime = endTime;
+            StartTime = startTime.ToUniversalTime();
+            EndTime = endTime.ToUniversalTime();
             PriceSnapshot = priceSnapshot;
             CurrencySnapshot = currencySnapshot;
             UserNotes = userNotes;
