@@ -17,7 +17,7 @@ namespace MeetLines.Domain.Repositories
         // Dashboard Stats
         Task<decimal> GetTotalSalesAsync(Guid projectId, DateTimeOffset starDate, DateTimeOffset endDate, CancellationToken ct = default);
         Task<IEnumerable<Appointment>> GetRecentAppointmentsAsync(Guid projectId, int limit, CancellationToken ct = default);
-        Task<IEnumerable<Appointment>> GetEmployeeTasksAsync(Guid projectId, Guid? employeeId, DateTimeOffset? fromDate, CancellationToken ct = default);
+        Task<IEnumerable<Appointment>> GetEmployeeTasksAsync(Guid projectId, Guid? employeeId, DateTimeOffset? fromDate, DateTimeOffset? toDate = null, CancellationToken ct = default);
         
         Task AddAsync(Appointment appointment, CancellationToken ct = default);
         Task UpdateAsync(Appointment appointment, CancellationToken ct = default);

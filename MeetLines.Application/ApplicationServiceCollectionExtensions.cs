@@ -77,6 +77,7 @@ namespace MeetLines.Application.IoC
             // Dashboard Use Cases
             services.AddScoped<GetDashboardStatsUseCase>();
             services.AddScoped<GetDashboardTasksUseCase>();
+            services.AddScoped<UpdateTaskStatusUseCase>();
 
             // Channels Use Cases
             services.AddScoped<ICreateChannelUseCase, CreateChannelUseCase>();
