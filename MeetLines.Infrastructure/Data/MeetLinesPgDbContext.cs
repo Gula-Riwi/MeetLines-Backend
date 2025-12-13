@@ -163,6 +163,7 @@ namespace MeetLines.Infrastructure.Data
                 b.HasOne(a => a.Project).WithMany().HasForeignKey(a => a.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 b.HasOne(a => a.Employee).WithMany().HasForeignKey(a => a.EmployeeId).OnDelete(DeleteBehavior.SetNull); 
                 b.HasOne(a => a.AppUser).WithMany().HasForeignKey(a => a.AppUserId).OnDelete(DeleteBehavior.SetNull);
+                b.HasOne(a => a.Service).WithMany().HasForeignKey(a => a.ServiceId).OnDelete(DeleteBehavior.Restrict);
 
                 b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_appointments_project");
                 b.HasIndex(x => x.AppUserId).HasDatabaseName("idx_appointments_appuser");

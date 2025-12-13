@@ -31,7 +31,6 @@ namespace MeetLines.Application.Services
         public async Task SendAppointmentReminderAsync(int appointmentId)
         {
             // 1. Fetch Appointment with relations (AppUser, Project)
-            // AppointmentId is int (from old schema) but repository expects int? Yes.
             var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(appointmentId);
 
             if (appointment == null) 
@@ -65,9 +64,21 @@ namespace MeetLines.Application.Services
                     var trans = JsonSerializer.Deserialize<MeetLines.Application.DTOs.Config.TransactionalConfig>(botConfig.TransactionalConfigJson, opts);
                     if (trans != null && !string.IsNullOrEmpty(trans.ReminderMessage))
                     {
+                        var culture = new System.Globalization.CultureInfo("es-ES");
+                        var timeZoneOffset = TimeSpan.FromHours(-5); // TODO: From Project Timezone
+                        
+                        var diff = appointment.StartTime - DateTimeOffset.UtcNow;
+                        string relative = diff.TotalHours >= 22 ? "mañana" : $"en {Math.Max(1, Math.Round(diff.TotalHours))} horas";
+                        if (diff.TotalMinutes < 90) relative = "en breve";
+
                         message = trans.ReminderMessage
                             .Replace("{name}", appointment.AppUser?.FullName ?? "Cliente")
-                            .Replace("{time}", appointment.StartTime.ToOffset(TimeSpan.FromHours(-5)).ToString("hh:mm tt")); // TODO: Use Project timezone
+                            .Replace("{service}", appointment.Service?.Name ?? "Servicio")
+                            .Replace("{date}", appointment.StartTime.ToOffset(timeZoneOffset).ToString("d 'de' MMMM", culture))
+                            .Replace("{time}", appointment.StartTime.ToOffset(timeZoneOffset).ToString("hh:mm tt", culture))
+                            .Replace("{employee}", appointment.Employee?.Name ?? "nuestro equipo")
+                            .Replace("{address}", !string.IsNullOrEmpty(appointment.Project?.Address) ? $"📍 {appointment.Project.Address}" : "")
+                            .Replace("{relative_time}", relative);
                     }
                 }
                 catch { /* ignore json error */ }
@@ -101,6 +112,61 @@ namespace MeetLines.Application.Services
                 _logger.LogError($"Job: Failed to send WhatsApp for Appointment {appointmentId}");
                 // Throw to let Hangfire retry
                 throw new Exception("Failed to send WhatsApp message via Meta API");
+            }
+        }
+
+        public async Task SendFeedbackRequestAsync(int appointmentId)
+        {
+            try 
+            {
+                // 1. Fetch Appointment
+                var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(appointmentId);
+                if (appointment == null || appointment.Status != "confirmed") 
+                {
+                    _logger.LogWarning($"FeedBackJob: Appointment {appointmentId} (Status: {appointment?.Status}) valid not found or not confirmed.");
+                    return;
+                }
+
+                // 2. Get Config
+                var botConfig = await _botConfigRepository.GetByProjectIdAsync(appointment.ProjectId);
+                if (botConfig == null || string.IsNullOrEmpty(botConfig.FeedbackConfigJson))
+                {
+                    _logger.LogWarning($"FeedBackJob: No Feedback Config found for Project {appointment.ProjectId}");
+                    return;
+                }
+
+                var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                var fbConfig = JsonSerializer.Deserialize<MeetLines.Application.DTOs.Config.FeedbackConfig>(botConfig.FeedbackConfigJson, opts);
+
+                if (fbConfig == null || !fbConfig.Enabled)
+                {
+                    _logger.LogInformation($"FeedBackJob: Feedback disabled for Project {appointment.ProjectId}");
+                    return;
+                }
+
+                // 3. Prepare Message
+                string message = fbConfig.InitialMessage
+                    .Replace("{name}", appointment.AppUser?.FullName ?? "Cliente");
+
+                // 4. Send
+                var project = appointment.Project;
+                if (project != null && !string.IsNullOrEmpty(project.WhatsappPhoneNumberId) && !string.IsNullOrEmpty(project.WhatsappAccessToken))
+                {
+                    var success = await SendToMetaAsync(
+                        project.WhatsappPhoneNumberId, 
+                        project.WhatsappAccessToken, 
+                        appointment.AppUser?.Phone, 
+                        message
+                    );
+
+                    if (success) _logger.LogInformation($"FeedBackJob: Feedback request sent for Appt {appointmentId}");
+                    else _logger.LogError($"FeedBackJob: Failed to send WhatsApp for Appt {appointmentId}");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"FeedBackJob: Error processing feedback for Appt {appointmentId}");
+                throw; // Retry
             }
         }
 
