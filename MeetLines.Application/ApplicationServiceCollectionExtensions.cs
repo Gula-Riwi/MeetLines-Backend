@@ -65,6 +65,8 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IGetPublicProjectsUseCase, GetPublicProjectsUseCase>();
             services.AddScoped<IGetPublicProjectEmployeesUseCase, GetPublicProjectEmployeesUseCase>();
             services.AddScoped<IUploadProjectPhotoUseCase, UploadProjectPhotoUseCase>();
+            services.AddScoped<IGetProjectPhotosUseCase, GetProjectPhotosUseCase>();
+            services.AddScoped<IDeleteProjectPhotoUseCase, DeleteProjectPhotoUseCase>();
             services.AddScoped<IConfigureTelegramUseCase, ConfigureTelegramUseCase>();
             
             // Dashboard Use Cases
