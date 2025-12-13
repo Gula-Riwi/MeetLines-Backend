@@ -246,6 +246,10 @@ namespace MeetLines.Application.Services
                 EndTime = appointment.EndTime,
                 Status = appointment.Status,
                 UserNotes = appointment.UserNotes,
+                ClientName = appUser.FullName,
+                ClientEmail = appUser.Email,
+                ClientPhone = appUser.Phone,
+                MeetingLink = appointment.MeetingLink,
                 CreatedAt = appointment.CreatedAt
             };
 
