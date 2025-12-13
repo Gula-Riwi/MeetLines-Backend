@@ -56,7 +56,8 @@ namespace MeetLines.API.Middlewares
             var response = new
             {
                 error = "Ocurrió un error interno en el servidor.",
-                details = ex.Message // En producción, podrías ocultar esto por seguridad
+                details = ex.Message,
+                innerException = ex.InnerException?.Message
             };
 
             var json = JsonSerializer.Serialize(response);
