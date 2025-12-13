@@ -93,6 +93,11 @@ namespace MeetLines.Application.UseCases.Auth.ClientAuth
 
                 await _appUserRepository.AddAsync(newUser, ct);
 
+                // Send Welcome Email (Non-blocking ideally, but kept simple here)
+                try {
+                    await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.FullName);
+                } catch { /* log error but don't fail registration */ }
+
                 var token = _jwtTokenService.GenerateAccessToken(newUser.Id, newUser.Email, "Client");
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
 

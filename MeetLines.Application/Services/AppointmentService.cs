@@ -164,6 +164,7 @@ namespace MeetLines.Application.Services
                 }
             }
 
+
             // Get or create AppUser
             var appUser = await _appUserRepository.GetByEmailAsync(request.ClientEmail, ct);
             if (appUser == null)
