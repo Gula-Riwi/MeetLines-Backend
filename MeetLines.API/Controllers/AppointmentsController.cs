@@ -112,6 +112,7 @@ namespace MeetLines.API.Controllers
                 return StatusCode(500, new { 
                     error = "Ocurrió un error interno en el servidor.", 
                     details = ex.Message,
+                    innerException = ex.InnerException?.Message,
                     stackTrace = ex.StackTrace
                 });
             }
