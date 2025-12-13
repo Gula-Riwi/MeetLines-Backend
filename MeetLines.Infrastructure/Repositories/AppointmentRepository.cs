@@ -55,5 +55,46 @@ namespace MeetLines.Infrastructure.Repositories
             _context.Appointments.Update(appointment);
             await _context.SaveChangesAsync(ct);
         }
+
+        public async Task<decimal> GetTotalSalesAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default)
+        {
+            return await _context.Appointments
+                .Where(x => x.ProjectId == projectId && 
+                            x.Status == "completed" && 
+                            x.StartTime >= startDate && 
+                            x.StartTime <= endDate)
+                .SumAsync(x => x.PriceSnapshot, ct);
+        }
+
+        public async Task<IEnumerable<Appointment>> GetRecentAppointmentsAsync(Guid projectId, int limit, CancellationToken ct = default)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Where(x => x.ProjectId == projectId)
+                .OrderByDescending(x => x.StartTime)
+                .Take(limit)
+                .ToListAsync(ct);
+        }
+
+        public async Task<IEnumerable<Appointment>> GetEmployeeTasksAsync(Guid projectId, Guid? employeeId, DateTimeOffset? fromDate, CancellationToken ct = default)
+        {
+            var query = _context.Appointments
+                .AsNoTracking()
+                .Where(x => x.ProjectId == projectId);
+
+            if (employeeId.HasValue)
+            {
+                query = query.Where(x => x.EmployeeId == employeeId.Value);
+            }
+
+            if (fromDate.HasValue)
+            {
+                query = query.Where(x => x.StartTime >= fromDate.Value);
+            }
+
+            return await query
+                .OrderByDescending(x => x.StartTime)
+                .ToListAsync(ct);
+        }
     }
 }
