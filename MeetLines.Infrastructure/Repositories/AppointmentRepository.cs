@@ -32,6 +32,8 @@ namespace MeetLines.Infrastructure.Repositories
             return await _context.Appointments
                 .Include(a => a.AppUser)
                 .Include(a => a.Project)
+                .Include(a => a.Service)
+                .Include(a => a.Employee)
                 .AsNoTracking() // We will use UpdateAsync to save changes
                 .FirstOrDefaultAsync(x => x.Id == id, ct);
 

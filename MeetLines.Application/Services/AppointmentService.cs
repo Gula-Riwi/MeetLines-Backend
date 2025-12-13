@@ -307,6 +307,36 @@ namespace MeetLines.Application.Services
             }
             // ===========================
 
+            // === HANGFIRE FEEDBACK ===
+            try 
+            {
+                var botConfigForFeedback = await _botConfigRepository.GetByProjectIdAsync(request.ProjectId, ct);
+                
+                if (botConfigForFeedback != null && !string.IsNullOrEmpty(botConfigForFeedback.FeedbackConfigJson))
+                {
+                    var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+                    var fbConfig = JsonSerializer.Deserialize<MeetLines.Application.DTOs.Config.FeedbackConfig>(botConfigForFeedback.FeedbackConfigJson, opts);
+
+                    if (fbConfig != null && fbConfig.Enabled)
+                    {
+                        var delayHours = fbConfig.HoursAfterService > 0 ? fbConfig.HoursAfterService : 1;
+                        var feedbackTime = request.EndTime.AddHours(delayHours);
+
+                        // Schedule Job
+                        var jobId = Hangfire.BackgroundJob.Schedule<INotificationService>(
+                            service => service.SendFeedbackRequestAsync(appointment.Id),
+                            feedbackTime
+                        );
+                        _logger.LogInformation($"[Hangfire] Feedback Request scheduled (Job {jobId}) for Appt {appointment.Id} at {feedbackTime} (UTC)");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Failed to schedule Hangfire Feedback for Appointment {appointment.Id}");
+            }
+            // =========================
+
             return Result<AppointmentResponse>.Ok(response);
         }
 
