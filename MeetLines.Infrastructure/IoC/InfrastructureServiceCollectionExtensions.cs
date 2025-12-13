@@ -100,6 +100,9 @@ namespace MeetLines.Infrastructure.IoC
             services.AddHttpClient<IDiscordWebhookService, DiscordWebhookService>();
             
             services.AddScoped<IPaymentRepository, PaymentRepository>();
+            
+            // Two-Factor Authentication
+            services.AddScoped<ITwoFactorBackupCodeRepository, TwoFactorBackupCodeRepository>();
 
             return services;
         }
@@ -116,6 +119,9 @@ namespace MeetLines.Infrastructure.IoC
             // Business Services
             services.AddScoped<IAppointmentAssignmentService, MeetLines.Application.Services.AppointmentAssignmentService>();
             services.AddScoped<ICloudinaryService, CloudinaryService>();
+            
+            // Two-Factor Authentication
+            services.AddScoped<ITotpService, TotpService>();
             
             return services;
         }

@@ -38,6 +38,7 @@ namespace MeetLines.Infrastructure.Data
         public DbSet<CustomerReactivation> CustomerReactivations { get; set; }
         public DbSet<BotMetrics> BotMetrics { get; set; }
         public DbSet<ProjectPhoto> ProjectPhotos { get; set; }
+        public DbSet<TwoFactorBackupCode> TwoFactorBackupCodes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -54,6 +55,10 @@ namespace MeetLines.Infrastructure.Data
                 b.HasIndex(x => x.Email).IsUnique();
                 b.Property(x => x.IsEmailVerified).HasDefaultValue(false);
                 b.HasIndex(x => x.ExternalProviderId).HasDatabaseName("idx_saasusers_externalprovider");
+                
+                // Two-Factor Authentication
+                b.Property(x => x.TwoFactorEnabled).HasColumnName("two_factor_enabled").HasDefaultValue(false);
+                b.Property(x => x.TwoFactorSecret).HasColumnName("two_factor_secret").HasMaxLength(255);
             });
 
             // Subscriptions
@@ -512,6 +517,27 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 b.Property(x => x.UpdatedAt).HasColumnName("updated_at").HasDefaultValueSql("CURRENT_TIMESTAMP");
                 b.HasIndex(x => x.Email).IsUnique().HasDatabaseName("app_users_email_key");
+                
+                // Two-Factor Authentication
+                b.Property(x => x.TwoFactorEnabled).HasColumnName("two_factor_enabled").HasDefaultValue(false);
+                b.Property(x => x.TwoFactorSecret).HasColumnName("two_factor_secret").HasMaxLength(255);
+            });
+
+            // TwoFactorBackupCodes
+            modelBuilder.Entity<TwoFactorBackupCode>(b =>
+            {
+                b.ToTable("two_factor_backup_codes");
+                b.HasKey(x => x.Id);
+                b.Property(x => x.Id).HasColumnName("id").HasDefaultValueSql("uuid_generate_v4()");
+                b.Property(x => x.UserId).HasColumnName("user_id").IsRequired();
+                b.Property(x => x.UserType).HasColumnName("user_type").HasMaxLength(50).IsRequired();
+                b.Property(x => x.Code).HasColumnName("code").HasMaxLength(20).IsRequired();
+                b.Property(x => x.IsUsed).HasColumnName("is_used").HasDefaultValue(false);
+                b.Property(x => x.CreatedAt).HasColumnName("created_at").HasDefaultValueSql("now()");
+                b.Property(x => x.UsedAt).HasColumnName("used_at");
+                
+                b.HasIndex(x => new { x.UserId, x.UserType }).HasDatabaseName("idx_backup_codes_user");
+                b.HasIndex(x => x.Code).HasDatabaseName("idx_backup_codes_code");
             });
 
             // AppUserPasswordResetToken
