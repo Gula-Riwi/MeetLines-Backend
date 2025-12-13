@@ -32,6 +32,8 @@ namespace MeetLines.API.Controllers
         private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
         private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
         private readonly IUploadProjectPhotoUseCase _uploadProjectPhotoUseCase;
+        private readonly IGetProjectPhotosUseCase _getProjectPhotosUseCase;
+        private readonly IDeleteProjectPhotoUseCase _deleteProjectPhotoUseCase;
         private readonly IConfiguration _configuration;
 
         public ProjectsController(
@@ -45,6 +47,8 @@ namespace MeetLines.API.Controllers
             IGetPublicProjectsUseCase getPublicProjectsUseCase,
             IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase,
             IUploadProjectPhotoUseCase uploadProjectPhotoUseCase,
+            IGetProjectPhotosUseCase getProjectPhotosUseCase,
+            IDeleteProjectPhotoUseCase deleteProjectPhotoUseCase,
             IConfiguration configuration)
         {
             _createProjectUseCase = createProjectUseCase ?? throw new ArgumentNullException(nameof(createProjectUseCase));
@@ -57,6 +61,8 @@ namespace MeetLines.API.Controllers
             _getPublicProjectsUseCase = getPublicProjectsUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectsUseCase));
             _getPublicProjectEmployeesUseCase = getPublicProjectEmployeesUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectEmployeesUseCase));
             _uploadProjectPhotoUseCase = uploadProjectPhotoUseCase ?? throw new ArgumentNullException(nameof(uploadProjectPhotoUseCase));
+            _getProjectPhotosUseCase = getProjectPhotosUseCase ?? throw new ArgumentNullException(nameof(getProjectPhotosUseCase));
+            _deleteProjectPhotoUseCase = deleteProjectPhotoUseCase ?? throw new ArgumentNullException(nameof(deleteProjectPhotoUseCase));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
@@ -188,6 +194,28 @@ namespace MeetLines.API.Controllers
             {
                 return NotFound(new { error = ex.Message });
             }
+        }
+
+        /// <summary>
+        /// Obtiene todas las fotos de un proyecto
+        /// </summary>
+        [HttpGet("{projectId}/photos")]
+        public async Task<IActionResult> GetProjectPhotos(Guid projectId, CancellationToken ct)
+        {
+            var result = await _getProjectPhotosUseCase.ExecuteAsync(projectId, ct);
+            if (!result.IsSuccess) return BadRequest(new { error = result.Error });
+            return Ok(result.Value);
+        }
+
+        /// <summary>
+        /// Elimina una foto de un proyecto
+        /// </summary>
+        [HttpDelete("{projectId}/photos/{photoId}")]
+        public async Task<IActionResult> DeleteProjectPhoto(Guid projectId, Guid photoId, CancellationToken ct)
+        {
+            var result = await _deleteProjectPhotoUseCase.ExecuteAsync(projectId, photoId, ct);
+            if (!result.IsSuccess) return BadRequest(new { error = result.Error });
+            return NoContent();
         }
 
         /// <summary>
