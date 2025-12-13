@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using MeetLines.Application.Common;
 using MeetLines.Application.DTOs.Appointments;
 using MeetLines.Application.Services.Interfaces;
+using MeetLines.Application.DTOs.Services;
 using MeetLines.Domain.Entities;
 using MeetLines.Domain.Repositories;
 using MeetLines.Application.DTOs.Config; // Unified DTO
