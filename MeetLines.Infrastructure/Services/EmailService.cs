@@ -114,6 +114,13 @@ namespace MeetLines.Infrastructure.Services
             await SendEmailAsync(toEmail, subject, body, senderName);
         }
 
+        public async Task SendNegativeFeedbackAlertAsync(string toEmail, string ownerName, string customerName, string customerPhone, int rating, string comment, string projectName)
+        {
+            var subject = $"🚨 Alerta Feedback ({rating}⭐) - {projectName}";
+            var body = _templateBuilder.BuildNegativeFeedbackAlert(ownerName, customerName, customerPhone, rating, comment, projectName);
+            await SendEmailAsync(toEmail, subject, body);
+        }
+
         private async Task SendEmailAsync(string toEmail, string subject, string htmlBody, string? fromName = null)
         {
             var message = new MimeMessage();

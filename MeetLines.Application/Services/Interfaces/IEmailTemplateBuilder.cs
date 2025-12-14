@@ -14,5 +14,6 @@ namespace MeetLines.Application.Services.Interfaces
         string BuildAppointmentAssigned(string employeeName, string clientName, DateTime date, string time);
         string BuildAppointmentConfirmed(string clientName, string employeeName, DateTime date, string time);
         string BuildAppointmentCancelled(string userName, DateTime date, string time, string reason);
+        string BuildNegativeFeedbackAlert(string ownerName, string customerName, string customerPhone, int rating, string comment, string projectName);
     }
 }

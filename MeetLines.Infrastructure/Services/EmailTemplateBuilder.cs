@@ -272,5 +272,28 @@ namespace MeetLines.Infrastructure.Services
 
             return BuildBaseHtml(content, "Cita Cancelada");
         }
+
+        public string BuildNegativeFeedbackAlert(string ownerName, string customerName, string customerPhone, int rating, string comment, string projectName)
+        {
+            var content = $@"
+                <h2 style='color: #ff6b6b; margin-top: 0;'>🚨 Alerta de Calificación Baja</h2>
+                <p>Hola {ownerName},</p>
+                <p>Has recibido una calificación negativa en tu proyecto <strong>{projectName}</strong>. Se recomienda revisar el caso.</p>
+                
+                {BuildInfoBox($@"
+                    <p style='margin: 0 0 5px 0;'><strong>Cliente:</strong> {customerName}</p>
+                    <p style='margin: 0 0 5px 0;'><strong>Teléfono:</strong> <a href='https://wa.me/{customerPhone?.Replace("+", "").Trim()}' style='color: #ff6b6b; text-decoration: none;'>{customerPhone} 📲</a></p>
+                    <p style='margin: 0 0 15px 0;'><strong>Calificación:</strong> <span style='font-size: 1.2em;'>{new string('⭐', rating)}</span> ({rating}/5)</p>
+                    
+                    <p style='margin: 0 0 5px 0;'><strong>Comentario:</strong></p>
+                    <blockquote style='background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; border-left: 2px solid #ff6b6b; margin: 0; font-style: italic;'>
+                        ""{comment ?? "Sin comentario"}""
+                    </blockquote>
+                ", "#ff6b6b")}
+                
+                <p>Te sugerimos contactar al cliente para manejar la situación.</p>";
+
+            return BuildBaseHtml(content, "Alerta Feedback Negativo");
+        }
     }
 }
