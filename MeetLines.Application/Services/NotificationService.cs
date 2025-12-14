@@ -197,25 +197,35 @@ namespace MeetLines.Application.Services
                     return;
                 }
 
-                // 3. Set Conversation State (DB) BEFORE Triggering Webhook
+                // 3. Prepare Message with Variables (Moved UP)
+                var message = fbConfig.RequestMessage ?? "Hola {customerName}, ¿cómo calificarías tu experiencia del 1 al 5?";
+                var culture = new System.Globalization.CultureInfo("es-ES");
+                var timeZoneOffset = TimeSpan.FromHours(-5); // Fix: Use Project Timezone later
+
+                message = message
+                    .Replace("{customerName}", appointment.AppUser?.FullName ?? "Cliente")
+                    .Replace("{name}", appointment.AppUser?.FullName ?? "Cliente")
+                    .Replace("{service}", appointment.Service?.Name ?? "Servicio")
+                    .Replace("{date}", appointment.StartTime.ToOffset(timeZoneOffset).ToString("d 'de' MMMM", culture))
+                    .Replace("{time}", appointment.StartTime.ToOffset(timeZoneOffset).ToString("hh:mm tt", culture))
+                    .Replace("{employee}", appointment.Employee?.Name ?? "nuestro equipo");
+
+                // 4. Set Conversation State (DB) - Now uses 'message'
                 if (!string.IsNullOrEmpty(appointment.AppUser?.Phone))
                 {
                     var conversationState = new Conversation(
                         projectId: appointment.ProjectId,
                         customerPhone: appointment.AppUser.Phone,
                         customerMessage: "(System Trigger)", 
-                        botResponse: fbConfig.InitialMessage, // Store what we are about to send
-                        botType: "feedback_wait", // Check this in n8n!
+                        botResponse: message, 
+                        botType: "feedback_wait", 
                         customerName: appointment.AppUser.FullName
                     );
                     await _conversationRepository.CreateAsync(conversationState);
                 }
 
-                // 4. Trigger Webhook (Dynamic per Project)
-                // Usamos el Webhook configurado en el Proyecto (mismo que recibe mensajes)
-                var webhookUrl = appointment.Project?.WhatsappForwardWebhook; // Primary for WhatsApp bot
-                
-                // Fallback or specific logic if needed, but user insisted on this one.
+                // 5. Trigger Webhook
+                var webhookUrl = appointment.Project?.WhatsappForwardWebhook;
                 if (string.IsNullOrEmpty(webhookUrl))
                 {
                     _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no WhatsappForwardWebhook configured.");
@@ -232,15 +242,11 @@ namespace MeetLines.Application.Services
                      employeeName = appointment.Employee?.Name,
                      serviceName = appointment.Service?.Name,
                      date = appointment.StartTime.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                     ratingMessage = fbConfig.InitialMessage 
+                     ratingMessage = message 
                 };
                  
                 var client = _httpClientFactory.CreateClient();
-                // Add API Key header if needed for security between Backend -> n8n (Optional)
-                if (!string.IsNullOrEmpty(_configuration["INTEGRATIONS_API_KEY"]))
-                {
-                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _configuration["INTEGRATIONS_API_KEY"]);
-                }
+                // Auth Header Removed by User Request
                 
                 var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
                 var response = await client.PostAsync(webhookUrl, content);

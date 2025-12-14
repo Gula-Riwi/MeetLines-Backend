@@ -3,13 +3,16 @@ namespace MeetLines.Application.DTOs.Config
     public class FeedbackConfig
     {
         public bool Enabled { get; set; }
-        public int HoursAfterService { get; set; } = 1; // Default 1 hora después
-        public string InitialMessage { get; set; } = "Hola {name}, gracias por confiar en nosotros. ¿Cómo calificarías tu experiencia del 1 al 5?";
+
+        public int DelayHours { get; set; } = 1; 
+        public string? CustomPrompt { get; set; }
+        public string RequestMessage { get; set; } = "Hola {customerName}, ¿cómo calificarías tu experiencia del 1 al 5?";
+        public bool NotifyOwnerOnNegative { get; set; }
+        public string NegativeFeedbackMessage { get; set; } = "Lamentamos eso. ¿Qué podemos mejorar?";
         
-        // Configuración para el manejo de la respuesta (usado por el Bot conversacional)
-        public string HighRatingMessage { get; set; } = "¡Nos alegra mucho! Ayúdanos con una reseña en Google aquí: {link}";
-        public string LowRatingMessage { get; set; } = "Lamentamos escuchar eso. ¿Qué podemos mejorar para la próxima?";
+        // Mantener propiedades adicionales que puedan ser útiles aunque no estén en el JSON actual del usuario (opcionales)
         public string? GoogleReviewLink { get; set; }
         public int HighRatingThreshold { get; set; } = 4;
+        public string HighRatingMessage { get; set; } = "¡Gracias!";
     }
 }
