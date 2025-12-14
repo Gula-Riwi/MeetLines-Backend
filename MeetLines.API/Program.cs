@@ -272,4 +272,12 @@ app.UseHangfireDashboard("/hangfire", new DashboardOptions
     Authorization = new[] { new MeetLines.API.Filters.HangfireAuthorizationFilter() }
 });
 
+// Schedule Recurring Jobs
+RecurringJob.AddOrUpdate<MeetLines.API.Jobs.ReactivationJob>(
+    "daily-customer-reactivation",
+    job => job.ExecuteAsync(),
+    Cron.Daily(15), // 15:00 UTC = 10:00 AM Colombia
+    new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc }
+);
+
 app.Run();

@@ -126,11 +126,57 @@ namespace MeetLines.Infrastructure.Repositories
             if (fromDate.HasValue)
             {
                 query = query.Where(x => x.StartTime >= fromDate.Value);
+                query = query.Where(x => x.StartTime >= fromDate.Value);
             }
 
             return await query
                 .OrderByDescending(x => x.StartTime)
                 .ToListAsync(ct);
+        }
+
+        public async Task<IEnumerable<Appointment>> GetInactiveCustomersAsync(Guid projectId, DateTimeOffset sinceDate, CancellationToken ct = default)
+        {
+            var now = DateTimeOffset.UtcNow;
+            
+            // Logic: 
+            // 1. Group by AppUser
+            // 2. Select Max(StartTime)
+            // 3. Filter where Max < sinceDate AND no Future appointments
+            
+            // Note: Use client-side evaluation for complex grouping if EF Core limitation requires it, 
+            // but for performance, we prefer server-side.
+            // Let's get "Latest Appt" for each user in the project. This can be heavy, but necessary.
+            
+            var userLastAppointments = await _context.Appointments
+                .Where(x => x.ProjectId == projectId && x.Status != "cancelled")
+                .GroupBy(x => x.AppUserId)
+                .Select(g => new 
+                { 
+                    AppUserId = g.Key, 
+                    LastDate = g.Max(x => x.StartTime),
+                    FutureCount = g.Count(x => x.StartTime > now)
+                })
+                .Where(x => x.LastDate < sinceDate && x.FutureCount == 0)
+                .ToListAsync(ct);
+
+            // Now hydrate the actual appointment objects (the latest one)
+            var userIds = userLastAppointments.Select(x => x.AppUserId).ToList();
+            
+            // We return "The last appointment" because it contains the User/Employee data we might need (e.g. "Last time you saw John")
+            // Fetch latest appt for these users
+             var appointments = await _context.Appointments
+                .Include(a => a.AppUser)
+                .Include(a => a.Project)
+                .Where(x => userIds.Contains(x.AppUserId))
+                // We need to pick one per user (the latest)
+                // Doing this in memory after fetching matches is safer for EF translation
+                .ToListAsync(ct);
+
+            return appointments
+                .GroupBy(a => a.AppUserId)
+                .Select(g => g.OrderByDescending(x => x.StartTime).First())
+                .Where(x => x.StartTime < sinceDate) // Double check
+                .ToList();
         }
     }
 }

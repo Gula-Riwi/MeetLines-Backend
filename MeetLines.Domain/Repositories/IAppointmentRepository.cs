@@ -14,6 +14,12 @@ namespace MeetLines.Domain.Repositories
         Task<IEnumerable<Appointment>> GetByProjectIdAsync(Guid projectId, CancellationToken ct = default);
         Task<IEnumerable<Appointment>> GetByEmployeeIdAsync(Guid employeeId, CancellationToken ct = default);
         Task<IEnumerable<Appointment>> GetByAppUserIdAsync(Guid appUserId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Finds distinct customers who have not had an appointment since 'sinceDate' AND have no future appointments.
+        /// Returns the latest appointment for each inactive customer.
+        /// </summary>
+        Task<IEnumerable<Appointment>> GetInactiveCustomersAsync(Guid projectId, DateTimeOffset sinceDate, CancellationToken ct = default);
         
         // Dashboard Stats
         Task<decimal> GetTotalSalesAsync(Guid projectId, DateTimeOffset starDate, DateTimeOffset endDate, CancellationToken ct = default);
