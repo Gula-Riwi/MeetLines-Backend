@@ -78,6 +78,7 @@ namespace MeetLines.Application.Services
                             .Replace("{time}", appointment.StartTime.ToOffset(timeZoneOffset).ToString("hh:mm tt", culture))
                             .Replace("{employee}", appointment.Employee?.Name ?? "nuestro equipo")
                             .Replace("{address}", !string.IsNullOrEmpty(appointment.Project?.Address) ? $"📍 {appointment.Project.Address}" : "")
+                            .Replace("{company}", appointment.Project?.Name ?? "")
                             .Replace("{relative_time}", relative);
                     }
                 }
