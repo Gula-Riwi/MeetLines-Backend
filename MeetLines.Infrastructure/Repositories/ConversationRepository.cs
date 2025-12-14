@@ -44,7 +44,7 @@ namespace MeetLines.Infrastructure.Repositories
         {
             return await _context.Conversations
                 .AsNoTracking()
-                .Where(x => x.ProjectId == projectId && x.CustomerPhone == customerPhone)
+                .Where(x => x.ProjectId == projectId && x.CustomerPhone.EndsWith(customerPhone))
                 .OrderByDescending(x => x.CreatedAt)
                 .ToListAsync(ct);
         }

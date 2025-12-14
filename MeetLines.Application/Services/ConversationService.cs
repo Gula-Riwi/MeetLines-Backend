@@ -47,7 +47,14 @@ namespace MeetLines.Application.Services
 
         public async Task<IEnumerable<ConversationDto>> GetByCustomerPhoneAsync(Guid projectId, string customerPhone, CancellationToken ct = default)
         {
-            var conversations = await _repository.GetByCustomerPhoneAsync(projectId, customerPhone, ct);
+            // Normalize to search by last 10 digits to ensure match regardless of country code prefix
+            var searchPhone = customerPhone?.Replace("+", "").Replace(" ", "").Trim();
+            if (!string.IsNullOrEmpty(searchPhone) && searchPhone.Length > 10)
+            {
+                searchPhone = searchPhone.Substring(searchPhone.Length - 10);
+            }
+
+            var conversations = await _repository.GetByCustomerPhoneAsync(projectId, searchPhone!, ct);
             return conversations.Select(MapToDto);
         }
 
