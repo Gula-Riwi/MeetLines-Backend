@@ -278,7 +278,6 @@ namespace MeetLines.Application.Services
                 ProjectId = appointment.ProjectId,
                 ServiceId = appointment.ServiceId,
                 EmployeeId = appointment.EmployeeId,
-                EmployeeId = appointment.EmployeeId,
                 EmployeeName = employee?.Name,
                 StartTime = appointment.StartTime.ToOffset(TimeSpan.FromHours(-5)),
                 EndTime = appointment.EndTime.ToOffset(TimeSpan.FromHours(-5)),
