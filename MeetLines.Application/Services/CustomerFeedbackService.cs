@@ -15,15 +15,18 @@ namespace MeetLines.Application.Services
         private readonly ICustomerFeedbackRepository _repository;
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IAppUserRepository _appUserRepository;
+        private readonly IConversationRepository _conversationRepository;
 
         public CustomerFeedbackService(
             ICustomerFeedbackRepository repository,
             IAppointmentRepository appointmentRepository,
-            IAppUserRepository appUserRepository)
+            IAppUserRepository appUserRepository,
+            IConversationRepository conversationRepository)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
             _appUserRepository = appUserRepository ?? throw new ArgumentNullException(nameof(appUserRepository));
+            _conversationRepository = conversationRepository ?? throw new ArgumentNullException(nameof(conversationRepository));
         }
 
         public async Task<IEnumerable<CustomerFeedbackDto>> GetByProjectIdAsync(Guid projectId, int page = 1, int pageSize = 50, CancellationToken ct = default)
@@ -81,6 +84,22 @@ namespace MeetLines.Application.Services
             );
 
             var created = await _repository.CreateAsync(entity, ct);
+
+            // 3. Auto-Reset Conversation State (Unlock user)
+            // Create a new convo record with 'reception' so n8n sees this as the latest state
+            if (!string.IsNullOrEmpty(request.CustomerPhone))
+            {
+                var resetConvo = new Conversation(
+                    projectId: request.ProjectId,
+                    customerPhone: request.CustomerPhone,
+                    customerMessage: "(System Reset - Feedback Received)", 
+                    botResponse: "(Feedback Loop Closed)", 
+                    botType: "reception", 
+                    customerName: request.CustomerName ?? request.CustomerPhone
+                );
+                await _conversationRepository.CreateAsync(resetConvo, ct);
+            }
+
             return MapToDto(created);
         }
 

@@ -21,6 +21,7 @@ namespace MeetLines.Tests.Services
         private readonly Mock<IEmployeeRepository> _mockEmployeeRepo;
         private readonly Mock<IProjectBotConfigRepository> _mockBotConfigRepo;
         private readonly Mock<IAppUserRepository> _mockAppUserRepo;
+        private readonly Mock<IConversationRepository> _mockConversationRepo;
         private readonly Mock<ILogger<AppointmentService>> _mockLogger;
         private readonly AppointmentService _service;
 
@@ -31,6 +32,7 @@ namespace MeetLines.Tests.Services
             _mockEmployeeRepo = new Mock<IEmployeeRepository>();
             _mockBotConfigRepo = new Mock<IProjectBotConfigRepository>();
             _mockAppUserRepo = new Mock<IAppUserRepository>();
+            _mockConversationRepo = new Mock<IConversationRepository>();
             _mockLogger = new Mock<ILogger<AppointmentService>>();
 
             _service = new AppointmentService(
@@ -39,6 +41,7 @@ namespace MeetLines.Tests.Services
                 _mockEmployeeRepo.Object,
                 _mockBotConfigRepo.Object,
                 _mockAppUserRepo.Object,
+                _mockConversationRepo.Object,
                 _mockLogger.Object
             );
         }
