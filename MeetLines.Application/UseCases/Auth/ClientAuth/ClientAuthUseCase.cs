@@ -105,20 +105,15 @@ namespace MeetLines.Application.UseCases.Auth.ClientAuth
                 existingUser.SetPassword(hash);
                 
                 // Ensure Application User properties are set if we didn't do it in the Merge block above (e.g. found by Email but empty pass)
+                // Ensure Application User properties are set
                 if (existingUser.Email != request.Email) 
                 {
-                    // This happens if we found by Phone and verified it's temp.
-                    // We need to update the email. 
-                    // AppUser likely has private set for Email. Let's check AppUser entity.
-                    // Only constructor sets email usually. We might need a method "UpdateEmail".
-                    // Assuming for now we can't easily change email without a method.
-                    // If AppUser doesn't support changing email, we have a problem.
-                    // Let's assume UpdateInfo does NOT update email.
+                     existingUser.UpdateEmail(request.Email);
                 }
 
                 await _appUserRepository.UpdateAsync(existingUser, ct);
 
-                var token = _jwtTokenService.GenerateAccessToken(existingUser.Id, existingUser.Email, "Client");
+                var token = _jwtTokenService.GenerateAccessToken(existingUser.Id, existingUser.Email!, "Client");
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
 
                 return Result<ClientAuthResponse>.Ok(new ClientAuthResponse

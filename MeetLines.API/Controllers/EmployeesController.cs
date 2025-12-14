@@ -76,6 +76,33 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Actualiza un empleado existente.
+        /// PUT: api/employees/{id}
+        /// </summary>
+        [HttpPut("{id}")]
+        [ProducesResponseType(typeof(ApiResponse<EmployeeResponse>), 200)]
+        public async Task<IActionResult> UpdateEmployee(Guid id, [FromBody] UpdateEmployeeRequest request, CancellationToken ct)
+        {
+             var result = await _employeeService.UpdateEmployeeAsync(id, request, ct);
+             if (!result.IsSuccess) return BadRequest(ApiResponse.Fail(result.Error ?? "Error al actualizar"));
+             return Ok(ApiResponse<EmployeeResponse>.Ok(result.Value!));
+        }
+
+        /// <summary>
+        /// Cambia estado de activo/inactivo.
+        /// PATCH: api/employees/{id}/status
+        /// Body: true/false (bool directamente)
+        /// </summary>
+        [HttpPatch("{id}/status")]
+        [ProducesResponseType(typeof(ApiResponse), 200)]
+        public async Task<IActionResult> ToggleStatus(Guid id, [FromBody] bool isActive, CancellationToken ct) 
+        {
+             var result = await _employeeService.ToggleEmployeeStatusAsync(id, isActive, ct);
+             if (!result.IsSuccess) return BadRequest(ApiResponse.Fail(result.Error ?? "Error al cambiar estado"));
+             return Ok(ApiResponse.Ok("Estado actualizado correctamente"));
+        }
+
+        /// <summary>
         /// Cierra sesión de empleado (invalida refresh token).
         /// POST: api/employees/logout
         /// </summary>

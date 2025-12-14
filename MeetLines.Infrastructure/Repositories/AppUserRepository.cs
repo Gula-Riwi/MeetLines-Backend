@@ -45,7 +45,7 @@ namespace MeetLines.Infrastructure.Repositories
              
              return await _context.AppUsers
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Phone.Contains(cleanSearch) || (cleanSearch.Length > 6 && x.Phone.EndsWith(cleanSearch)), ct);
+                .FirstOrDefaultAsync(x => x.Phone != null && (x.Phone.Contains(cleanSearch) || (cleanSearch.Length > 6 && x.Phone.EndsWith(cleanSearch))), ct);
         }
 
         public async Task AddAsync(AppUser appUser, CancellationToken ct = default)
