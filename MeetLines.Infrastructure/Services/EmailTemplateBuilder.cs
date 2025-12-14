@@ -150,7 +150,7 @@ namespace MeetLines.Infrastructure.Services
         {
             return $@"
                 <div class='button-container'>
-                    <a href='{url}' class='button'>{text}</a>
+                    <a href='{url}' class='button' target='_blank' rel='noopener noreferrer'>{text}</a>
                 </div>";
         }
 
