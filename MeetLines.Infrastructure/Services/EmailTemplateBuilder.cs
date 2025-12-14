@@ -16,44 +16,27 @@ namespace MeetLines.Infrastructure.Services
         {
             return $@"
                 <!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.0 Transitional//EN"" ""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"">
-                <html xmlns=""http://www.w3.org/1999/xhtml"" xmlns:v=""urn:schemas-microsoft-com:vml"" xmlns:o=""urn:schemas-microsoft-com:office:office"">
+                <html xmlns=""http://www.w3.org/1999/xhtml"">
                 <head>
                     <meta http-equiv=""Content-Type"" content=""text/html; charset=UTF-8"" />
                     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0""/>
-                    <meta name=""x-apple-disable-message-reformatting"" />
-                    <meta http-equiv=""X-UA-Compatible"" content=""IE=edge"" />
                     <title>{title}</title>
-                    <!--[if mso]>
-                    <noscript>
-                        <xml>
-                            <o:OfficeDocumentSettings>
-                                <o:AllowPNG/>
-                                <o:PixelsPerInch>96</o:PixelsPerInch>
-                            </o:OfficeDocumentSettings>
-                        </xml>
-                    </noscript>
-                    <style type=""text/css"">
-                        body, table, td, a {{ font-family: Arial, Helvetica, sans-serif !important; }}
-                        table {{ border-collapse: collapse; }}
-                        .button {{ mso-hide: all; }}
-                    </style>
-                    <![endif]-->
                 </head>
-                <body style='margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, Helvetica, Arial, sans-serif; background-color: {BackgroundColor}; color: {TextColor}; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;'>
-                    <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%' style='border-collapse: collapse;'>
+                <body style='margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: {BackgroundColor}; color: {TextColor};'>
+                    <table width='100%' border='0' cellpadding='0' cellspacing='0' style='background-color: {BackgroundColor};'>
                         <tr>
                             <td align='center' style='padding: 40px 20px;'>
-                                <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='600' style='border-collapse: collapse; max-width: 600px; width: 100%;'>
+                                <table width='600' border='0' cellpadding='0' cellspacing='0' style='max-width: 600px;'>
                                     <!-- Header -->
                                     <tr>
                                         <td align='center' style='padding: 0 0 20px 0;'>
-                                            <h1 style='color: {HeadingColor}; margin: 0; font-size: 28px; font-weight: bold; letter-spacing: 1px;'>MeetLines</h1>
+                                            <h1 style='color: {HeadingColor}; margin: 0; font-size: 28px; font-weight: bold;'>MeetLines</h1>
                                         </td>
                                     </tr>
                                     
                                     <!-- Content -->
                                     <tr>
-                                        <td style='background-color: {CardColor}; padding: 40px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);'>
+                                        <td bgcolor='{CardColor}' style='padding: 40px; border-radius: 8px;'>
                                             {content}
                                         </td>
                                     </tr>
@@ -79,23 +62,19 @@ namespace MeetLines.Infrastructure.Services
         private string BuildButton(string text, string url)
         {
             return $@"
-                <!--[if mso]>
-                <v:roundrect xmlns:v=""urn:schemas-microsoft-com:vml"" xmlns:w=""urn:schemas-microsoft-com:office:word"" href=""{url}"" style=""height:44px;v-text-anchor:middle;width:250px;"" arcsize=""14%"" strokecolor=""{PrimaryColor}"" fillcolor=""{PrimaryColor}"">
-                    <w:anchorlock/>
-                    <center style=""color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;"">{text}</center>
-                </v:roundrect>
-                <![endif]-->
-                <!--[if !mso]><!-->
-                <table border='0' cellspacing='0' cellpadding='0' role='presentation' style='margin: 30px auto;'>
+                <table width='100%' border='0' cellspacing='0' cellpadding='0' style='margin: 30px 0;'>
                     <tr>
-                        <td align='center' style='border-radius: 6px; background: {PrimaryColor};'>
-                            <a href='{url}' target='_blank' rel='noopener noreferrer' style='background: {PrimaryColor}; border: 16px solid {PrimaryColor}; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; font-size: 16px; line-height: 1.1; text-align: center; text-decoration: none; display: block; border-radius: 6px; font-weight: 600; color: #ffffff;'>
-                                {text}
-                            </a>
+                        <td align='center'>
+                            <table border='0' cellspacing='0' cellpadding='0'>
+                                <tr>
+                                    <td align='center' bgcolor='{PrimaryColor}' style='padding: 14px 28px; border-radius: 6px;'>
+                                        <a href='{url}' target='_blank' style='font-size: 16px; font-family: Arial, sans-serif; color: #ffffff; text-decoration: none; font-weight: bold; display: inline-block;'>{text}</a>
+                                    </td>
+                                </tr>
+                            </table>
                         </td>
                     </tr>
-                </table>
-                <!--<![endif]-->";
+                </table>";
         }
 
         private string BuildInfoBox(string content, string borderColor = AccentColor)
