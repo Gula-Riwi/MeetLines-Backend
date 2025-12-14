@@ -62,11 +62,21 @@ namespace MeetLines.Infrastructure.Services
         private string BuildButton(string text, string url)
         {
             return $@"
-                <div style='text-align: center; margin: 30px 0;'>
-                    <a href='{url}' style='background-color: {PrimaryColor}; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 4px; display: inline-block; font-weight: bold; box-shadow: 0 4px 6px rgba(99, 102, 241, 0.25);'>
-                        {text}
-                    </a>
-                </div>";
+                <table border='0' cellspacing='0' cellpadding='0' style='width: 100%; margin: 30px 0;'>
+                    <tr>
+                        <td align='center'>
+                            <table border='0' cellspacing='0' cellpadding='0'>
+                                <tr>
+                                    <td align='center' bgcolor='{PrimaryColor}' style='border-radius: 4px;'>
+                                        <a href='{url}' target='_blank' style='font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 4px; padding: 14px 28px; border: 1px solid {PrimaryColor}; display: inline-block; font-weight: bold; background-color: {PrimaryColor};'>
+                                            {text}
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>";
         }
 
         private string BuildInfoBox(string content, string borderColor = AccentColor)
