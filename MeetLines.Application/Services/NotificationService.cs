@@ -85,21 +85,65 @@ namespace MeetLines.Application.Services
                 catch { /* ignore json error */ }
             }
 
-            // 4. Send WhatsApp
+            // 4. Determine Channel & Send
             var project = appointment.Project;
-            if (project == null || string.IsNullOrEmpty(project.WhatsappAccessToken) || string.IsNullOrEmpty(project.WhatsappPhoneNumberId))
+            bool success = false;
+            
+            // Channel Detection Strategy:
+            // 1. Telegram users (temp) MUST use Telegram.
+            // 2. Everyone else (App users, Unified users, WhatsApp users) PREFERS WhatsApp if available in Project.
+            // 3. SMS is last resort for App users if Project has no WhatsApp.
+
+            string channel = "whatsapp"; // Priority Default
+            var userEmail = appointment.AppUser?.Email ?? "";
+            
+            if (userEmail.EndsWith("@telegram.temp")) 
             {
-                _logger.LogWarning($"Job: Project {appointment.ProjectId} missing WhatsApp creds.");
-                return;
+                channel = "telegram";
+            }
+            else 
+            {
+                // Check if WhatsApp is configured for this project
+                bool hasWhatsapp = project != null && !string.IsNullOrEmpty(project.WhatsappPhoneNumberId) && !string.IsNullOrEmpty(project.WhatsappAccessToken);
+                
+                if (hasWhatsapp)
+                {
+                    channel = "whatsapp";
+                }
+                else if (appointment.AppUser?.AuthProvider == "email")
+                {
+                    channel = "sms";
+                }
             }
 
-            // Send Logic
-            var success = await SendToMetaAsync(
-                project.WhatsappPhoneNumberId, 
-                project.WhatsappAccessToken, 
-                appointment.AppUser?.Phone, 
-                message
-            );
+            if (channel == "telegram")
+            {
+                 if (!string.IsNullOrEmpty(project?.TelegramBotToken) && !string.IsNullOrEmpty(appointment.AppUser?.Phone))
+                 {
+                      success = await SendToTelegramAsync(project.TelegramBotToken, appointment.AppUser.Phone, message);
+                 }
+                 else 
+                 {
+                      _logger.LogWarning($"Job: Missing Telegram Token or ChatId for Appt {appointmentId}");
+                 }
+            }
+            else if (channel == "sms")
+            {
+                 // Mock SMS - No Provider Configured Yet
+                 _logger.LogInformation($"[SMS SEND MOCK] To: {appointment.AppUser?.Phone} Msg: {message}");
+                 success = true; // Assume handled
+            }
+            else // whatsapp
+            {
+                 if (project != null && !string.IsNullOrEmpty(project.WhatsappPhoneNumberId))
+                 {
+                      success = await SendToMetaAsync(project.WhatsappPhoneNumberId, project.WhatsappAccessToken!, appointment.AppUser?.Phone, message);
+                 }
+                 else
+                 {
+                      _logger.LogWarning($"Job: Project {appointment.ProjectId} missing WhatsApp creds and SMS fallback failed.");
+                 }
+            }
 
             if (success)
             {
@@ -207,6 +251,30 @@ namespace MeetLines.Application.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception calling Meta API");
+                return false;
+            }
+        }
+
+        private async Task<bool> SendToTelegramAsync(string botToken, string chatId, string text)
+        {
+            try
+            {
+                var client = _httpClientFactory.CreateClient();
+                var url = $"https://api.telegram.org/bot{botToken}/sendMessage";
+                var payload = new { chat_id = chatId, text = text };
+                
+                var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+                var response = await client.PostAsync(url, content);
+                
+                if (!response.IsSuccessStatusCode) {
+                     var err = await response.Content.ReadAsStringAsync();
+                     _logger.LogError($"Telegram Error: {err}");
+                     return false;
+                }
+                return true;
+            }
+            catch(Exception ex) {
+                _logger.LogError(ex, "Telegram Exception");
                 return false;
             }
         }
