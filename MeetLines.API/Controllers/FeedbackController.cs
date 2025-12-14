@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using MeetLines.Application.DTOs.BotSystem;
 using MeetLines.Application.Services.Interfaces;
+using Microsoft.Extensions.Configuration; // Added for API Key access
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -14,10 +15,12 @@ namespace MeetLines.API.Controllers
     public class FeedbackController : ControllerBase
     {
         private readonly ICustomerFeedbackService _service;
+        private readonly IConfiguration _configuration;
 
-        public FeedbackController(ICustomerFeedbackService service)
+        public FeedbackController(ICustomerFeedbackService service, IConfiguration configuration)
         {
             _service = service ?? throw new ArgumentNullException(nameof(service));
+            _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         }
 
         /// <summary>
@@ -46,14 +49,21 @@ namespace MeetLines.API.Controllers
 
         /// <summary>
         /// Creates feedback (called by n8n webhook)
+        /// Secured via Manual API Key check + AllowAnonymous to bypass User Auth
         /// </summary>
         [HttpPost]
-        [AllowAnonymous] // n8n webhook
+        [AllowAnonymous] 
         public async Task<ActionResult<CustomerFeedbackDto>> Create(
             Guid projectId,
             [FromBody] CreateFeedbackRequest request,
             CancellationToken ct = default)
         {
+            // Security Check
+            if (!ValidateApiKey())
+            {
+                return Unauthorized(new { error = "Unauthorized: Invalid or missing API Key" });
+            }
+
             if (request.ProjectId != projectId)
             {
                 return BadRequest(new { message = "Project ID mismatch" });
@@ -85,6 +95,26 @@ namespace MeetLines.API.Controllers
         {
             var stats = await _service.GetStatsAsync(projectId, ct);
             return Ok(stats);
+        }
+
+        private bool ValidateApiKey()
+        {
+            var apiKey = _configuration["INTEGRATIONS_API_KEY"];
+            if (string.IsNullOrEmpty(apiKey)) return false; // Fail secure if key not configured
+
+            if (!Request.Headers.TryGetValue("Authorization", out var extractedAuthHeader))
+            {
+                return false;
+            }
+
+            var authHeader = extractedAuthHeader.ToString();
+            if (!authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            var token = authHeader.Substring("Bearer ".Length).Trim();
+            return token == apiKey;
         }
     }
 }

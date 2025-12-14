@@ -13,10 +13,17 @@ namespace MeetLines.Application.Services
     public class CustomerFeedbackService : ICustomerFeedbackService
     {
         private readonly ICustomerFeedbackRepository _repository;
+        private readonly IAppointmentRepository _appointmentRepository;
+        private readonly IAppUserRepository _appUserRepository;
 
-        public CustomerFeedbackService(ICustomerFeedbackRepository repository)
+        public CustomerFeedbackService(
+            ICustomerFeedbackRepository repository,
+            IAppointmentRepository appointmentRepository,
+            IAppUserRepository appUserRepository)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+            _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
+            _appUserRepository = appUserRepository ?? throw new ArgumentNullException(nameof(appUserRepository));
         }
 
         public async Task<IEnumerable<CustomerFeedbackDto>> GetByProjectIdAsync(Guid projectId, int page = 1, int pageSize = 50, CancellationToken ct = default)
@@ -34,12 +41,42 @@ namespace MeetLines.Application.Services
 
         public async Task<CustomerFeedbackDto> CreateAsync(CreateFeedbackRequest request, CancellationToken ct = default)
         {
+            int? linkedAppointmentId = request.AppointmentId;
+            string? customerName = request.CustomerName;
+
+            // Smart Auto-Linking Logic
+            if (!linkedAppointmentId.HasValue && !string.IsNullOrEmpty(request.CustomerPhone))
+            {
+                // 1. Find User by Phone
+                var user = await _appUserRepository.GetByPhoneAsync(request.CustomerPhone, ct);
+                if (user != null)
+                {
+                    if (string.IsNullOrEmpty(customerName)) customerName = user.FullName;
+
+                    // 2. Find most recent past appointment
+                    var projectAppts = await _appointmentRepository.GetByProjectIdAsync(request.ProjectId, ct);
+                    
+                    var lastAppt = projectAppts
+                        .Where(a => a.AppUserId == user.Id && 
+                                    a.StartTime < DateTimeOffset.UtcNow &&
+                                    (a.Status == "completed" || a.Status == "confirmed"))
+                        .OrderByDescending(a => a.StartTime)
+                        .FirstOrDefault();
+
+                    if (lastAppt != null)
+                    {
+                        linkedAppointmentId = lastAppt.Id;
+                        // Optional: Check if really recent? e.g. within 7 days. For now, just take the last one.
+                    }
+                }
+            }
+
             var entity = new CustomerFeedback(
                 projectId: request.ProjectId,
                 customerPhone: request.CustomerPhone,
                 rating: request.Rating,
-                appointmentId: request.AppointmentId,
-                customerName: request.CustomerName,
+                appointmentId: linkedAppointmentId,
+                customerName: customerName,
                 comment: request.Comment
             );
 

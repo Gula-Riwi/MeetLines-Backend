@@ -3,9 +3,11 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Repositories;
+using MeetLines.Domain.Entities;
 
 namespace MeetLines.Application.Services
 {
@@ -15,17 +17,23 @@ namespace MeetLines.Application.Services
         private readonly IProjectBotConfigRepository _botConfigRepository;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly ILogger<NotificationService> _logger;
+        private readonly IConfiguration _configuration;
+        private readonly IConversationRepository _conversationRepository;
 
         public NotificationService(
             IAppointmentRepository appointmentRepository,
             IProjectBotConfigRepository botConfigRepository,
             IHttpClientFactory httpClientFactory,
-            ILogger<NotificationService> logger)
+            ILogger<NotificationService> logger,
+            IConfiguration configuration,
+            IConversationRepository conversationRepository)
         {
             _appointmentRepository = appointmentRepository;
             _botConfigRepository = botConfigRepository;
             _httpClientFactory = httpClientFactory;
             _logger = logger;
+            _configuration = configuration;
+            _conversationRepository = conversationRepository;
         }
 
         public async Task SendAppointmentReminderAsync(int appointmentId)
@@ -89,11 +97,6 @@ namespace MeetLines.Application.Services
             var project = appointment.Project;
             bool success = false;
             
-            // Channel Detection Strategy:
-            // 1. Telegram users (temp) MUST use Telegram.
-            // 2. Everyone else (App users, Unified users, WhatsApp users) PREFERS WhatsApp if available in Project.
-            // 3. SMS is last resort for App users if Project has no WhatsApp.
-
             string channel = "whatsapp"; // Priority Default
             var userEmail = appointment.AppUser?.Email ?? "";
             
@@ -172,57 +175,82 @@ namespace MeetLines.Application.Services
             {
                 // 1. Fetch Appointment
                 var appointment = await _appointmentRepository.GetByIdWithDetailsAsync(appointmentId);
-                if (appointment == null || appointment.Status != "confirmed") 
+                if (appointment == null) return;
+                
+                // Allow 'confirmed' or 'completed'. Skip if 'cancelled'
+                if (appointment.Status == "cancelled" || appointment.Status == "pending") 
                 {
-                    _logger.LogWarning($"FeedBackJob: Appointment {appointmentId} (Status: {appointment?.Status}) valid not found or not confirmed.");
+                    _logger.LogWarning($"FeedBackJob: Appt {appointmentId} is {appointment.Status}. Skipping.");
                     return;
                 }
 
-                // 2. Get Config
+                // 2. Get Config (Check if Enabled)
                 var botConfig = await _botConfigRepository.GetByProjectIdAsync(appointment.ProjectId);
-                if (botConfig == null || string.IsNullOrEmpty(botConfig.FeedbackConfigJson))
-                {
-                    _logger.LogWarning($"FeedBackJob: No Feedback Config found for Project {appointment.ProjectId}");
-                    return;
-                }
+                if (botConfig == null || string.IsNullOrEmpty(botConfig.FeedbackConfigJson)) return;
 
                 var opts = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
                 var fbConfig = JsonSerializer.Deserialize<MeetLines.Application.DTOs.Config.FeedbackConfig>(botConfig.FeedbackConfigJson, opts);
 
-                if (fbConfig == null || !fbConfig.Enabled)
+                if (fbConfig == null || !fbConfig.Enabled) 
                 {
                     _logger.LogInformation($"FeedBackJob: Feedback disabled for Project {appointment.ProjectId}");
                     return;
                 }
 
-                // 3. Prepare Message
-                string message = fbConfig.InitialMessage
-                    .Replace("{name}", appointment.AppUser?.FullName ?? "Cliente");
-
-                // 4. Send
-                var project = appointment.Project;
-                if (project != null && !string.IsNullOrEmpty(project.WhatsappPhoneNumberId) && !string.IsNullOrEmpty(project.WhatsappAccessToken))
+                // 3. Set Conversation State (DB) BEFORE Triggering Webhook
+                if (!string.IsNullOrEmpty(appointment.AppUser?.Phone))
                 {
-                    var targetPhone = appointment.AppUser?.Phone?.Replace("+", "").Replace(" ", "").Trim();
-                    if (!string.IsNullOrEmpty(targetPhone) && targetPhone.Length == 10 && !targetPhone.StartsWith("57"))
-                    {
-                        targetPhone = "57" + targetPhone;
-                    }
-
-                    var success = await SendToMetaAsync(
-                        project.WhatsappPhoneNumberId, 
-                        project.WhatsappAccessToken, 
-                        targetPhone, 
-                        message
+                    var conversationState = new Conversation(
+                        projectId: appointment.ProjectId,
+                        customerPhone: appointment.AppUser.Phone,
+                        customerMessage: "(System Trigger)", 
+                        botResponse: fbConfig.InitialMessage, // Store what we are about to send
+                        botType: "feedback_wait", // Check this in n8n!
+                        customerName: appointment.AppUser.FullName
                     );
-
-                    if (success) _logger.LogInformation($"FeedBackJob: Feedback request sent for Appt {appointmentId}");
-                    else _logger.LogError($"FeedBackJob: Failed to send WhatsApp for Appt {appointmentId}");
+                    await _conversationRepository.CreateAsync(conversationState);
                 }
+
+                // 4. Trigger Webhook from ENV (Standard Backend Logic)
+                var webhookUrl = _configuration["FEEDBACK_TRIGGER_WEBHOOK"];
+                if (string.IsNullOrEmpty(webhookUrl))
+                {
+                    _logger.LogWarning("FeedBackJob: FEEDBACK_TRIGGER_WEBHOOK is not configured in .env");
+                    return;
+                }
+
+                var payload = new 
+                {
+                     type = "feedback_request",
+                     projectId = appointment.ProjectId,
+                     appointmentId = appointment.Id,
+                     clientName = appointment.AppUser?.FullName,
+                     clientPhone = appointment.AppUser?.Phone,
+                     employeeName = appointment.Employee?.Name,
+                     serviceName = appointment.Service?.Name,
+                     date = appointment.StartTime.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                     ratingMessage = fbConfig.InitialMessage 
+                };
+                 
+                var client = _httpClientFactory.CreateClient();
+                // Add API Key header if needed for security between Backend -> n8n (Optional)
+                if (!string.IsNullOrEmpty(_configuration["INTEGRATIONS_API_KEY"]))
+                {
+                    client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _configuration["INTEGRATIONS_API_KEY"]);
+                }
+                
+                var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+                var response = await client.PostAsync(webhookUrl, content);
+                 
+                if (response.IsSuccessStatusCode)
+                     _logger.LogInformation($"FeedBackJob: Webhook triggered successfully for Appt {appointmentId} to {webhookUrl}");
+                else
+                     _logger.LogError($"FeedBackJob: Webhook failed {response.StatusCode}");
+
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"FeedBackJob: Error processing feedback for Appt {appointmentId}");
+                _logger.LogError(ex, $"FeedBackJob: Error for Appt {appointmentId}");
                 throw; // Retry
             }
         }
