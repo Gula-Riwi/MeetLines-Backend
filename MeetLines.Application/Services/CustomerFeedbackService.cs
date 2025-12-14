@@ -131,7 +131,7 @@ namespace MeetLines.Application.Services
                                 customerName ?? request.CustomerPhone,
                                 request.CustomerPhone,
                                 request.Rating,
-                                request.Comment,
+                                request.Comment ?? "Sin comentario",
                                 project.Name
                             );
                             _logger.LogInformation($"Alert sent to owner {owner.Email} for low rating ({request.Rating})");
