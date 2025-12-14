@@ -13,6 +13,7 @@ namespace MeetLines.Domain.Repositories
         Task<Appointment?> FindDuplicateAsync(Guid projectId, Guid appUserId, DateTimeOffset startTime, CancellationToken ct = default);
         Task<IEnumerable<Appointment>> GetByProjectIdAsync(Guid projectId, CancellationToken ct = default);
         Task<IEnumerable<Appointment>> GetByEmployeeIdAsync(Guid employeeId, CancellationToken ct = default);
+        Task<IEnumerable<Appointment>> GetByAppUserIdAsync(Guid appUserId, CancellationToken ct = default);
         
         // Dashboard Stats
         Task<decimal> GetTotalSalesAsync(Guid projectId, DateTimeOffset starDate, DateTimeOffset endDate, CancellationToken ct = default);

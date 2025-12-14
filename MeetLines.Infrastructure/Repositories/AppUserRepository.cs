@@ -31,6 +31,23 @@ namespace MeetLines.Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.Email == email.ToLower(), ct);
         }
 
+        public async Task<AppUser?> GetByPhoneAsync(string phone, CancellationToken ct = default)
+        {
+             if (string.IsNullOrWhiteSpace(phone)) return null;
+
+             // Normalize: Remove +, spaces, dashes
+             var cleanSearch = phone.Replace("+", "").Replace(" ", "").Replace("-", "").Trim();
+             
+             // Strategy: 
+             // 1. Exact match (fastest)
+             // 2. EndsWith (to match local number input against stored international format)
+             //    Only apply EndsWith if search term is reasonably unique (> 6 digits)
+             
+             return await _context.AppUsers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.Phone.Contains(cleanSearch) || (cleanSearch.Length > 6 && x.Phone.EndsWith(cleanSearch)), ct);
+        }
+
         public async Task AddAsync(AppUser appUser, CancellationToken ct = default)
         {
             _context.AppUsers.Add(appUser);
