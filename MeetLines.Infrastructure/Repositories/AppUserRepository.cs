@@ -35,17 +35,34 @@ namespace MeetLines.Infrastructure.Repositories
         {
              if (string.IsNullOrWhiteSpace(phone)) return null;
 
-             // Normalize: Remove +, spaces, dashes
              var cleanSearch = phone.Replace("+", "").Replace(" ", "").Replace("-", "").Trim();
-             
-             // Strategy: 
-             // 1. Exact match (fastest)
-             // 2. EndsWith (to match local number input against stored international format)
-             //    Only apply EndsWith if search term is reasonably unique (> 6 digits)
-             
-             return await _context.AppUsers
+             var last7 = cleanSearch.Length > 7 ? cleanSearch.Substring(cleanSearch.Length - 7) : cleanSearch;
+
+             // 1. Initial SQL Filter: Fetch candidates that likely match (by checking last 7 digits)
+             var candidates = await _context.AppUsers
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.Phone != null && (x.Phone.Contains(cleanSearch) || (cleanSearch.Length > 6 && x.Phone.EndsWith(cleanSearch))), ct);
+                .Where(x => x.Phone != null && x.Phone.Contains(last7))
+                .ToListAsync(ct);
+
+             // 2. Precise In-Memory Matching (Bidirectional + formatting cleanup)
+             foreach(var u in candidates)
+             {
+                 if(string.IsNullOrEmpty(u.Phone)) continue;
+                 var dbClean = u.Phone.Replace("+", "").Replace(" ", "").Replace("-", "").Trim();
+
+                 // Match Logic:
+                 // A) Exact Match
+                 // B) Input ends with DB (e.g. Input: 57300..., DB: 300...)
+                 // C) DB ends with Input (e.g. Input: 300..., DB: 57300...)
+                 if (dbClean == cleanSearch || 
+                     (dbClean.Length >= 7 && cleanSearch.EndsWith(dbClean)) || 
+                     (cleanSearch.Length >= 7 && dbClean.EndsWith(cleanSearch)))
+                 {
+                     return u;
+                 }
+             }
+
+             return null;
         }
 
         public async Task AddAsync(AppUser appUser, CancellationToken ct = default)
