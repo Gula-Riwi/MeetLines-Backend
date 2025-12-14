@@ -137,7 +137,13 @@ namespace MeetLines.Application.Services
             {
                  if (project != null && !string.IsNullOrEmpty(project.WhatsappPhoneNumberId))
                  {
-                      success = await SendToMetaAsync(project.WhatsappPhoneNumberId, project.WhatsappAccessToken!, appointment.AppUser?.Phone, message);
+                      var targetPhone = appointment.AppUser?.Phone?.Replace("+", "").Replace(" ", "").Trim();
+                      if (!string.IsNullOrEmpty(targetPhone) && targetPhone.Length == 10 && !targetPhone.StartsWith("57"))
+                      {
+                          targetPhone = "57" + targetPhone;
+                      }
+
+                      success = await SendToMetaAsync(project.WhatsappPhoneNumberId, project.WhatsappAccessToken!, targetPhone, message);
                  }
                  else
                  {
@@ -197,10 +203,16 @@ namespace MeetLines.Application.Services
                 var project = appointment.Project;
                 if (project != null && !string.IsNullOrEmpty(project.WhatsappPhoneNumberId) && !string.IsNullOrEmpty(project.WhatsappAccessToken))
                 {
+                    var targetPhone = appointment.AppUser?.Phone?.Replace("+", "").Replace(" ", "").Trim();
+                    if (!string.IsNullOrEmpty(targetPhone) && targetPhone.Length == 10 && !targetPhone.StartsWith("57"))
+                    {
+                        targetPhone = "57" + targetPhone;
+                    }
+
                     var success = await SendToMetaAsync(
                         project.WhatsappPhoneNumberId, 
                         project.WhatsappAccessToken, 
-                        appointment.AppUser?.Phone, 
+                        targetPhone, 
                         message
                     );
 
