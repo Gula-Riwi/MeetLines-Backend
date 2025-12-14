@@ -17,6 +17,7 @@ namespace MeetLines.Application.DTOs.Config
         public int MaxAdvanceBookingDays { get; set; } = 30;
         public int MinAdvanceBookingDays { get; set; } = 0;
         public int BufferBetweenAppointments { get; set; } = 0;
+        public int MinHoursBeforeBooking { get; set; } = 0;
     }
 
     public class BusinessHours

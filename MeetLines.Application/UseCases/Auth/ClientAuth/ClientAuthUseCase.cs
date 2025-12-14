@@ -121,7 +121,7 @@ namespace MeetLines.Application.UseCases.Auth.ClientAuth
                     Token = token,
                     RefreshToken = refreshToken,
                     FullName = existingUser.FullName,
-                    Email = existingUser.Email
+                    Email = existingUser.Email ?? request.Email
                 });
             }
             else
