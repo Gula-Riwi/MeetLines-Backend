@@ -106,6 +106,43 @@ namespace MeetLines.Application.Services
             }
         }
 
+        public async Task<Result<EmployeeResponse>> UpdateEmployeeAsync(Guid employeeId, UpdateEmployeeRequest request, CancellationToken ct = default)
+        {
+            try 
+            {
+                var employee = await _employeeRepository.GetByIdAsync(employeeId, ct);
+                if (employee == null) return Result<EmployeeResponse>.Fail("Empleado no encontrado");
+
+                employee.UpdateDetails(request.Name, request.Role, request.Area ?? string.Empty);
+                await _employeeRepository.UpdateAsync(employee, ct);
+
+                return Result<EmployeeResponse>.Ok(MapToResponse(employee));
+            }
+            catch (Exception ex)
+            {
+                 return Result<EmployeeResponse>.Fail($"Error al actualizar empleado: {ex.Message}");
+            }
+        }
+
+        public async Task<Result> ToggleEmployeeStatusAsync(Guid employeeId, bool isActive, CancellationToken ct = default)
+        {
+            try
+            {
+                var employee = await _employeeRepository.GetByIdAsync(employeeId, ct);
+                if (employee == null) return Result.Fail("Empleado no encontrado");
+
+                if (isActive) employee.Activate();
+                else employee.Deactivate();
+
+                await _employeeRepository.UpdateAsync(employee, ct);
+                return Result.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail($"Error al cambiar estado: {ex.Message}");
+            }
+        }
+
         private static EmployeeResponse MapToResponse(Employee e)
         {
             return new EmployeeResponse

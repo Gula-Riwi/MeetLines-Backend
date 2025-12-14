@@ -173,7 +173,16 @@ namespace MeetLines.Application.Services
 
 
             // Get or create AppUser
+            // Get or create AppUser
+            // 1. Try by Email
             var appUser = await _appUserRepository.GetByEmailAsync(request.ClientEmail, ct);
+            
+            // 2. Try by Phone (If not found by email) - Prevents duplicates if user is already registered with real email
+            if (appUser == null && !string.IsNullOrEmpty(request.ClientPhone))
+            {
+                appUser = await _appUserRepository.GetByPhoneAsync(request.ClientPhone, ct);
+            }
+
             if (appUser == null)
             {
                 // Create new AppUser for this customer
@@ -185,11 +194,20 @@ namespace MeetLines.Application.Services
                 );
                 await _appUserRepository.AddAsync(appUser, ct);
             }
-            else if (!string.IsNullOrEmpty(request.ClientPhone) && string.IsNullOrEmpty(appUser.Phone))
+            else 
             {
-                // Update phone if missing
-                appUser.UpdateInfo(appUser.FullName, request.ClientPhone);
-                await _appUserRepository.UpdateAsync(appUser, ct);
+                // Existing User Found (by Email or Phone)
+                // Optionally update missing info, but prioritize existing data over Bot generic data.
+                bool changed = false;
+                if (!string.IsNullOrEmpty(request.ClientPhone) && string.IsNullOrEmpty(appUser.Phone))
+                {
+                    // If user had no phone, save it.
+                    // We need to use UpdateInfo but keep existing name if possible.
+                    appUser.UpdateInfo(appUser.FullName, request.ClientPhone);
+                    changed = true;
+                }
+                
+                if (changed) await _appUserRepository.UpdateAsync(appUser, ct);
             }
 
 
@@ -358,6 +376,31 @@ namespace MeetLines.Application.Services
             });
 
             return Result<IEnumerable<AppointmentResponse>>.Ok(responses);
+        }
+
+        public async Task<Result> UpdateAppointmentStatusAsync(int appointmentId, string newStatus, CancellationToken ct = default)
+        {
+            try
+            {
+                var appointment = await _appointmentRepository.GetByIdAsync(appointmentId, ct);
+                if (appointment == null) return Result.Fail("Cita no encontrada");
+
+                if (string.Equals(newStatus, "cancelled", StringComparison.OrdinalIgnoreCase))
+                {
+                    appointment.Cancel("Admin Manual Cancellation");
+                }
+                else
+                {
+                    appointment.UpdateStatus(newStatus);
+                }
+
+                await _appointmentRepository.UpdateAsync(appointment, ct);
+                return Result.Ok();
+            }
+            catch (Exception ex)
+            {
+                return Result.Fail($"Error al actualizar estado: {ex.Message}");
+            }
         }
     }
 }
