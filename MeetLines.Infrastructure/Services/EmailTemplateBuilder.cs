@@ -16,7 +16,7 @@ namespace MeetLines.Infrastructure.Services
         {
             return $@"
                 <!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.0 Transitional//EN"" ""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"">
-                <html xmlns=""http://www.w3.org/1999/xhtml"">
+                <html xmlns=""http://www.w3.org/1999/xhtml"" xmlns:v=""urn:schemas-microsoft-com:vml"" xmlns:o=""urn:schemas-microsoft-com:office:office"">
                 <head>
                     <meta http-equiv=""Content-Type"" content=""text/html; charset=UTF-8"" />
                     <meta name=""viewport"" content=""width=device-width, initial-scale=1.0""/>
@@ -24,8 +24,18 @@ namespace MeetLines.Infrastructure.Services
                     <meta http-equiv=""X-UA-Compatible"" content=""IE=edge"" />
                     <title>{title}</title>
                     <!--[if mso]>
+                    <noscript>
+                        <xml>
+                            <o:OfficeDocumentSettings>
+                                <o:AllowPNG/>
+                                <o:PixelsPerInch>96</o:PixelsPerInch>
+                            </o:OfficeDocumentSettings>
+                        </xml>
+                    </noscript>
                     <style type=""text/css"">
                         body, table, td, a {{ font-family: Arial, Helvetica, sans-serif !important; }}
+                        table {{ border-collapse: collapse; }}
+                        .button {{ mso-hide: all; }}
                     </style>
                     <![endif]-->
                 </head>
@@ -69,27 +79,23 @@ namespace MeetLines.Infrastructure.Services
         private string BuildButton(string text, string url)
         {
             return $@"
-                <table border='0' cellspacing='0' cellpadding='0' style='width: 100%; margin: 30px 0;'>
+                <!--[if mso]>
+                <v:roundrect xmlns:v=""urn:schemas-microsoft-com:vml"" xmlns:w=""urn:schemas-microsoft-com:office:word"" href=""{url}"" style=""height:44px;v-text-anchor:middle;width:250px;"" arcsize=""14%"" strokecolor=""{PrimaryColor}"" fillcolor=""{PrimaryColor}"">
+                    <w:anchorlock/>
+                    <center style=""color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:bold;"">{text}</center>
+                </v:roundrect>
+                <![endif]-->
+                <!--[if !mso]><!-->
+                <table border='0' cellspacing='0' cellpadding='0' role='presentation' style='margin: 30px auto;'>
                     <tr>
-                        <td align='center'>
-                            <table border='0' cellspacing='0' cellpadding='0'>
-                                <tr>
-                                    <td align='center' style='border-radius: 6px; background-color: {PrimaryColor};'>
-                                        <a href='{url}' target='_blank' rel='noopener noreferrer' style='font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Helvetica, Arial, sans-serif; color: #ffffff !important; text-decoration: none; border-radius: 6px; padding: 14px 28px; display: inline-block; font-weight: 600; background-color: {PrimaryColor}; mso-padding-alt: 0; text-align: center;'>
-                                            <!--[if mso]>
-                                            <i style='letter-spacing: 28px; mso-font-width: -100%; mso-text-raise: 30pt;'>&nbsp;</i>
-                                            <![endif]-->
-                                            <span style='mso-text-raise: 15pt; color: #ffffff;'>{text}</span>
-                                            <!--[if mso]>
-                                            <i style='letter-spacing: 28px; mso-font-width: -100%;'>&nbsp;</i>
-                                            <![endif]-->
-                                        </a>
-                                    </td>
-                                </tr>
-                            </table>
+                        <td align='center' style='border-radius: 6px; background: {PrimaryColor};'>
+                            <a href='{url}' target='_blank' rel='noopener noreferrer' style='background: {PrimaryColor}; border: 16px solid {PrimaryColor}; font-family: -apple-system, BlinkMacSystemFont, Arial, sans-serif; font-size: 16px; line-height: 1.1; text-align: center; text-decoration: none; display: block; border-radius: 6px; font-weight: 600; color: #ffffff;'>
+                                {text}
+                            </a>
                         </td>
                     </tr>
-                </table>";
+                </table>
+                <!--<![endif]-->";
         }
 
         private string BuildInfoBox(string content, string borderColor = AccentColor)
