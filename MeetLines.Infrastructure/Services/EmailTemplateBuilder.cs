@@ -68,7 +68,7 @@ namespace MeetLines.Infrastructure.Services
                             <table border='0' cellspacing='0' cellpadding='0'>
                                 <tr>
                                     <td align='center' bgcolor='{PrimaryColor}' style='border-radius: 4px;'>
-                                        <a href='{url}' target='_blank' style='font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 4px; padding: 14px 28px; border: 1px solid {PrimaryColor}; display: inline-block; font-weight: bold; background-color: {PrimaryColor};'>
+                                        <a href='{url}' target='_blank' style='font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 4px; padding: 12px 24px; border: 1px solid {PrimaryColor}; display: inline-block; font-weight: bold; background-color: {PrimaryColor}; border-top: 12px solid {PrimaryColor}; border-bottom: 12px solid {PrimaryColor}; border-right: 24px solid {PrimaryColor}; border-left: 24px solid {PrimaryColor};'>
                                             {text}
                                         </a>
                                     </td>
