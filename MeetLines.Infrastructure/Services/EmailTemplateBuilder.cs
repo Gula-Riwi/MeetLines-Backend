@@ -14,141 +14,129 @@ namespace MeetLines.Infrastructure.Services
 
         private string BuildBaseHtml(string content, string title)
         {
-            // Se agregaron xmlns:v y xmlns:o para soporte de Outlook
             return $@"<!DOCTYPE html>
-<html lang='es' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
+<html lang='es'>
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <!--[if !mso]><!-->
     <meta http-equiv='X-UA-Compatible' content='IE=edge'>
-    <!--<![endif]-->
     <title>{title}</title>
     <style>
-        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background-color: {BackgroundColor}; 
-            color: {TextColor}; 
-            line-height: 1.6; 
-            min-height: 100vh; 
-        }}
+        /* Reseteo básico */
+        body {{ margin: 0; padding: 0; background-color: {BackgroundColor}; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }}
+        table {{ border-collapse: collapse; }}
+        
+        /* Estilos generales */
         .container {{ 
             max-width: 600px; 
-            margin: 40px auto; 
-            background: {CardColor}; 
-            border-radius: 12px; 
-            overflow: hidden; 
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
-            border: 1px solid rgba(100, 102, 241, 0.2); 
+            margin: 0 auto; 
+            background-color: {CardColor}; 
+            color: {TextColor};
+            border-radius: 8px;
+            overflow: hidden;
         }}
         .header {{ 
-            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%); 
-            padding: 40px 30px; 
+            padding: 30px; 
             text-align: center; 
-            border-bottom: 1px solid rgba(100, 102, 241, 0.3); 
+            background-color: {CardColor};
+            border-bottom: 1px solid #233554;
         }}
         .logo {{ 
-            font-size: 32px; 
+            font-size: 28px; 
             font-weight: bold; 
             color: {HeadingColor}; 
-            margin-bottom: 10px; 
-            letter-spacing: 1px; 
         }}
         .content {{ 
-            padding: 40px; 
+            padding: 40px 30px; 
+            line-height: 1.6;
         }}
-        .greeting {{ 
-            font-size: 24px; 
-            color: {HeadingColor}; 
-            margin-bottom: 20px; 
-            font-weight: 600; 
-        }}
-        .message {{ 
-            font-size: 16px; 
-            color: {TextColor}; 
-            margin-bottom: 25px; 
-            line-height: 1.7; 
-        }}
-        .message p {{ 
-            margin-bottom: 15px; 
-        }}
-        /* Los estilos del botón se han movido inline en el método BuildButton para compatibilidad */
         .footer {{ 
-            background: rgba(10, 10, 30, 0.5); 
-            padding: 30px 25px; 
+            background-color: #0f1c33; 
+            padding: 20px; 
             text-align: center; 
-            border-top: 1px solid rgba(100, 102, 241, 0.2); 
-        }}
-        .footer-text {{ 
             font-size: 12px; 
-            color: #8892b0; 
-            margin-bottom: 15px; 
-            line-height: 1.5; 
+            color: #8892b0;
         }}
-        .social-links {{ 
-            margin-top: 15px; 
-        }}
-        .social-link {{ 
-            color: {PrimaryColor}; 
-            text-decoration: none; 
-            margin: 0 10px; 
-            font-size: 12px; 
-        }}
-        .social-link:hover {{ 
-            color: {AccentColor}; 
+        a {{ color: {PrimaryColor}; }}
+        
+        /* Media Query para móviles */
+        @media only screen and (max-width: 600px) {{
+            .container {{ width: 100% !important; border-radius: 0 !important; }}
+            .content {{ padding: 20px !important; }}
         }}
     </style>
 </head>
-<body>
-    <div class='container'>
-        <div class='header'>
-            <div class='logo'>MeetLines</div>
-        </div>
-        <div class='content'>
-            {content}
-        </div>
-        <div class='footer'>
-            <div class='footer-text'>
-                © {DateTime.Now.Year} MeetLines. Todos los derechos reservados.<br>
-                Este es un email automático, por favor no respondas a este mensaje.
-            </div>
-            <div class='social-links'>
-                <a href='#' class='social-link'>Términos</a>
-                <a href='#' class='social-link'>Privacidad</a>
-            </div>
-        </div>
-    </div>
+<body style='margin: 0; padding: 0; background-color: {BackgroundColor};'>
+    <center>
+        <table border='0' cellpadding='0' cellspacing='0' width='100%' style='background-color: {BackgroundColor}; height: 100vh;'>
+            <tr>
+                <td align='center' valign='top' style='padding: 40px 10px;'>
+                    <!-- Contenedor Principal -->
+                    <table border='0' cellpadding='0' cellspacing='0' width='600' class='container' style='background-color: {CardColor}; border-radius: 8px;'>
+                        <!-- Header -->
+                        <tr>
+                            <td class='header' align='center'>
+                                <div class='logo'>MeetLines</div>
+                            </td>
+                        </tr>
+                        
+                        <!-- Contenido -->
+                        <tr>
+                            <td class='content' align='left' style='color: {TextColor}; font-size: 16px;'>
+                                {content}
+                            </td>
+                        </tr>
+                        
+                        <!-- Footer -->
+                        <tr>
+                            <td class='footer' align='center'>
+                                © {DateTime.Now.Year} MeetLines. Todos los derechos reservados.<br>
+                                Este es un email automático.
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </center>
 </body>
 </html>";
         }
 
         private string BuildButton(string text, string url)
         {
-            // CORRECCIÓN PRINCIPAL:
-            // Usamos VML para Outlook y estilos inline para el resto.
-            // Esto asegura que el botón sea cliqueable en todas partes.
+            // TÉCNICA DE BORDES:
+            // Usamos bordes sólidos del mismo color que el fondo para simular padding.
+            // Esto funciona en Outlook, Gmail, Apple Mail y todos los clientes móviles.
             return $@"
-                <div class='button-container' style='text-align: center; margin: 30px 0;'>
-                    <!--[if mso]>
-                    <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' xmlns:w='urn:schemas-microsoft-com:office:word' href='{url}' style='height:48px;v-text-anchor:middle;width:200px;' arcsize='10%' stroke='f' fillcolor='{PrimaryColor}'>
-                    <w:anchorlock/>
-                    <center>
-                    <![endif]-->
-                    <a href='{url}' target='_blank' style='background-color:{PrimaryColor};box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);color:#ffffff;display:inline-block;font-family:sans-serif;font-size:16px;font-weight:bold;line-height:48px;text-align:center;text-decoration:none;width:200px;-webkit-text-size-adjust:none;border-radius:6px;'>
-                        {text}
-                    </a>
-                    <!--[if mso]>
-                    </center>
-                    </v:roundrect>
-                    <![endif]-->
-                </div>";
+                <table width='100%' border='0' cellspacing='0' cellpadding='0'>
+                    <tr>
+                        <td align='center' style='padding: 30px 0;'>
+                            <a href='{url}' target='_blank' style='
+                                background-color: {PrimaryColor}; 
+                                color: #ffffff; 
+                                font-family: sans-serif; 
+                                font-size: 16px; 
+                                font-weight: bold; 
+                                text-decoration: none; 
+                                display: inline-block; 
+                                border-radius: 4px; 
+                                border-top: 14px solid {PrimaryColor}; 
+                                border-bottom: 14px solid {PrimaryColor}; 
+                                border-left: 30px solid {PrimaryColor}; 
+                                border-right: 30px solid {PrimaryColor};
+                                box-sizing: border-box;'>
+                                {text}
+                            </a>
+                        </td>
+                    </tr>
+                </table>";
         }
 
         private string BuildInfoBox(string content, string borderColor = AccentColor)
         {
             return $@"
-                <div style='background-color: rgba(255, 255, 255, 0.05); padding: 20px; border-left: 4px solid {borderColor}; margin: 25px 0; border-radius: 4px;'>
+                <div style='background-color: rgba(255, 255, 255, 0.05); padding: 15px; border-left: 4px solid {borderColor}; margin: 20px 0; border-radius: 4px;'>
                     {content}
                 </div>";
         }
@@ -156,14 +144,13 @@ namespace MeetLines.Infrastructure.Services
         public string BuildEmailVerification(string userName, string verificationUrl)
         {
             var content = $@"
-                <h2 style='color: {HeadingColor}; margin-top: 0;'>¡Hola {userName}!</h2>
-                <p>Gracias por registrarte en MeetLines. Para completar la configuración de tu cuenta y acceder a todas las funciones, por favor verifica tu correo electrónico.</p>
+                <h2 style='color: {HeadingColor}; margin: 0 0 20px 0;'>¡Hola {userName}!</h2>
+                <p>Gracias por registrarte en MeetLines. Por favor verifica tu correo electrónico.</p>
                 
                 {BuildButton("Verificar Email", verificationUrl)}
                 
-                <p style='font-size: 14px; color: #8892b0;'>O copia y pega este enlace:</p>
-                <p style='font-size: 12px; color: {PrimaryColor}; word-break: break-all;'>{verificationUrl}</p>
-                <p style='font-size: 14px; margin-top: 20px;'>Este enlace expirará en 24 horas.</p>";
+                <p style='font-size: 14px; margin-bottom: 5px;'>O copia este enlace:</p>
+                <p style='font-size: 12px; color: {PrimaryColor}; word-break: break-all; margin: 0;'>{verificationUrl}</p>";
 
             return BuildBaseHtml(content, "Verifica tu correo");
         }
@@ -171,17 +158,12 @@ namespace MeetLines.Infrastructure.Services
         public string BuildPasswordReset(string userName, string resetUrl)
         {
             var content = $@"
-                <div class='greeting'>Recuperación de Contraseña</div>
-                <div class='message'>
-                    <p>Hola {userName}, hemos recibido una solicitud para restablecer la contraseña de tu cuenta en MeetLines.</p>
-                </div>
+                <h2 style='color: {HeadingColor}; margin: 0 0 20px 0;'>Recuperar Contraseña</h2>
+                <p>Hola {userName}, recibimos una solicitud para restablecer tu contraseña.</p>
                 
                 {BuildButton("Restablecer Contraseña", resetUrl)}
                 
-                <div class='message'>
-                    <p>Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
-                    <p style='color: #8892b0;'>El enlace expirará en 1 hora.</p>
-                </div>";
+                <p style='color: #8892b0; font-size: 14px;'>El enlace expira en 1 hora.</p>";
 
             return BuildBaseHtml(content, "Recuperar contraseña");
         }
@@ -189,13 +171,10 @@ namespace MeetLines.Infrastructure.Services
         public string BuildWelcome(string userName, string loginUrl)
         {
             var content = $@"
-                <h2 style='color: {HeadingColor}; margin-top: 0;'>¡Bienvenido a MeetLines!</h2>
-                <p>¡Hola {userName}! Tu cuenta ha sido verificada exitosamente.</p>
-                <p>Estamos emocionados de tenerte con nosotros. Ahora puedes gestionar tus citas y proyectos de manera eficiente con nuestra plataforma.</p>
+                <h2 style='color: {HeadingColor}; margin: 0 0 20px 0;'>¡Bienvenido a MeetLines!</h2>
+                <p>Tu cuenta ha sido verificada exitosamente.</p>
                 
-                {BuildButton("Ir a mi Dashboard", loginUrl)}
-                
-                <p>Si tienes alguna pregunta, nuestro equipo de soporte está aquí para ayudarte.</p>";
+                {BuildButton("Ir a mi Dashboard", loginUrl)}";
 
             return BuildBaseHtml(content, "Bienvenido");
         }
@@ -203,23 +182,12 @@ namespace MeetLines.Infrastructure.Services
         public string BuildPasswordChanged(string userName, string loginUrl)
         {
             var content = $@"
-                <h2 style='color: {HeadingColor}; margin-top: 0;'>Contraseña Actualizada</h2>
-                <p>Hola {userName},</p>
-                <p>Te informamos que tu contraseña ha sido cambiada exitosamente.</p>
+                <h2 style='color: {HeadingColor}; margin: 0 0 20px 0;'>Contraseña Actualizada</h2>
+                <p>Hola {userName}, tu contraseña ha sido cambiada.</p>
                 
-                {BuildInfoBox($@"
-                    <p style='margin: 0;'><strong>Fecha:</strong> {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
-                    <p style='margin: 10px 0 0 0;'><strong>Acción:</strong> Cambio de contraseña</p>
-                ", "#28a745")}
-
-                <p>Por seguridad, se han cerrado todas las sesiones activas.</p>
+                {BuildInfoBox($"<strong style='color:{HeadingColor}'>Fecha:</strong> {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm} UTC", "#28a745")}
                 
-                {BuildButton("Iniciar Sesión", loginUrl)}
-
-                <div style='margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 20px;'>
-                    <p style='color: #ff6b6b; font-size: 14px; margin: 0;'><strong>¿No fuiste tú?</strong></p>
-                    <p style='font-size: 14px; margin-top: 5px;'>Si no realizaste este cambio, contacta a soporte inmediatamente.</p>
-                </div>";
+                {BuildButton("Iniciar Sesión", loginUrl)}";
 
             return BuildBaseHtml(content, "Contraseña cambiada");
         }
@@ -227,13 +195,10 @@ namespace MeetLines.Infrastructure.Services
         public string BuildEmailVerified(string userName, string dashboardUrl)
         {
             var content = $@"
-                <h2 style='color: {HeadingColor}; margin-top: 0;'>¡Cuenta Verificada!</h2>
-                <p>Hola {userName},</p>
-                <p>Tu correo electrónico ha sido confirmado correctamente. Ya tienes acceso total a la plataforma.</p>
+                <h2 style='color: {HeadingColor}; margin: 0 0 20px 0;'>¡Cuenta Verificada!</h2>
+                <p>Hola {userName}, tu correo ha sido confirmado.</p>
                 
-                {BuildButton("Comenzar Ahora", dashboardUrl)}
-                
-                <p>¡Disfruta de la experiencia MeetLines!</p>";
+                {BuildButton("Comenzar Ahora", dashboardUrl)}";
 
             return BuildBaseHtml(content, "Cuenta verificada");
         }
@@ -241,13 +206,9 @@ namespace MeetLines.Infrastructure.Services
         public string BuildProjectCreated(string userName, string projectName)
         {
             var content = $@"
-                <h2 style='color: {AccentColor}; margin-top: 0;'>Nuevo Proyecto Creado</h2>
-                <p>¡Excelente trabajo, {userName}!</p>
-                <p>El proyecto <strong>{projectName}</strong> ha sido creado y está listo para configurarse.</p>
-                
-                {BuildInfoBox("Configura tus servicios y empleados para empezar a recibir citas.", AccentColor)}
-                
-                <p>¡Mucho éxito con tu nuevo proyecto!</p>";
+                <h2 style='color: {AccentColor}; margin: 0 0 20px 0;'>Nuevo Proyecto</h2>
+                <p>El proyecto <strong>{projectName}</strong> ha sido creado.</p>
+                {BuildInfoBox("Configura tus servicios para empezar.", AccentColor)}";
 
             return BuildBaseHtml(content, "Proyecto Creado");
         }
@@ -255,47 +216,31 @@ namespace MeetLines.Infrastructure.Services
         public string BuildEmployeeCredentials(string name, string username, string password, string area)
         {
             var content = $@"
-                <h2 style='color: {HeadingColor}; margin-top: 0;'>Bienvenido al equipo, {name}</h2>
-                <p>Has sido registrado como empleado en el área: <strong style='color: {AccentColor};'>{area}</strong>.</p>
-                <p>A continuación encontrarás tus credenciales de acceso temporal:</p>
+                <h2 style='color: {HeadingColor}; margin: 0 0 20px 0;'>Bienvenido, {name}</h2>
+                <p>Área: <strong style='color: {AccentColor};'>{area}</strong></p>
                 
                 {BuildInfoBox($@"
-                    <ul style='list-style: none; padding: 0; margin: 0;'>
-                        <li style='margin-bottom: 10px;'><strong>Usuario:</strong> {username}</li>
-                        <li><strong>Contraseña:</strong> {password}</li>
-                    </ul>
+                    <div style='color: {HeadingColor};'>
+                        <strong>Usuario:</strong> {username}<br>
+                        <strong>Contraseña:</strong> {password}
+                    </div>
                 ", PrimaryColor)}
                 
-                <p>Por motivos de seguridad, te recomendamos cambiar tu contraseña al iniciar sesión por primera vez.</p>";
+                <p>Por favor cambia tu contraseña al entrar.</p>";
 
-            return BuildBaseHtml(content, "Credenciales de Acceso");
+            return BuildBaseHtml(content, "Credenciales");
         }
 
         public string BuildAppointmentAssigned(string employeeName, string clientName, DateTime date, string time)
         {
             var content = $@"
-                <h2 style='color: {HeadingColor}; margin-top: 0;'>Nueva Cita Asignada</h2>
-                <p>Hola {employeeName},</p>
-                <p>Se te ha asignado una nueva cita.</p>
+                <h2 style='color: {HeadingColor}; margin: 0 0 20px 0;'>Nueva Cita Asignada</h2>
+                <p>Hola {employeeName}, tienes una nueva cita.</p>
                 
                 {BuildInfoBox($@"
-                    <table style='width: 100%; color: {TextColor};'>
-                        <tr>
-                            <td style='padding: 5px 0;'><strong>Cliente:</strong></td>
-                            <td style='text-align: right;'>{clientName}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 5px 0;'><strong>Fecha:</strong></td>
-                            <td style='text-align: right;'>{date:dd/MM/yyyy}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 5px 0;'><strong>Hora:</strong></td>
-                            <td style='text-align: right;'>{time}</td>
-                        </tr>
-                    </table>
-                ", AccentColor)}
-                
-                <p>Por favor, asegúrate de estar preparado.</p>";
+                    <strong>Cliente:</strong> {clientName}<br>
+                    <strong>Fecha:</strong> {date:dd/MM/yyyy} - {time}
+                ", AccentColor)}";
 
             return BuildBaseHtml(content, "Nueva Cita");
         }
@@ -303,28 +248,13 @@ namespace MeetLines.Infrastructure.Services
         public string BuildAppointmentConfirmed(string clientName, string employeeName, DateTime date, string time)
         {
             var content = $@"
-                <h2 style='color: {AccentColor}; margin-top: 0;'>¡Cita Confirmada!</h2>
-                <p>Hola {clientName},</p>
-                <p>Tu cita ha sido confirmada exitosamente.</p>
+                <h2 style='color: {AccentColor}; margin: 0 0 20px 0;'>¡Cita Confirmada!</h2>
+                <p>Hola {clientName}, tu cita está lista.</p>
                 
                 {BuildInfoBox($@"
-                    <table style='width: 100%; color: {TextColor};'>
-                        <tr>
-                            <td style='padding: 5px 0;'><strong>Profesional:</strong></td>
-                            <td style='text-align: right;'>{employeeName}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 5px 0;'><strong>Fecha:</strong></td>
-                            <td style='text-align: right;'>{date:dd/MM/yyyy}</td>
-                        </tr>
-                        <tr>
-                            <td style='padding: 5px 0;'><strong>Hora:</strong></td>
-                            <td style='text-align: right;'>{time}</td>
-                        </tr>
-                    </table>
-                ", "#28a745")}
-                
-                <p>¡Te esperamos!</p>";
+                    <strong>Profesional:</strong> {employeeName}<br>
+                    <strong>Fecha:</strong> {date:dd/MM/yyyy} - {time}
+                ", "#28a745")}";
 
             return BuildBaseHtml(content, "Cita Confirmada");
         }
@@ -332,19 +262,13 @@ namespace MeetLines.Infrastructure.Services
         public string BuildAppointmentCancelled(string userName, DateTime date, string time, string reason)
         {
             var content = $@"
-                <h2 style='color: #ff6b6b; margin-top: 0;'>Cita Cancelada</h2>
-                <p>Hola {userName},</p>
-                <p>Lamentamos informarte que tu cita ha sido cancelada.</p>
+                <h2 style='color: #ff6b6b; margin: 0 0 20px 0;'>Cita Cancelada</h2>
+                <p>Hola {userName}, tu cita ha sido cancelada.</p>
                 
                 {BuildInfoBox($@"
-                    <p style='margin: 0 0 10px 0;'><strong>Detalles de la cita:</strong></p>
-                    <p style='margin: 0;'>{date:dd/MM/yyyy} a las {time}</p>
-                    <hr style='border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 15px 0;'>
-                    <p style='margin: 0 0 5px 0;'><strong>Motivo:</strong></p>
-                    <p style='margin: 0; color: #ff6b6b;'>{reason ?? "No especificado"}</p>
-                ", "#ff6b6b")}
-                
-                <p>Si deseas reagendar, por favor visita nuestra plataforma.</p>";
+                    <strong>Fecha:</strong> {date:dd/MM/yyyy} a las {time}<br>
+                    <strong>Motivo:</strong> {reason ?? "No especificado"}
+                ", "#ff6b6b")}";
 
             return BuildBaseHtml(content, "Cita Cancelada");
         }
