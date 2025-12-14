@@ -14,11 +14,15 @@ namespace MeetLines.Infrastructure.Services
 
         private string BuildBaseHtml(string content, string title)
         {
+            // Se agregaron xmlns:v y xmlns:o para soporte de Outlook
             return $@"<!DOCTYPE html>
-<html lang='es'>
+<html lang='es' xmlns:v='urn:schemas-microsoft-com:vml' xmlns:o='urn:schemas-microsoft-com:office:office'>
 <head>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <!--[if !mso]><!-->
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <!--<![endif]-->
     <title>{title}</title>
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
@@ -69,27 +73,7 @@ namespace MeetLines.Infrastructure.Services
         .message p {{ 
             margin-bottom: 15px; 
         }}
-        .button-container {{ 
-            text-align: center; 
-            margin: 30px 0; 
-        }}
-        .button {{ 
-            display: inline-block; 
-            background: {PrimaryColor}; 
-            color: #ffffff; 
-            padding: 14px 32px; 
-            text-decoration: none; 
-            border-radius: 6px; 
-            font-weight: 600; 
-            font-size: 16px; 
-            transition: all 0.3s ease; 
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); 
-        }}
-        .button:hover {{ 
-            background: #4f46e5; 
-            transform: translateY(-2px); 
-            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); 
-        }}
+        /* Los estilos del botón se han movido inline en el método BuildButton para compatibilidad */
         .footer {{ 
             background: rgba(10, 10, 30, 0.5); 
             padding: 30px 25px; 
@@ -113,13 +97,6 @@ namespace MeetLines.Infrastructure.Services
         }}
         .social-link:hover {{ 
             color: {AccentColor}; 
-        }}
-        .highlight {{ 
-            background: rgba(100, 102, 241, 0.1); 
-            padding: 20px; 
-            border-radius: 8px; 
-            border-left: 4px solid {PrimaryColor}; 
-            margin: 20px 0; 
         }}
     </style>
 </head>
@@ -148,9 +125,23 @@ namespace MeetLines.Infrastructure.Services
 
         private string BuildButton(string text, string url)
         {
+            // CORRECCIÓN PRINCIPAL:
+            // Usamos VML para Outlook y estilos inline para el resto.
+            // Esto asegura que el botón sea cliqueable en todas partes.
             return $@"
-                <div class='button-container'>
-                    <a href='{url}' class='button' target='_blank' rel='noopener noreferrer'>{text}</a>
+                <div class='button-container' style='text-align: center; margin: 30px 0;'>
+                    <!--[if mso]>
+                    <v:roundrect xmlns:v='urn:schemas-microsoft-com:vml' xmlns:w='urn:schemas-microsoft-com:office:word' href='{url}' style='height:48px;v-text-anchor:middle;width:200px;' arcsize='10%' stroke='f' fillcolor='{PrimaryColor}'>
+                    <w:anchorlock/>
+                    <center>
+                    <![endif]-->
+                    <a href='{url}' target='_blank' style='background-color:{PrimaryColor};box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);color:#ffffff;display:inline-block;font-family:sans-serif;font-size:16px;font-weight:bold;line-height:48px;text-align:center;text-decoration:none;width:200px;-webkit-text-size-adjust:none;border-radius:6px;'>
+                        {text}
+                    </a>
+                    <!--[if mso]>
+                    </center>
+                    </v:roundrect>
+                    <![endif]-->
                 </div>";
         }
 
