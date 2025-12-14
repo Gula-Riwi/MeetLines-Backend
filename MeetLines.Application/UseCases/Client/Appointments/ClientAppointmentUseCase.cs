@@ -52,6 +52,8 @@ namespace MeetLines.Application.UseCases.Client.Appointments
                 // Appt Info
                 StartTime = a.StartTime,
                 EndTime = a.EndTime,
+                Price = a.PriceSnapshot,
+                Currency = a.CurrencySnapshot,
                 Status = a.Status,
                 UserNotes = a.UserNotes,
                 MeetingLink = a.MeetingLink,
