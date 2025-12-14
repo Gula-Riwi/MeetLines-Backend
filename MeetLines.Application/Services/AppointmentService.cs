@@ -58,7 +58,7 @@ namespace MeetLines.Application.Services
 
         public async Task<AvailableSlotsResponse> GetAvailableSlotsAsync(Guid projectId, DateTime date, int? serviceId = null, CancellationToken ct = default)
         {
-            // 1. Get BotConfig
+            // 1. Get BotConfig and Transactional Config
             var botConfig = await _botConfigRepository.GetByProjectIdAsync(projectId, ct);
             if (botConfig == null || string.IsNullOrEmpty(botConfig.TransactionalConfigJson))
             {
@@ -71,6 +71,12 @@ namespace MeetLines.Application.Services
             {
                 return new AvailableSlotsResponse { Date = date.ToString("yyyy-MM-dd"), Slots = new List<AvailableSlotDto>() };
             }
+
+            // Define Cutoff Time (Now + MinHoursBeforeBooking)
+            // System assumes -05:00 for "Local Time" logic
+            var localNow = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(-5));
+            var minLeadHours = config.MinHoursBeforeBooking > 0 ? config.MinHoursBeforeBooking : 0;
+            var cutoffTime = localNow.AddHours(minLeadHours);
 
             // 2. Get business hours for the day
             var dayOfWeek = date.DayOfWeek.ToString().ToLower();
@@ -117,8 +123,18 @@ namespace MeetLines.Application.Services
 
                 while (currentTime.Add(TimeSpan.FromMinutes(slotDuration)) <= endTime)
                 {
-                    var slotStart = new DateTimeOffset(date.Date.Add(currentTime), TimeSpan.Zero);
+                    // Construct slot start in correct offset
+                    var slotStart = new DateTimeOffset(date.Date.Add(currentTime), TimeSpan.FromHours(-5));
                     var slotEnd = slotStart.AddMinutes(slotDuration);
+
+                    // FILTER: Past Slots / Min Lead Time
+                    // Use slotStart as the comparison point. 
+                    // If slotStart is before expected cutoff, it's not available.
+                    if (slotStart < cutoffTime)
+                    {
+                        currentTime = currentTime.Add(TimeSpan.FromMinutes(slotDuration));
+                        continue;
+                    }
 
                     // Check if employee is available
                     var isAvailable = !existingAppointments.Any(a =>
