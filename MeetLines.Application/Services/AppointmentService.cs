@@ -252,6 +252,30 @@ namespace MeetLines.Application.Services
             }
             // =========================
 
+            // === VALIDATIONS ===
+            // 1. Past Date Check (Buffer 15 mins)
+            if (startTimeCorrected < DateTimeOffset.UtcNow.AddMinutes(-15))
+            {
+                return Result<AppointmentResponse>.Fail("No se puede agendar en el pasado.");
+            }
+
+            // 2. Overlap Check (Availability)
+            // Fetch relevant appointments via Repository to check overlap
+            // TODO: Optimize Repository to filtering by date range instead of fetching all project appts
+            var projectAppts = await _appointmentRepository.GetByProjectIdAsync(request.ProjectId, ct);
+            var hasOverlap = projectAppts.Any(a => 
+                a.EmployeeId == request.EmployeeId &&
+                a.Status != "cancelled" &&
+                a.StartTime < endTimeCorrected && // Existing starts before New ends
+                a.EndTime > startTimeCorrected    // Existing ends after New starts
+            );
+
+            if (hasOverlap)
+            {
+                return Result<AppointmentResponse>.Fail("El horario seleccionado ya está ocupado.");
+            }
+            // ===================
+
             // Create appointment with the AppUser
             var appointment = new Appointment(
                 projectId: request.ProjectId,
