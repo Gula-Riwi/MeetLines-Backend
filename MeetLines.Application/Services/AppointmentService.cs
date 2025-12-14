@@ -211,9 +211,24 @@ namespace MeetLines.Application.Services
             }
 
 
+            // === TIMEZONE FIX ===
+            // Force interpret input time as Project Local Time (-05:00)
+            // Example: User sends 23:00 (intending Local). n8n might send 23:00 Z.
+            // We ignore Z and force -05:00.
+            var targetOffset = TimeSpan.FromHours(-5);
+            
+            // 1. Extract purely the date and time parts
+            var localDateTime = request.StartTime.DateTime; 
+            var localEndTime = request.EndTime.DateTime;
+
+            // 2. Create new DateTimeOffset with correct -05:00 offset
+            var startTimeCorrected = new DateTimeOffset(localDateTime, targetOffset);
+            var endTimeCorrected = new DateTimeOffset(localEndTime, targetOffset);
+            // ====================
+
             // === IDEMPOTENCY CHECK ===
             // Npgsql 6.0+ requires UTC for DateTimeOffset comparisons
-            var searchTimeUtc = request.StartTime.ToUniversalTime();
+            var searchTimeUtc = startTimeCorrected.ToUniversalTime();
             var existingAppt = await _appointmentRepository.FindDuplicateAsync(request.ProjectId, appUser.Id, searchTimeUtc, ct);
             if (existingAppt != null)
             {
@@ -243,8 +258,8 @@ namespace MeetLines.Application.Services
                 leadId: null,
                 appUserId: appUser.Id,
                 serviceId: request.ServiceId,
-                startTime: request.StartTime,
-                endTime: request.EndTime,
+                startTime: startTimeCorrected,  // Use Corrected
+                endTime: endTimeCorrected,      // Use Corrected
                 priceSnapshot: service.Price,
                 currencySnapshot: service.Currency,
                 userNotes: request.UserNotes
@@ -263,9 +278,10 @@ namespace MeetLines.Application.Services
                 ProjectId = appointment.ProjectId,
                 ServiceId = appointment.ServiceId,
                 EmployeeId = appointment.EmployeeId,
+                EmployeeId = appointment.EmployeeId,
                 EmployeeName = employee?.Name,
-                StartTime = appointment.StartTime,
-                EndTime = appointment.EndTime,
+                StartTime = appointment.StartTime.ToOffset(TimeSpan.FromHours(-5)),
+                EndTime = appointment.EndTime.ToOffset(TimeSpan.FromHours(-5)),
                 Price = appointment.PriceSnapshot,
                 Currency = appointment.CurrencySnapshot,
                 Status = appointment.Status,
@@ -372,8 +388,8 @@ namespace MeetLines.Application.Services
                 ProjectId = a.ProjectId,
                 ServiceId = a.ServiceId,
                 EmployeeId = a.EmployeeId,
-                StartTime = a.StartTime,
-                EndTime = a.EndTime,
+                StartTime = a.StartTime.ToOffset(TimeSpan.FromHours(-5)),
+                EndTime = a.EndTime.ToOffset(TimeSpan.FromHours(-5)),
                 Price = a.PriceSnapshot,
                 Currency = a.CurrencySnapshot,
                 Status = a.Status,
