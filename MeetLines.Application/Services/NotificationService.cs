@@ -211,11 +211,14 @@ namespace MeetLines.Application.Services
                     await _conversationRepository.CreateAsync(conversationState);
                 }
 
-                // 4. Trigger Webhook from ENV (Standard Backend Logic)
-                var webhookUrl = _configuration["FEEDBACK_TRIGGER_WEBHOOK"];
+                // 4. Trigger Webhook (Dynamic per Project)
+                // Usamos el Webhook configurado en el Proyecto (mismo que recibe mensajes)
+                var webhookUrl = appointment.Project?.WhatsappForwardWebhook; // Primary for WhatsApp bot
+                
+                // Fallback or specific logic if needed, but user insisted on this one.
                 if (string.IsNullOrEmpty(webhookUrl))
                 {
-                    _logger.LogWarning("FeedBackJob: FEEDBACK_TRIGGER_WEBHOOK is not configured in .env");
+                    _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no WhatsappForwardWebhook configured.");
                     return;
                 }
 
@@ -245,7 +248,7 @@ namespace MeetLines.Application.Services
                 if (response.IsSuccessStatusCode)
                      _logger.LogInformation($"FeedBackJob: Webhook triggered successfully for Appt {appointmentId} to {webhookUrl}");
                 else
-                     _logger.LogError($"FeedBackJob: Webhook failed {response.StatusCode}");
+                     _logger.LogError($"FeedBackJob: Webhook failed {response.StatusCode} response: {await response.Content.ReadAsStringAsync()}");
 
             }
             catch (Exception ex)
