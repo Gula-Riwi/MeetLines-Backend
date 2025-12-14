@@ -42,6 +42,7 @@ namespace MeetLines.Application.UseCases.Client.Appointments
             {
                 Id = a.Id,
                 ProjectId = a.ProjectId,
+                ProjectName = a.Project?.Name,
                 // Service Info
                 ServiceId = a.ServiceId,
                 ServiceName = a.Service?.Name,
