@@ -396,7 +396,7 @@ namespace MeetLines.Application.Services
 
                     if (fbConfig != null && fbConfig.Enabled)
                     {
-                        var delayHours = fbConfig.HoursAfterService > 0 ? fbConfig.HoursAfterService : 1;
+                        var delayHours = fbConfig.DelayHours > 0 ? fbConfig.DelayHours : 1;
                         var feedbackTime = request.EndTime.AddHours(delayHours);
 
                         // Schedule Job
