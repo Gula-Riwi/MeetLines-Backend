@@ -91,5 +91,12 @@ namespace MeetLines.Domain.Entities
             ReminderSent = true; 
             UpdatedAt = DateTimeOffset.UtcNow;
         }
+
+        public void UpdateStatus(string newStatus)
+        {
+             if (string.IsNullOrWhiteSpace(newStatus)) throw new ArgumentException("Status cannot be empty");
+             Status = newStatus.ToLowerInvariant();
+             UpdatedAt = DateTimeOffset.UtcNow;
+        }
     }
 }

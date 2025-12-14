@@ -11,5 +11,7 @@ namespace MeetLines.Application.Services.Interfaces
     {
         Task<Result<EmployeeResponse>> CreateEmployeeAsync(CreateEmployeeRequest request, CancellationToken ct = default);
         Task<Result<IEnumerable<EmployeeResponse>>> GetEmployeesByProjectAsync(Guid projectId, CancellationToken ct = default);
+        Task<Result<EmployeeResponse>> UpdateEmployeeAsync(Guid employeeId, UpdateEmployeeRequest request, CancellationToken ct = default);
+        Task<Result> ToggleEmployeeStatusAsync(Guid employeeId, bool isActive, CancellationToken ct = default);
     }
 }

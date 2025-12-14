@@ -179,5 +179,18 @@ namespace MeetLines.API.Controllers
 
             return Ok(result.Value);
         }
+
+        [HttpPatch("appointments/{id}/status")]
+        [Authorize]
+        public async Task<ActionResult> UpdateAppointmentStatus(
+            Guid projectId, 
+            int id, 
+            [FromBody] UpdateAppointmentStatusRequest request, 
+            CancellationToken ct)
+        {
+             var result = await _appointmentService.UpdateAppointmentStatusAsync(id, request.Status, ct);
+             if (!result.IsSuccess) return BadRequest(new { error = result.Error });
+             return Ok(new { message = "Estado actualizado exitosamente" });
+        }
     }
 }
