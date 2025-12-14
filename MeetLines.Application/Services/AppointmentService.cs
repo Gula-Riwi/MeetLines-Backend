@@ -22,6 +22,7 @@ namespace MeetLines.Application.Services
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IProjectBotConfigRepository _botConfigRepository;
         private readonly IAppUserRepository _appUserRepository;
+        private readonly IConversationRepository _conversationRepository;
         private readonly ILogger<AppointmentService> _logger;
 
         public AppointmentService(
@@ -30,6 +31,7 @@ namespace MeetLines.Application.Services
             IEmployeeRepository employeeRepository,
             IProjectBotConfigRepository botConfigRepository,
             IAppUserRepository appUserRepository,
+            IConversationRepository conversationRepository,
             ILogger<AppointmentService> logger)
         {
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
@@ -37,6 +39,7 @@ namespace MeetLines.Application.Services
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _botConfigRepository = botConfigRepository ?? throw new ArgumentNullException(nameof(botConfigRepository));
             _appUserRepository = appUserRepository ?? throw new ArgumentNullException(nameof(appUserRepository));
+            _conversationRepository = conversationRepository ?? throw new ArgumentNullException(nameof(conversationRepository));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -331,6 +334,21 @@ namespace MeetLines.Application.Services
                 MeetingLink = appointment.MeetingLink,
                 CreatedAt = appointment.CreatedAt
             };
+
+            // 3. Auto-Reset Conversation State (Unlock user)
+            // Create a new convo record with 'reception' so n8n sees this as the latest state
+            if (!string.IsNullOrEmpty(appUser.Phone))
+            {
+                var resetConvo = new Conversation(
+                    projectId: request.ProjectId,
+                    customerPhone: appUser.Phone,
+                    customerMessage: "(System Reset - Appointment Booked)", 
+                    botResponse: "(Booking Loop Closed)", 
+                    botType: "reception", 
+                    customerName: appUser.FullName
+                );
+                await _conversationRepository.CreateAsync(resetConvo, ct);
+            }
 
             // === HANGFIRE SCHEDULING ===
             try 
