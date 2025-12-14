@@ -13,6 +13,8 @@ namespace MeetLines.Application.DTOs.Appointments
         public string? EmployeeName { get; set; }
         public DateTimeOffset StartTime { get; set; }
         public DateTimeOffset EndTime { get; set; }
+        public decimal Price { get; set; }
+        public string Currency { get; set; } = "COP";
         public string Status { get; set; } = string.Empty;
         public string? UserNotes { get; set; }
         public string? ClientName { get; set; }
