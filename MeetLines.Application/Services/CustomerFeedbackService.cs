@@ -128,7 +128,7 @@ namespace MeetLines.Application.Services
                             await _emailService.SendNegativeFeedbackAlertAsync(
                                 owner.Email,
                                 owner.Name ?? "Propietario",
-                                request.CustomerName ?? request.CustomerPhone,
+                                customerName ?? request.CustomerPhone,
                                 request.CustomerPhone,
                                 request.Rating,
                                 request.Comment,
