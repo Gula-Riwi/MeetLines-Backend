@@ -15,17 +15,24 @@ namespace MeetLines.Infrastructure.Services
         private string BuildBaseHtml(string content, string title)
         {
             return $@"
-                <!DOCTYPE html>
-                <html>
+                <!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.0 Transitional//EN"" ""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"">
+                <html xmlns=""http://www.w3.org/1999/xhtml"">
                 <head>
-                    <meta charset='UTF-8'>
-                    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+                    <meta http-equiv=""Content-Type"" content=""text/html; charset=UTF-8"" />
+                    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0""/>
+                    <meta name=""x-apple-disable-message-reformatting"" />
+                    <meta http-equiv=""X-UA-Compatible"" content=""IE=edge"" />
                     <title>{title}</title>
+                    <!--[if mso]>
+                    <style type=""text/css"">
+                        body, table, td, a {{ font-family: Arial, Helvetica, sans-serif !important; }}
+                    </style>
+                    <![endif]-->
                 </head>
-                <body style='margin: 0; padding: 0; font-family: ""Segoe UI"", Tahoma, Geneva, Verdana, sans-serif; background-color: {BackgroundColor}; color: {TextColor};'>
-                    <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%'>
+                <body style='margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, ""Segoe UI"", Roboto, Helvetica, Arial, sans-serif; background-color: {BackgroundColor}; color: {TextColor}; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;'>
+                    <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='100%' style='border-collapse: collapse;'>
                         <tr>
-                            <td align='center' style='padding: 40px 0;'>
+                            <td align='center' style='padding: 40px 20px;'>
                                 <table role='presentation' border='0' cellpadding='0' cellspacing='0' width='600' style='border-collapse: collapse; max-width: 600px; width: 100%;'>
                                     <!-- Header -->
                                     <tr>
@@ -43,7 +50,7 @@ namespace MeetLines.Infrastructure.Services
 
                                     <!-- Footer -->
                                     <tr>
-                                        <td align='center' style='padding: 30px 0; color: #8892b0; font-size: 12px;'>
+                                        <td align='center' style='padding: 30px 20px; color: #8892b0; font-size: 12px;'>
                                             <p style='margin: 0;'>&copy; {DateTime.Now.Year} MeetLines. Todos los derechos reservados.</p>
                                             <p style='margin: 10px 0 0 0;'>
                                                 <a href='#' style='color: {PrimaryColor}; text-decoration: none;'>Términos</a> | 
@@ -67,9 +74,15 @@ namespace MeetLines.Infrastructure.Services
                         <td align='center'>
                             <table border='0' cellspacing='0' cellpadding='0'>
                                 <tr>
-                                    <td align='center' bgcolor='{PrimaryColor}' style='border-radius: 4px;'>
-                                        <a href='{url}' target='_blank' style='font-size: 16px; font-family: Helvetica, Arial, sans-serif; color: #ffffff; text-decoration: none; border-radius: 4px; padding: 12px 24px; border: 1px solid {PrimaryColor}; display: inline-block; font-weight: bold; background-color: {PrimaryColor}; border-top: 12px solid {PrimaryColor}; border-bottom: 12px solid {PrimaryColor}; border-right: 24px solid {PrimaryColor}; border-left: 24px solid {PrimaryColor};'>
-                                            {text}
+                                    <td align='center' style='border-radius: 6px; background-color: {PrimaryColor};'>
+                                        <a href='{url}' target='_blank' rel='noopener noreferrer' style='font-size: 16px; font-family: -apple-system, BlinkMacSystemFont, &quot;Segoe UI&quot;, Helvetica, Arial, sans-serif; color: #ffffff !important; text-decoration: none; border-radius: 6px; padding: 14px 28px; display: inline-block; font-weight: 600; background-color: {PrimaryColor}; mso-padding-alt: 0; text-align: center;'>
+                                            <!--[if mso]>
+                                            <i style='letter-spacing: 28px; mso-font-width: -100%; mso-text-raise: 30pt;'>&nbsp;</i>
+                                            <![endif]-->
+                                            <span style='mso-text-raise: 15pt; color: #ffffff;'>{text}</span>
+                                            <!--[if mso]>
+                                            <i style='letter-spacing: 28px; mso-font-width: -100%;'>&nbsp;</i>
+                                            <![endif]-->
                                         </a>
                                     </td>
                                 </tr>
