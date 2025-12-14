@@ -18,5 +18,8 @@ namespace MeetLines.Application.Services.Interfaces
         Task SendAppointmentAssignedAsync(string toEmail, string employeeName, string clientName, DateTime date, string time, string? senderName = null);
         Task SendAppointmentConfirmedAsync(string toEmail, string clientName, string employeeName, DateTime date, string time, string? senderName = null);
         Task SendAppointmentCancelledAsync(string toEmail, string userName, DateTime date, string time, string reason, string? senderName = null);
+        
+        // Feedback Alerts
+        Task SendNegativeFeedbackAlertAsync(string toEmail, string ownerName, string customerName, string customerPhone, int rating, string comment, string projectName);
     }
 }
