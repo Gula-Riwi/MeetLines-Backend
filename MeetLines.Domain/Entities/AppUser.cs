@@ -46,6 +46,13 @@ namespace MeetLines.Domain.Entities
             Phone = phone;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
+
+        public void UpdateEmail(string newEmail)
+        {
+            if (string.IsNullOrWhiteSpace(newEmail)) throw new ArgumentException("Email cannot be empty", nameof(newEmail));
+            Email = newEmail.ToLowerInvariant();
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
         
         public void VerifyEmail()
         {

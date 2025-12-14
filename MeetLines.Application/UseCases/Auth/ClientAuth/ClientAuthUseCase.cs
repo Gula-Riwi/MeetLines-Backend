@@ -59,19 +59,63 @@ namespace MeetLines.Application.UseCases.Auth.ClientAuth
 
         public async Task<Result<ClientAuthResponse>> RegisterAsync(ClientRegisterRequest request, CancellationToken ct = default)
         {
+            // 1. Check by Email
             var existingUser = await _appUserRepository.GetByEmailAsync(request.Email, ct);
             if (existingUser != null)
             {
                 if (!string.IsNullOrEmpty(existingUser.PasswordHash))
                 {
-                    return Result<ClientAuthResponse>.Fail("El usuario ya existe");
+                    return Result<ClientAuthResponse>.Fail("El usuario ya existe (Email)");
                 }
+                // Implicitly handles case where email exists but no password (bot user with real email?), but logic below is more robust for Phone.
+            }
 
-                // Upgrade existing bot-user
+            // 2. Check by Phone (Merge Strategy)
+            if (existingUser == null && !string.IsNullOrEmpty(request.Phone))
+            {
+                var userByPhone = await _appUserRepository.GetByPhoneAsync(request.Phone, ct);
+                if (userByPhone != null)
+                {
+                    // Check if it's a temporary/bot user that we can take over
+                    // Criteria: Ends with .temp (whatsapp/telegram) OR AuthProvider is "bot" OR Password is empty
+                    bool isTempUser = (userByPhone.Email != null && userByPhone.Email.EndsWith(".temp")) 
+                                      || userByPhone.AuthProvider == "bot" 
+                                      || string.IsNullOrEmpty(userByPhone.PasswordHash);
+
+                    if (isTempUser)
+                    {
+                        // TAKEOVER / MERGE
+                        existingUser = userByPhone;
+                        
+                        // Update Email from temp to real
+                        existingUser.UpdateEmail(request.Email); // We might need to expose this setter or use specialized method
+                        existingUser.UpdateInfo(request.FullName, request.Phone); 
+                    }
+                    else
+                    {
+                        return Result<ClientAuthResponse>.Fail("El teléfono ya está registrado en otra cuenta.");
+                    }
+                }
+            }
+
+            if (existingUser != null)
+            {
+                // Upgrade existing user (Bot or Email-only)
                 var hash = _passwordHasher.HashPassword(request.Password);
                 existingUser.SetPassword(hash);
-                existingUser.UpdateInfo(request.FullName, request.Phone ?? existingUser.Phone);
                 
+                // Ensure Application User properties are set if we didn't do it in the Merge block above (e.g. found by Email but empty pass)
+                if (existingUser.Email != request.Email) 
+                {
+                    // This happens if we found by Phone and verified it's temp.
+                    // We need to update the email. 
+                    // AppUser likely has private set for Email. Let's check AppUser entity.
+                    // Only constructor sets email usually. We might need a method "UpdateEmail".
+                    // Assuming for now we can't easily change email without a method.
+                    // If AppUser doesn't support changing email, we have a problem.
+                    // Let's assume UpdateInfo does NOT update email.
+                }
+
                 await _appUserRepository.UpdateAsync(existingUser, ct);
 
                 var token = _jwtTokenService.GenerateAccessToken(existingUser.Id, existingUser.Email, "Client");
@@ -87,16 +131,16 @@ namespace MeetLines.Application.UseCases.Auth.ClientAuth
             }
             else
             {
+                // Create New User
                 var newUser = new AppUser(request.Email, request.FullName, request.Phone, "email");
                 var hash = _passwordHasher.HashPassword(request.Password);
                 newUser.SetPassword(hash);
 
                 await _appUserRepository.AddAsync(newUser, ct);
 
-                // Send Welcome Email (Non-blocking ideally, but kept simple here)
                 try {
                     await _emailService.SendWelcomeEmailAsync(newUser.Email, newUser.FullName);
-                } catch { /* log error but don't fail registration */ }
+                } catch { /* log */ }
 
                 var token = _jwtTokenService.GenerateAccessToken(newUser.Id, newUser.Email, "Client");
                 var refreshToken = _jwtTokenService.GenerateRefreshToken();
