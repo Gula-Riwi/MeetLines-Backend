@@ -14,67 +14,144 @@ namespace MeetLines.Infrastructure.Services
 
         private string BuildBaseHtml(string content, string title)
         {
-            return $@"
-                <!DOCTYPE html PUBLIC ""-//W3C//DTD XHTML 1.0 Transitional//EN"" ""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"">
-                <html xmlns=""http://www.w3.org/1999/xhtml"">
-                <head>
-                    <meta http-equiv=""Content-Type"" content=""text/html; charset=UTF-8"" />
-                    <meta name=""viewport"" content=""width=device-width, initial-scale=1.0""/>
-                    <title>{title}</title>
-                </head>
-                <body style='margin: 0; padding: 0; font-family: Arial, Helvetica, sans-serif; background-color: {BackgroundColor}; color: {TextColor};'>
-                    <table width='100%' border='0' cellpadding='0' cellspacing='0' style='background-color: {BackgroundColor};'>
-                        <tr>
-                            <td align='center' style='padding: 40px 20px;'>
-                                <table width='600' border='0' cellpadding='0' cellspacing='0' style='max-width: 600px;'>
-                                    <!-- Header -->
-                                    <tr>
-                                        <td align='center' style='padding: 0 0 20px 0;'>
-                                            <h1 style='color: {HeadingColor}; margin: 0; font-size: 28px; font-weight: bold;'>MeetLines</h1>
-                                        </td>
-                                    </tr>
-                                    
-                                    <!-- Content -->
-                                    <tr>
-                                        <td bgcolor='{CardColor}' style='padding: 40px; border-radius: 8px;'>
-                                            {content}
-                                        </td>
-                                    </tr>
-
-                                    <!-- Footer -->
-                                    <tr>
-                                        <td align='center' style='padding: 30px 20px; color: #8892b0; font-size: 12px;'>
-                                            <p style='margin: 0;'>&copy; {DateTime.Now.Year} MeetLines. Todos los derechos reservados.</p>
-                                            <p style='margin: 10px 0 0 0;'>
-                                                <a href='#' style='color: {PrimaryColor}; text-decoration: none;'>Términos</a> | 
-                                                <a href='#' style='color: {PrimaryColor}; text-decoration: none;'>Privacidad</a>
-                                            </p>
-                                        </td>
-                                    </tr>
-                                </table>
-                            </td>
-                        </tr>
-                    </table>
-                </body>
-                </html>";
+            return $@"<!DOCTYPE html>
+<html lang='es'>
+<head>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <title>{title}</title>
+    <style>
+        * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+        body {{ 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: {BackgroundColor}; 
+            color: {TextColor}; 
+            line-height: 1.6; 
+            min-height: 100vh; 
+        }}
+        .container {{ 
+            max-width: 600px; 
+            margin: 40px auto; 
+            background: {CardColor}; 
+            border-radius: 12px; 
+            overflow: hidden; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); 
+            border: 1px solid rgba(100, 102, 241, 0.2); 
+        }}
+        .header {{ 
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(99, 102, 241, 0.1) 100%); 
+            padding: 40px 30px; 
+            text-align: center; 
+            border-bottom: 1px solid rgba(100, 102, 241, 0.3); 
+        }}
+        .logo {{ 
+            font-size: 32px; 
+            font-weight: bold; 
+            color: {HeadingColor}; 
+            margin-bottom: 10px; 
+            letter-spacing: 1px; 
+        }}
+        .content {{ 
+            padding: 40px; 
+        }}
+        .greeting {{ 
+            font-size: 24px; 
+            color: {HeadingColor}; 
+            margin-bottom: 20px; 
+            font-weight: 600; 
+        }}
+        .message {{ 
+            font-size: 16px; 
+            color: {TextColor}; 
+            margin-bottom: 25px; 
+            line-height: 1.7; 
+        }}
+        .message p {{ 
+            margin-bottom: 15px; 
+        }}
+        .button-container {{ 
+            text-align: center; 
+            margin: 30px 0; 
+        }}
+        .button {{ 
+            display: inline-block; 
+            background: {PrimaryColor}; 
+            color: #ffffff; 
+            padding: 14px 32px; 
+            text-decoration: none; 
+            border-radius: 6px; 
+            font-weight: 600; 
+            font-size: 16px; 
+            transition: all 0.3s ease; 
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3); 
+        }}
+        .button:hover {{ 
+            background: #4f46e5; 
+            transform: translateY(-2px); 
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4); 
+        }}
+        .footer {{ 
+            background: rgba(10, 10, 30, 0.5); 
+            padding: 30px 25px; 
+            text-align: center; 
+            border-top: 1px solid rgba(100, 102, 241, 0.2); 
+        }}
+        .footer-text {{ 
+            font-size: 12px; 
+            color: #8892b0; 
+            margin-bottom: 15px; 
+            line-height: 1.5; 
+        }}
+        .social-links {{ 
+            margin-top: 15px; 
+        }}
+        .social-link {{ 
+            color: {PrimaryColor}; 
+            text-decoration: none; 
+            margin: 0 10px; 
+            font-size: 12px; 
+        }}
+        .social-link:hover {{ 
+            color: {AccentColor}; 
+        }}
+        .highlight {{ 
+            background: rgba(100, 102, 241, 0.1); 
+            padding: 20px; 
+            border-radius: 8px; 
+            border-left: 4px solid {PrimaryColor}; 
+            margin: 20px 0; 
+        }}
+    </style>
+</head>
+<body>
+    <div class='container'>
+        <div class='header'>
+            <div class='logo'>MeetLines</div>
+        </div>
+        <div class='content'>
+            {content}
+        </div>
+        <div class='footer'>
+            <div class='footer-text'>
+                © {DateTime.Now.Year} MeetLines. Todos los derechos reservados.<br>
+                Este es un email automático, por favor no respondas a este mensaje.
+            </div>
+            <div class='social-links'>
+                <a href='#' class='social-link'>Términos</a>
+                <a href='#' class='social-link'>Privacidad</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>";
         }
 
         private string BuildButton(string text, string url)
         {
             return $@"
-                <table width='100%' border='0' cellspacing='0' cellpadding='0' style='margin: 30px 0;'>
-                    <tr>
-                        <td align='center'>
-                            <table border='0' cellspacing='0' cellpadding='0'>
-                                <tr>
-                                    <td align='center' bgcolor='{PrimaryColor}' style='padding: 14px 28px; border-radius: 6px;'>
-                                        <a href='{url}' target='_blank' style='font-size: 16px; font-family: Arial, sans-serif; color: #ffffff; text-decoration: none; font-weight: bold; display: inline-block;'>{text}</a>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>";
+                <div class='button-container'>
+                    <a href='{url}' class='button'>{text}</a>
+                </div>";
         }
 
         private string BuildInfoBox(string content, string borderColor = AccentColor)
@@ -103,13 +180,17 @@ namespace MeetLines.Infrastructure.Services
         public string BuildPasswordReset(string userName, string resetUrl)
         {
             var content = $@"
-                <h2 style='color: {HeadingColor}; margin-top: 0;'>Recuperación de Contraseña</h2>
-                <p>Hola {userName}, hemos recibido una solicitud para restablecer la contraseña de tu cuenta en MeetLines.</p>
+                <div class='greeting'>Recuperación de Contraseña</div>
+                <div class='message'>
+                    <p>Hola {userName}, hemos recibido una solicitud para restablecer la contraseña de tu cuenta en MeetLines.</p>
+                </div>
                 
                 {BuildButton("Restablecer Contraseña", resetUrl)}
                 
-                <p style='font-size: 14px; margin-top: 20px;'>Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
-                <p style='font-size: 14px; color: #8892b0;'>El enlace expirará en 1 hora.</p>";
+                <div class='message'>
+                    <p>Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
+                    <p style='color: #8892b0;'>El enlace expirará en 1 hora.</p>
+                </div>";
 
             return BuildBaseHtml(content, "Recuperar contraseña");
         }
