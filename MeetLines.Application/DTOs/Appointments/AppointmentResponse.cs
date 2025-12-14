@@ -6,6 +6,7 @@ namespace MeetLines.Application.DTOs.Appointments
     {
         public int Id { get; set; }
         public Guid ProjectId { get; set; }
+        public string? ProjectName { get; set; }
         public int ServiceId { get; set; }
         public string? ServiceName { get; set; }
         public Guid? EmployeeId { get; set; }
