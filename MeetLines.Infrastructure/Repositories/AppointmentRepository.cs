@@ -68,6 +68,18 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IEnumerable<Appointment>> GetByAppUserIdAsync(Guid appUserId, CancellationToken ct = default)
+        {
+            return await _context.Appointments
+                .AsNoTracking()
+                .Include(a => a.Service)
+                .Include(a => a.Employee)
+                .Include(a => a.Project)
+                .Where(x => x.AppUserId == appUserId)
+                .OrderByDescending(x => x.StartTime)
+                .ToListAsync(ct);
+        }
+
         public async Task AddAsync(Appointment appointment, CancellationToken ct = default)
         {
             _context.Appointments.Add(appointment);

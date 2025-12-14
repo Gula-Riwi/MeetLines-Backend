@@ -93,6 +93,9 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IGetProjectServicesUseCase, GetProjectServicesUseCase>();
             services.AddScoped<IGetServiceByIdUseCase, GetServiceByIdUseCase>();
 
+            // Client Appointments Use Case
+            services.AddScoped<MeetLines.Application.UseCases.Client.Appointments.IClientAppointmentUseCase, MeetLines.Application.UseCases.Client.Appointments.ClientAppointmentUseCase>();
+
             // Registrar validadores de FluentValidation
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             
