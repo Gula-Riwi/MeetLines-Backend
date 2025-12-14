@@ -7,6 +7,7 @@ using MeetLines.Application.DTOs.BotSystem;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Entities;
 using MeetLines.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace MeetLines.Application.Services
 {
@@ -16,17 +17,29 @@ namespace MeetLines.Application.Services
         private readonly IAppointmentRepository _appointmentRepository;
         private readonly IAppUserRepository _appUserRepository;
         private readonly IConversationRepository _conversationRepository;
+        private readonly IProjectRepository _projectRepository;
+        private readonly ISaasUserRepository _saasUserRepository;
+        private readonly IEmailService _emailService;
+        private readonly ILogger<CustomerFeedbackService> _logger;
 
         public CustomerFeedbackService(
             ICustomerFeedbackRepository repository,
             IAppointmentRepository appointmentRepository,
             IAppUserRepository appUserRepository,
-            IConversationRepository conversationRepository)
+            IConversationRepository conversationRepository,
+            IProjectRepository projectRepository,
+            ISaasUserRepository saasUserRepository,
+            IEmailService emailService,
+            ILogger<CustomerFeedbackService> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _appointmentRepository = appointmentRepository ?? throw new ArgumentNullException(nameof(appointmentRepository));
             _appUserRepository = appUserRepository ?? throw new ArgumentNullException(nameof(appUserRepository));
             _conversationRepository = conversationRepository ?? throw new ArgumentNullException(nameof(conversationRepository));
+            _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
+            _saasUserRepository = saasUserRepository ?? throw new ArgumentNullException(nameof(saasUserRepository));
+            _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<IEnumerable<CustomerFeedbackDto>> GetByProjectIdAsync(Guid projectId, int page = 1, int pageSize = 50, CancellationToken ct = default)
@@ -98,6 +111,43 @@ namespace MeetLines.Application.Services
                     customerName: request.CustomerName ?? request.CustomerPhone
                 );
                 await _conversationRepository.CreateAsync(resetConvo, ct);
+            }
+
+            // 4. Negative Feedback Alert (Rating <= 3)
+            if (request.Rating <= 3)
+            {
+                try
+                {
+                    // Fetch Project and Owner
+                    var project = await _projectRepository.GetAsync(request.ProjectId, ct);
+                    if (project != null)
+                    {
+                        var owner = await _saasUserRepository.GetByIdAsync(project.UserId, ct);
+                        if (owner != null && !string.IsNullOrEmpty(owner.Email))
+                        {
+                            await _emailService.SendNegativeFeedbackAlertAsync(
+                                owner.Email,
+                                owner.Name ?? "Propietario",
+                                request.CustomerName ?? request.CustomerPhone,
+                                request.CustomerPhone,
+                                request.Rating,
+                                request.Comment,
+                                project.Name
+                            );
+                            _logger.LogInformation($"Alert sent to owner {owner.Email} for low rating ({request.Rating})");
+                            
+                            // Update OwnerNotified flag
+                            // Note: entity is already created. We can update it implicitly or explicitly.
+                            // Ideally, we passed 'OwnerNotified = true' to constructor if we did this before creating,
+                            // but since creating is done, let's leave it simple or do a quick update.
+                            // For performance, sticking to just email is fine for now as requested.
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to send negative feedback alert email");
+                }
             }
 
             return MapToDto(created);
