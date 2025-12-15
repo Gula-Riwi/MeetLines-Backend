@@ -62,6 +62,11 @@ namespace MeetLines.Application.UseCases.Projects
 
                 project.UpdateDetails(request.Name, request.Industry, request.Description, request.Address, request.City, request.Country, request.Latitude, request.Longitude);
 
+                if (!string.IsNullOrWhiteSpace(request.ProfilePhotoUrl))
+                {
+                    project.UpdateProfilePhoto(request.ProfilePhotoUrl, request.ProfilePhotoPublicId ?? string.Empty);
+                }
+
                 // Update WhatsApp integration fields if provided
                 if (!string.IsNullOrWhiteSpace(request.WhatsappVerifyToken) || !string.IsNullOrWhiteSpace(request.WhatsappPhoneNumberId) || !string.IsNullOrWhiteSpace(request.WhatsappAccessToken) || !string.IsNullOrWhiteSpace(request.WhatsappForwardWebhook))
                 {
@@ -96,6 +101,7 @@ namespace MeetLines.Application.UseCases.Projects
             Status = project.Status,
             CreatedAt = project.CreatedAt,
             UpdatedAt = project.UpdatedAt,
+            ProfilePhotoUrl = project.ProfilePhotoUrl,
             WhatsappPhoneNumberId = project.WhatsappPhoneNumberId,
             WhatsappForwardWebhook = project.WhatsappForwardWebhook
         };
