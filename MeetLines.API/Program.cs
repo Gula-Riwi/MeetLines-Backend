@@ -280,4 +280,11 @@ RecurringJob.AddOrUpdate<MeetLines.API.Jobs.ReactivationJob>(
     new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc }
 );
 
+RecurringJob.AddOrUpdate<MeetLines.API.Jobs.DailyMetricsJob>(
+    "daily-bot-metrics-snapshot",
+    job => job.ExecuteAsync(),
+    Cron.Daily(5), // 05:00 UTC = 00:00 Columbia (Midnight)
+    new RecurringJobOptions { TimeZone = TimeZoneInfo.Utc }
+);
+
 app.Run();

@@ -92,6 +92,14 @@ namespace MeetLines.Infrastructure.Repositories
             await _context.SaveChangesAsync(ct);
         }
 
+        public async Task<IEnumerable<Appointment>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default)
+        {
+            return await _context.Appointments
+                .Where(a => a.ProjectId == projectId && a.StartTime >= startDate && a.StartTime <= endDate)
+                .OrderBy(a => a.StartTime)
+                .ToListAsync(ct);
+        }
+
         public async Task<decimal> GetTotalSalesAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default)
         {
             return await _context.Appointments

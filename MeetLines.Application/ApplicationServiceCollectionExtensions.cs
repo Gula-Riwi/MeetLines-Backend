@@ -100,6 +100,7 @@ namespace MeetLines.Application.IoC
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             
             services.AddScoped<ICustomerReactivationService, CustomerReactivationService>();
+            services.AddScoped<IAiInsightsService, AiInsightsService>();
 
             return services;
         }
