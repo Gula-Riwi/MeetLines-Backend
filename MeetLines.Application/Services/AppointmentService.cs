@@ -437,7 +437,23 @@ namespace MeetLines.Application.Services
 
         public async Task<Result<IEnumerable<AppointmentResponse>>> GetAppointmentsAsync(Guid userId, string userRole, Guid projectId, CancellationToken ct = default)
         {
-            var appointments = await _appointmentRepository.GetByProjectIdAsync(projectId, ct);
+            // Logic Request:
+            // 1. Owner (SaaS User) / Admin: See ALL appointments.
+            // 2. Employee: See ONLY assigned appointments.
+            // 3. Filter: Future appointments only (asc order).
+            
+            // Check for Owner (Role 'User' from SaaS Login) or Employee Admin
+            bool isOwnerOrAdmin = string.Equals(userRole, "User", StringComparison.OrdinalIgnoreCase) || 
+                                  string.Equals(userRole, "admin", StringComparison.OrdinalIgnoreCase) ||
+                                  string.Equals(userRole, "owner", StringComparison.OrdinalIgnoreCase);
+
+            Guid? filterEmployeeId = isOwnerOrAdmin ? null : userId;
+            
+            // "Las que ya pasaron no" -> From Now onwards.
+            // Using Local Time Offset logic (-5)
+            var minDate = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(-5));
+
+            var appointments = await _appointmentRepository.GetDashboardAppointmentsAsync(projectId, filterEmployeeId, minDate, ct);
             
             var responses = appointments.Select(a => new AppointmentResponse
             {
@@ -445,12 +461,17 @@ namespace MeetLines.Application.Services
                 ProjectId = a.ProjectId,
                 ServiceId = a.ServiceId,
                 EmployeeId = a.EmployeeId,
+                EmployeeName = a.Employee?.Name, // Include Name if available
                 StartTime = a.StartTime.ToOffset(TimeSpan.FromHours(-5)),
                 EndTime = a.EndTime.ToOffset(TimeSpan.FromHours(-5)),
                 Price = a.PriceSnapshot,
                 Currency = a.CurrencySnapshot,
                 Status = a.Status,
                 UserNotes = a.UserNotes,
+                ClientName = a.AppUser?.FullName, // Fallback if ClientName not in entity (using Navigation prop)
+                ClientEmail = a.AppUser?.Email,
+                ClientPhone = a.AppUser?.Phone,
+                MeetingLink = a.MeetingLink,
                 CreatedAt = a.CreatedAt
             });
 

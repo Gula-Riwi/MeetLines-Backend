@@ -147,6 +147,22 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<IEnumerable<Appointment>> GetDashboardAppointmentsAsync(Guid projectId, Guid? employeeId, DateTimeOffset minDate, CancellationToken ct = default)
+        {
+            var query = _context.Appointments
+                .AsNoTracking()
+                .Where(x => x.ProjectId == projectId && x.StartTime >= minDate);
+
+            if (employeeId.HasValue)
+            {
+                query = query.Where(x => x.EmployeeId == employeeId.Value);
+            }
+
+            return await query
+                .OrderBy(x => x.StartTime) // Ascending (Closest to Farthest)
+                .ToListAsync(ct);
+        }
+
         public async Task<IEnumerable<Appointment>> GetInactiveCustomersAsync(Guid projectId, DateTimeOffset sinceDate, CancellationToken ct = default)
         {
             var now = DateTimeOffset.UtcNow;

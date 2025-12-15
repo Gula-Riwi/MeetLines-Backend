@@ -32,6 +32,7 @@ namespace MeetLines.API.Controllers
         private readonly IGetPublicProjectsUseCase _getPublicProjectsUseCase;
         private readonly IGetPublicProjectEmployeesUseCase _getPublicProjectEmployeesUseCase;
         private readonly IUploadProjectPhotoUseCase _uploadProjectPhotoUseCase;
+        private readonly IUploadProjectProfilePhotoUseCase _uploadProjectProfilePhotoUseCase;
         private readonly IGetProjectPhotosUseCase _getProjectPhotosUseCase;
         private readonly IDeleteProjectPhotoUseCase _deleteProjectPhotoUseCase;
         private readonly IConfiguration _configuration;
@@ -47,6 +48,7 @@ namespace MeetLines.API.Controllers
             IGetPublicProjectsUseCase getPublicProjectsUseCase,
             IGetPublicProjectEmployeesUseCase getPublicProjectEmployeesUseCase,
             IUploadProjectPhotoUseCase uploadProjectPhotoUseCase,
+            IUploadProjectProfilePhotoUseCase uploadProjectProfilePhotoUseCase,
             IGetProjectPhotosUseCase getProjectPhotosUseCase,
             IDeleteProjectPhotoUseCase deleteProjectPhotoUseCase,
             IConfiguration configuration)
@@ -61,6 +63,7 @@ namespace MeetLines.API.Controllers
             _getPublicProjectsUseCase = getPublicProjectsUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectsUseCase));
             _getPublicProjectEmployeesUseCase = getPublicProjectEmployeesUseCase ?? throw new ArgumentNullException(nameof(getPublicProjectEmployeesUseCase));
             _uploadProjectPhotoUseCase = uploadProjectPhotoUseCase ?? throw new ArgumentNullException(nameof(uploadProjectPhotoUseCase));
+            _uploadProjectProfilePhotoUseCase = uploadProjectProfilePhotoUseCase ?? throw new ArgumentNullException(nameof(uploadProjectProfilePhotoUseCase));
             _getProjectPhotosUseCase = getProjectPhotosUseCase ?? throw new ArgumentNullException(nameof(getProjectPhotosUseCase));
             _deleteProjectPhotoUseCase = deleteProjectPhotoUseCase ?? throw new ArgumentNullException(nameof(deleteProjectPhotoUseCase));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -197,6 +200,42 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
+        /// Sube una foto de perfil para un proyecto
+        /// </summary>
+        [HttpPost("{projectId}/profile-photo")]
+        public async Task<IActionResult> UploadProfilePhoto(Guid projectId, [FromForm] MeetLines.API.DTOs.UploadProjectPhotoRequest request, CancellationToken ct)
+        {
+            var userId = GetUserId();
+            var file = request.File;
+
+            if (file == null || file.Length == 0)
+            {
+                return BadRequest(new { error = "No file uploaded" });
+            }
+
+            // Validar tipo de archivo (solo imágenes)
+            if (!file.ContentType.StartsWith("image/"))
+            {
+                return BadRequest(new { error = "File must be an image" });
+            }
+
+            try 
+            {
+                using var stream = file.OpenReadStream();
+                var resultUrl = await _uploadProjectProfilePhotoUseCase.ExecuteAsync(userId, projectId, stream, file.FileName, ct);
+                return Ok(new { url = resultUrl });
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return Forbid();
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new { error = ex.Message });
+            }
+        }
+
+        /// <summary>
         /// Obtiene todas las fotos de un proyecto
         /// </summary>
         [HttpGet("{projectId}/photos")]
@@ -320,7 +359,11 @@ namespace MeetLines.API.Controllers
                     Id = project.Id.ToString(),
                     Name = project.Name,
                     Industry = project.Industry ?? string.Empty,
-                    Description = project.Description ?? string.Empty
+                    Description = project.Description ?? string.Empty,
+                    Address = project.Address,
+                    City = project.City,
+                    Country = project.Country,
+                    ProfilePhotoUrl = project.ProfilePhotoUrl
                 };
 
                 return Ok(dto);
@@ -365,7 +408,8 @@ namespace MeetLines.API.Controllers
                  City = project.City ?? string.Empty,
                  Country = project.Country ?? string.Empty,
                  Latitude = project.Latitude,
-                 Longitude = project.Longitude
+                 Longitude = project.Longitude,
+                 ProfilePhotoUrl = project.ProfilePhotoUrl
              };
 
              return Ok(dto);

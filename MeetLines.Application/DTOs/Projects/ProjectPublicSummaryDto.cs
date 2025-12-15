@@ -29,5 +29,8 @@ namespace MeetLines.Application.DTOs.Projects
         // Calculated distance in KM if coordinates provided
         [JsonPropertyName("distanceKm")]
         public double? DistanceKm { get; set; }
+
+        [JsonPropertyName("profilePhotoUrl")]
+        public string? ProfilePhotoUrl { get; set; }
     }
 }
