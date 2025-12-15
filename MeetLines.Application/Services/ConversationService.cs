@@ -105,6 +105,21 @@ namespace MeetLines.Application.Services
             await _repository.UpdateAsync(conversation, ct);
         }
 
+        public async Task ReturnToBotAsync(Guid projectId, string customerPhone, CancellationToken ct = default)
+        {
+            var entity = new Conversation(
+                projectId: projectId,
+                customerPhone: customerPhone,
+                customerMessage: "(Manual Return to Bot)",
+                botResponse: "(Bot Active)",
+                botType: "reception" // Resets state to 'reception'
+            );
+            
+            // We do NOT mark as handled by human, effectively resetting the 'flag' if logic checks the latest record.
+            
+            await _repository.CreateAsync(entity, ct);
+        }
+
         private ConversationDto MapToDto(Conversation entity)
         {
             return new ConversationDto
