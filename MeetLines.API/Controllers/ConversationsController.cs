@@ -52,6 +52,7 @@ namespace MeetLines.API.Controllers
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
             [FromQuery] Guid? assignedToEmployeeId = null,
+            [FromQuery] bool activeOnly = false,
             CancellationToken ct = default)
         {
             var request = new ConversationListRequest
@@ -63,7 +64,8 @@ namespace MeetLines.API.Controllers
                 RequiresHumanAttention = requiresHumanAttention,
                 AssignedToEmployeeId = assignedToEmployeeId,
                 StartDate = startDate,
-                EndDate = endDate
+                EndDate = endDate,
+                ActiveAssignmentsOnly = activeOnly
             };
 
             var conversations = await _service.GetByProjectIdAsync(request, ct);

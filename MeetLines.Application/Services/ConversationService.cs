@@ -21,6 +21,12 @@ namespace MeetLines.Application.Services
 
         public async Task<IEnumerable<ConversationDto>> GetByProjectIdAsync(ConversationListRequest request, CancellationToken ct = default)
         {
+            if (request.ActiveAssignmentsOnly && request.AssignedToEmployeeId.HasValue)
+            {
+                var activeConversations = await _repository.GetActiveAssignmentsAsync(request.ProjectId, request.AssignedToEmployeeId.Value, ct);
+                return activeConversations.Select(MapToDto);
+            }
+
             var skip = (request.Page - 1) * request.PageSize;
             var conversations = await _repository.GetByProjectIdAsync(
                 request.ProjectId, 

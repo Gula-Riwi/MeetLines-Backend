@@ -155,5 +155,22 @@ namespace MeetLines.Infrastructure.Repositories
                 .OrderByDescending(c => c.CreatedAt)
                 .FirstOrDefaultAsync(ct);
         }
+
+        public async Task<IEnumerable<Conversation>> GetActiveAssignmentsAsync(Guid projectId, Guid employeeId, CancellationToken ct = default)
+        {
+            // Get IDs of the latest conversation for each phone
+            var latestIdsQuery = _context.Conversations
+                .Where(x => x.ProjectId == projectId)
+                .GroupBy(x => x.CustomerPhone)
+                .Select(g => g.OrderByDescending(c => c.CreatedAt).Select(c => c.Id).FirstOrDefault());
+
+            // Filter for only those that are assigned to this employee and are in human mode
+            return await _context.Conversations
+                .Where(c => latestIdsQuery.Contains(c.Id) 
+                            && c.HandledByEmployeeId == employeeId 
+                            && (c.BotType == "human_agent" || c.BotType == "human_paused"))
+                .OrderByDescending(c => c.CreatedAt)
+                .ToListAsync(ct);
+        }
     }
 }
