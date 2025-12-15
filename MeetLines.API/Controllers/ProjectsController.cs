@@ -239,6 +239,7 @@ namespace MeetLines.API.Controllers
         /// Obtiene todas las fotos de un proyecto
         /// </summary>
         [HttpGet("{projectId}/photos")]
+        [AllowAnonymous]
         public async Task<IActionResult> GetProjectPhotos(Guid projectId, CancellationToken ct)
         {
             var result = await _getProjectPhotosUseCase.ExecuteAsync(projectId, ct);

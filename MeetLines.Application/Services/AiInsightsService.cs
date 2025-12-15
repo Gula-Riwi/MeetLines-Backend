@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using MeetLines.Application.DTOs.AiInsights;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace MeetLines.Application.Services
 {
@@ -15,39 +16,50 @@ namespace MeetLines.Application.Services
         private readonly ICustomerFeedbackRepository _feedbackRepo;
         private readonly IConversationRepository _conversationRepo;
         private readonly IBotMetricsRepository _botMetricsRepo;
+        private readonly ILogger<AiInsightsService> _logger;
 
         public AiInsightsService(
             IAppointmentRepository appointmentRepo,
             ICustomerFeedbackRepository feedbackRepo,
             IConversationRepository conversationRepo,
-            IBotMetricsRepository botMetricsRepo)
+            IBotMetricsRepository botMetricsRepo,
+            ILogger<AiInsightsService> logger)
         {
             _appointmentRepo = appointmentRepo;
             _feedbackRepo = feedbackRepo;
             _conversationRepo = conversationRepo;
             _botMetricsRepo = botMetricsRepo;
+            _logger = logger;
         }
 
         public async Task<AiInsightsDto> GetProjectInsightsAsync(Guid projectId, CancellationToken ct = default)
         {
-            var now = DateTimeOffset.UtcNow;
-            var thirtyDaysAgo = now.AddDays(-30);
-
-            // Parallel execution for performance
-            var staffingTask = CalculateStaffingRecommendationsAsync(projectId, thirtyDaysAgo, now, ct);
-            var churnTask = CalculateChurnRiskAsync(projectId, thirtyDaysAgo, now, ct);
-            var revenueTask = CalculateRevenueOpportunityAsync(projectId, thirtyDaysAgo, now, ct);
-            var goldenHourTask = CalculateGoldenHourAsync(projectId, thirtyDaysAgo, now, ct);
-
-            await Task.WhenAll(staffingTask, churnTask, revenueTask, goldenHourTask);
-
-            return new AiInsightsDto
+            try 
             {
-                Staffing = await staffingTask,
-                ChurnRisks = await churnTask,
-                Revenue = await revenueTask,
-                Optimization = await goldenHourTask
-            };
+                var now = DateTimeOffset.UtcNow;
+                var thirtyDaysAgo = now.AddDays(-30);
+
+                // Parallel execution for performance
+                var staffingTask = CalculateStaffingRecommendationsAsync(projectId, thirtyDaysAgo, now, ct);
+                var churnTask = CalculateChurnRiskAsync(projectId, thirtyDaysAgo, now, ct);
+                var revenueTask = CalculateRevenueOpportunityAsync(projectId, thirtyDaysAgo, now, ct);
+                var goldenHourTask = CalculateGoldenHourAsync(projectId, thirtyDaysAgo, now, ct);
+
+                await Task.WhenAll(staffingTask, churnTask, revenueTask, goldenHourTask);
+
+                return new AiInsightsDto
+                {
+                    Staffing = await staffingTask,
+                    ChurnRisks = await churnTask,
+                    Revenue = await revenueTask,
+                    Optimization = await goldenHourTask
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error calculating AI Insights for ProjectId: {ProjectId}", projectId);
+                throw; // Re-throw to maintain 500 response, but now we have logs
+            }
         }
 
         private async Task<StaffingRecommendationDto> CalculateStaffingRecommendationsAsync(Guid projectId, DateTimeOffset start, DateTimeOffset end, CancellationToken ct)

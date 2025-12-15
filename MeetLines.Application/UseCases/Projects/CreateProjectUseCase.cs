@@ -105,6 +105,11 @@ namespace MeetLines.Application.UseCases.Projects
                     request.Latitude,
                     request.Longitude);
 
+                if (!string.IsNullOrWhiteSpace(request.ProfilePhotoUrl))
+                {
+                    project.UpdateProfilePhoto(request.ProfilePhotoUrl, request.ProfilePhotoPublicId ?? string.Empty);
+                }
+
                 await _projectRepository.AddAsync(project, ct);
 
 
