@@ -19,7 +19,7 @@ namespace MeetLines.Domain.Repositories
         /// <summary>
         /// Gets all conversations for a project
         /// </summary>
-        Task<IEnumerable<Conversation>> GetByProjectIdAsync(Guid projectId, int skip, int take, CancellationToken ct = default);
+        Task<IEnumerable<Conversation>> GetByProjectIdAsync(Guid projectId, int skip, int take, string? botType = null, bool? requiresHumanAttention = null, Guid? assignedToEmployeeId = null, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, CancellationToken ct = default);
         
         /// <summary>
         /// Gets conversations by customer phone

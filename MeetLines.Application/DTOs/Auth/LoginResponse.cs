@@ -12,5 +12,6 @@ namespace MeetLines.Application.DTOs.Auth
         public bool IsEmailVerified { get; set; }
         public DateTimeOffset ExpiresAt { get; set; }
         public bool RequiresTwoFactor { get; set; }
+        public Guid? ProjectId { get; set; }
     }
 }

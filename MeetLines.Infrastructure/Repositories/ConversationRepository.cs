@@ -29,11 +29,38 @@ namespace MeetLines.Infrastructure.Repositories
                 .FirstOrDefaultAsync(x => x.Id == id, ct);
         }
 
-        public async Task<IEnumerable<Conversation>> GetByProjectIdAsync(Guid projectId, int skip, int take, CancellationToken ct = default)
+        public async Task<IEnumerable<Conversation>> GetByProjectIdAsync(Guid projectId, int skip, int take, string? botType = null, bool? requiresHumanAttention = null, Guid? assignedToEmployeeId = null, DateTimeOffset? startDate = null, DateTimeOffset? endDate = null, CancellationToken ct = default)
         {
-            return await _context.Conversations
+            var query = _context.Conversations
                 .AsNoTracking()
-                .Where(x => x.ProjectId == projectId)
+                .Where(x => x.ProjectId == projectId);
+
+            if (!string.IsNullOrEmpty(botType))
+            {
+                query = query.Where(x => x.BotType == botType);
+            }
+
+            if (requiresHumanAttention.HasValue)
+            {
+                query = query.Where(x => x.RequiresHumanAttention == requiresHumanAttention.Value);
+            }
+
+            if (assignedToEmployeeId.HasValue)
+            {
+                query = query.Where(x => x.HandledByEmployeeId == assignedToEmployeeId.Value);
+            }
+
+            if (startDate.HasValue)
+            {
+                query = query.Where(x => x.CreatedAt >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(x => x.CreatedAt <= endDate.Value);
+            }
+
+            return await query
                 .OrderByDescending(x => x.CreatedAt)
                 .Skip(skip)
                 .Take(take)
