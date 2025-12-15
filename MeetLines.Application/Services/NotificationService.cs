@@ -376,6 +376,27 @@ namespace MeetLines.Application.Services
             }
         }
 
+        public async Task<bool> SendWhatsAppMessageAsync(Guid projectId, string toPhone, string message, CancellationToken ct = default)
+        {
+            try
+            {
+                var project = await _projectRepository.GetAsync(projectId, ct);
+                if (project == null || string.IsNullOrEmpty(project.WhatsappPhoneNumberId) || string.IsNullOrEmpty(project.WhatsappAccessToken))
+                {
+                    _logger.LogWarning($"Project {projectId} missing WhatsApp credentials.");
+                    return false;
+                }
+
+                // Call the private method
+                return await SendToMetaAsync(project.WhatsappPhoneNumberId, project.WhatsappAccessToken, toPhone, message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send WhatsApp message via service.");
+                return false;
+            }
+        }
+
         public async Task SendNegativeFeedbackAlertAsync(Guid projectId, string message, CancellationToken ct = default)
         {
             try
