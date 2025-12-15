@@ -230,12 +230,33 @@ namespace MeetLines.Application.Services
                     await _conversationRepository.CreateAsync(conversationState);
                 }
 
-                // 5. Trigger Webhook
-                var webhookUrl = appointment.Project?.WhatsappForwardWebhook;
-                if (string.IsNullOrEmpty(webhookUrl))
+                // 5. Determine Channel and Trigger Webhook
+                var userEmail = appointment.AppUser?.Email ?? "";
+                bool isTelegram = userEmail.EndsWith("@telegram.temp");
+                
+                string? webhookUrl;
+                string? botToken = null;
+                
+                if (isTelegram)
                 {
-                    _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no WhatsappForwardWebhook configured.");
-                    return;
+                    webhookUrl = appointment.Project?.TelegramForwardWebhook;
+                    botToken = appointment.Project?.TelegramBotToken;
+                    
+                    if (string.IsNullOrEmpty(webhookUrl))
+                    {
+                        _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no TelegramForwardWebhook configured.");
+                        return;
+                    }
+                }
+                else
+                {
+                    webhookUrl = appointment.Project?.WhatsappForwardWebhook;
+                    
+                    if (string.IsNullOrEmpty(webhookUrl))
+                    {
+                        _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no WhatsappForwardWebhook configured.");
+                        return;
+                    }
                 }
 
                 var payload = new 
@@ -248,7 +269,9 @@ namespace MeetLines.Application.Services
                      employeeName = appointment.Employee?.Name,
                      serviceName = appointment.Service?.Name,
                      date = appointment.StartTime.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                     ratingMessage = message 
+                     ratingMessage = message,
+                     channel = isTelegram ? "telegram" : "whatsapp",
+                     botToken = botToken // Solo presente para Telegram
                 };
                  
                 var client = _httpClientFactory.CreateClient();
