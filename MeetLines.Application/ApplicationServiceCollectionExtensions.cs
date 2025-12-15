@@ -101,6 +101,7 @@ namespace MeetLines.Application.IoC
             
             services.AddScoped<ICustomerReactivationService, CustomerReactivationService>();
             services.AddScoped<IAiInsightsService, AiInsightsService>();
+            services.AddScoped<IEmployeeAssignmentService, EmployeeAssignmentService>();
 
             return services;
         }

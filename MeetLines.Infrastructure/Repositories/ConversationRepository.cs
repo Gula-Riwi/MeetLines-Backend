@@ -120,5 +120,14 @@ namespace MeetLines.Infrastructure.Repositories
 
             return await query.AverageAsync(x => x.Sentiment, ct);
         }
+
+        public async Task<Conversation?> GetLatestByPhoneAsync(Guid projectId, string phone, CancellationToken ct = default)
+        {
+            return await _context.Conversations
+                .AsNoTracking()
+                .Where(c => c.ProjectId == projectId && c.CustomerPhone.EndsWith(phone))
+                .OrderByDescending(c => c.CreatedAt)
+                .FirstOrDefaultAsync(ct);
+        }
     }
 }

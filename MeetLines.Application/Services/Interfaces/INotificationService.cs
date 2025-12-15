@@ -6,5 +6,7 @@ namespace MeetLines.Application.Services.Interfaces
     {
         Task SendAppointmentReminderAsync(int appointmentId);
         Task SendFeedbackRequestAsync(int appointmentId);
+        Task SendNegativeFeedbackAlertAsync(Guid projectId, string message, CancellationToken ct = default);
+        Task NotifyEmployeeOfNewChatAsync(Guid projectId, Guid employeeId, string customerPhone, CancellationToken ct = default);
     }
 }
