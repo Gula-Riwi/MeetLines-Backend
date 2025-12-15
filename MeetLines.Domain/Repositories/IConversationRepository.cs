@@ -65,5 +65,6 @@ namespace MeetLines.Domain.Repositories
         /// Gets average sentiment for a project
         /// </summary>
         Task<double?> GetAverageSentimentAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default);
+        Task<Conversation?> GetLatestByPhoneAsync(Guid projectId, string phone, CancellationToken ct = default);
     }
 }

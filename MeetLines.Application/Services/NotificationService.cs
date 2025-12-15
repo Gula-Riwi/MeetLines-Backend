@@ -327,5 +327,38 @@ namespace MeetLines.Application.Services
                 return false;
             }
         }
+        public async Task NotifyEmployeeOfNewChatAsync(Guid projectId, Guid employeeId, string customerPhone, CancellationToken ct = default)
+        {
+            try
+            {
+                // In V1, we just log it or maybe send email if Email is configured.
+                // Ideally this sends a WhatsApp Template to the Employee's phone.
+                _logger.LogInformation("🔔 NOTIFICATION: Employee {EmployeeId} assigned to chat with {CustomerPhone}", employeeId, customerPhone);
+                
+                // TODO: Retrieve employee email/phone and send actual alert
+                // For now, this placeholder ensures the service call succeeds.
+                await Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to notify employee of new chat.");
+            }
+        }
+
+        public async Task SendNegativeFeedbackAlertAsync(Guid projectId, string message, CancellationToken ct = default)
+        {
+            try
+            {
+                // V1: Log the alert. Ideally this sends an email or WhatsApp to the Project Owner.
+                _logger.LogWarning("🚨 NEGATIVE FEEDBACK ALERT for Project {ProjectId}: {Message}", projectId, message);
+                
+                // Placeholder for actual sending logic
+                await Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send negative feedback alert.");
+            }
+        }
     }
 }
