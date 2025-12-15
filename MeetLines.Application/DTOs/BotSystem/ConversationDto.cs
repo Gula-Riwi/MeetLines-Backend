@@ -59,6 +59,7 @@ namespace MeetLines.Application.DTOs.BotSystem
         public Guid? AssignedToEmployeeId { get; set; }
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? EndDate { get; set; }
+        public bool ActiveAssignmentsOnly { get; set; } = false;
     }
 
     /// <summary>

@@ -66,5 +66,10 @@ namespace MeetLines.Domain.Repositories
         /// </summary>
         Task<double?> GetAverageSentimentAsync(Guid projectId, DateTimeOffset? startDate = null, CancellationToken ct = default);
         Task<Conversation?> GetLatestByPhoneAsync(Guid projectId, string phone, CancellationToken ct = default);
+        
+        /// <summary>
+        /// Gets active conversations assigned to a specific employee (Latest message is assigned and bot type is human_agent)
+        /// </summary>
+        Task<IEnumerable<Conversation>> GetActiveAssignmentsAsync(Guid projectId, Guid employeeId, CancellationToken ct = default);
     }
 }
