@@ -165,8 +165,20 @@ namespace MeetLines.API.Controllers
         [HttpPost("phone/{phone}/return-to-bot")]
         public async Task<ActionResult> ReturnToBot(Guid projectId, string phone, CancellationToken ct = default)
         {
-            await _service.ReturnToBotAsync(projectId, phone, ct);
-            return Ok(new { success = true });
+            try
+            {
+                await _service.ReturnToBotAsync(projectId, phone, ct);
+                return Ok(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new 
+                { 
+                    error = "Internal Server Error in ReturnToBot", 
+                    details = ex.Message, 
+                    inner = ex.InnerException?.Message 
+                });
+            }
         }
     }
 }
