@@ -115,6 +115,12 @@ namespace MeetLines.Domain.Entities
             Sentiment = sentiment;
         }
 
+        public void SetBotType(string botType)
+        {
+            if (string.IsNullOrWhiteSpace(botType)) throw new ArgumentException("BotType cannot be empty", nameof(botType));
+            BotType = botType;
+        }
+
         public string? LastMessage { get; private set; }
         public string? LastResponse { get; private set; }
 
