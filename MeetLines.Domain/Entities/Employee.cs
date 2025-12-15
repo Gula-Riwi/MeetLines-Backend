@@ -9,6 +9,7 @@ namespace MeetLines.Domain.Entities
         public string Name { get; private set; }
         public string Username { get; private set; }
         public string Email { get; private set; } // New Property
+        public string Phone { get; private set; } // New Property for WhatsApp Alerts
         public string PasswordHash { get; private set; }
         public string Role { get; private set; }
         public string Area { get; private set; } // New Property
@@ -22,6 +23,7 @@ namespace MeetLines.Domain.Entities
             Name = null!; 
             Username = null!; 
             Email = null!;
+            Phone = null!;
             PasswordHash = null!; 
             Role = null!; 
             Area = null!;
@@ -42,6 +44,7 @@ namespace MeetLines.Domain.Entities
             Name = name;
             Username = username.ToLowerInvariant(); // Normalize username
             Email = email;
+            Phone = ""; // Default empty
             PasswordHash = passwordHash;
             Role = role;
             Area = area;
@@ -50,13 +53,14 @@ namespace MeetLines.Domain.Entities
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
-        public void UpdateDetails(string name, string role, string area)
+        public void UpdateDetails(string name, string role, string area, string? phone = null)
         {
             if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name cannot be empty", nameof(name));
             
             Name = name;
             Role = role;
             Area = area;
+            if (phone != null) Phone = phone;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 

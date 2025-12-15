@@ -10,6 +10,6 @@ namespace MeetLines.Application.Services.Interfaces
         /// <summary>
         /// Assigns a conversation to an available employee using Round-Robin (Least Recently Assigned) logic.
         /// </summary>
-        Task<Employee?> AssignConversationToEmployeeAsync(Guid projectId, Guid conversationId, CancellationToken ct = default);
+        Task<Employee?> AssignConversationToEmployeeAsync(Guid projectId, Guid conversationId, string customerPhone, CancellationToken ct = default);
     }
 }
