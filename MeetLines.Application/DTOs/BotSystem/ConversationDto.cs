@@ -56,6 +56,7 @@ namespace MeetLines.Application.DTOs.BotSystem
         public int PageSize { get; set; } = 50;
         public string? BotType { get; set; }
         public bool? RequiresHumanAttention { get; set; }
+        public Guid? AssignedToEmployeeId { get; set; }
         public DateTimeOffset? StartDate { get; set; }
         public DateTimeOffset? EndDate { get; set; }
     }

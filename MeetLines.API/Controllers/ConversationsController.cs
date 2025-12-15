@@ -51,6 +51,7 @@ namespace MeetLines.API.Controllers
             [FromQuery] bool? requiresHumanAttention = null,
             [FromQuery] DateTime? startDate = null,
             [FromQuery] DateTime? endDate = null,
+            [FromQuery] Guid? assignedToEmployeeId = null,
             CancellationToken ct = default)
         {
             var request = new ConversationListRequest
@@ -60,6 +61,7 @@ namespace MeetLines.API.Controllers
                 PageSize = pageSize,
                 BotType = botType,
                 RequiresHumanAttention = requiresHumanAttention,
+                AssignedToEmployeeId = assignedToEmployeeId,
                 StartDate = startDate,
                 EndDate = endDate
             };

@@ -22,25 +22,16 @@ namespace MeetLines.Application.Services
         public async Task<IEnumerable<ConversationDto>> GetByProjectIdAsync(ConversationListRequest request, CancellationToken ct = default)
         {
             var skip = (request.Page - 1) * request.PageSize;
-            var conversations = await _repository.GetByProjectIdAsync(request.ProjectId, skip, request.PageSize, ct);
-
-            // Apply additional filters
-            if (!string.IsNullOrEmpty(request.BotType))
-            {
-                conversations = conversations.Where(x => x.BotType == request.BotType);
-            }
-
-            if (request.RequiresHumanAttention.HasValue)
-            {
-                conversations = conversations.Where(x => x.RequiresHumanAttention == request.RequiresHumanAttention.Value);
-            }
-
-            if (request.StartDate.HasValue || request.EndDate.HasValue)
-            {
-                var start = request.StartDate ?? DateTime.MinValue;
-                var end = request.EndDate ?? DateTime.MaxValue;
-                conversations = conversations.Where(x => x.CreatedAt >= start && x.CreatedAt <= end);
-            }
+            var conversations = await _repository.GetByProjectIdAsync(
+                request.ProjectId, 
+                skip, 
+                request.PageSize, 
+                request.BotType, 
+                request.RequiresHumanAttention, 
+                request.AssignedToEmployeeId,
+                (request.StartDate ?? DateTime.MinValue) == DateTime.MinValue ? null : request.StartDate, 
+                (request.EndDate ?? DateTime.MaxValue) == DateTime.MaxValue ? null : request.EndDate, 
+                ct);
 
             return conversations.Select(MapToDto);
         }
