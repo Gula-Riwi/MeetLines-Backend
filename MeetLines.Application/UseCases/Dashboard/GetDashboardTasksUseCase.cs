@@ -67,10 +67,8 @@ namespace MeetLines.Application.UseCases.Dashboard
                             // Assuming AppUser has Name property (Standard)
                             // Ref: Step 532 AppUser size 2759 bytes.
                             // I'll assume it has Name.
-                             clientName = ((dynamic)user).Name; // Using dynamic to bypass strict "Name" check if I assume standard AppUser. 
-                             // Wait, dynamic is bad. I should cast or assume property.
-                             // I'll assume AppUser entity has Name. I won't use dynamic.
-                             // If build fails, I fix.
+                            // Fix: Use correct property FullName and cast properly
+                            clientName = user.FullName;
                         }
                     }
 

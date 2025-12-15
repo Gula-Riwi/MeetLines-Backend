@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using MeetLines.Domain.Entities;
 using MeetLines.Domain.Repositories;
 using MeetLines.Infrastructure.Data;
@@ -13,10 +14,12 @@ namespace MeetLines.Infrastructure.Repositories
     public class AppointmentRepository : IAppointmentRepository
     {
         private readonly MeetLinesPgDbContext _context;
+        private readonly Microsoft.Extensions.Logging.ILogger<AppointmentRepository> _logger; // Add logger
 
-        public AppointmentRepository(MeetLinesPgDbContext context)
+        public AppointmentRepository(MeetLinesPgDbContext context, Microsoft.Extensions.Logging.ILogger<AppointmentRepository> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _logger = logger;
         }
 
         public async Task<Appointment?> GetByIdAsync(int id, CancellationToken ct = default)
@@ -156,6 +159,7 @@ namespace MeetLines.Infrastructure.Repositories
         public async Task<IEnumerable<Appointment>> GetDashboardAppointmentsAsync(Guid projectId, Guid? employeeId, DateTimeOffset minDate, CancellationToken ct = default)
         {
             var minDateUtc = minDate.ToUniversalTime();
+            _logger.LogInformation($"[Repo] GetDashboardAppointments. Project: {projectId}, Employee: {employeeId}, MinDate: {minDate} (UTC: {minDateUtc})");
 
             var query = _context.Appointments
                 .AsNoTracking()
@@ -166,9 +170,12 @@ namespace MeetLines.Infrastructure.Repositories
                 query = query.Where(x => x.EmployeeId == employeeId.Value);
             }
 
-            return await query
+            var result = await query
                 .OrderBy(x => x.StartTime) // Ascending (Closest to Farthest)
                 .ToListAsync(ct);
+
+            _logger.LogInformation($"[Repo] Found {result.Count} appointments.");
+            return result;
         }
 
         public async Task<IEnumerable<Appointment>> GetInactiveCustomersAsync(Guid projectId, DateTimeOffset sinceDate, CancellationToken ct = default)
