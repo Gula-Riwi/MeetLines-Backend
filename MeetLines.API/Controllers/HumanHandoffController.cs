@@ -86,19 +86,7 @@ namespace MeetLines.API.Controllers
             });
         }
 
-        [HttpPost("phone/{phone}/return-to-bot")]
-        public async Task<IActionResult> ReturnToBot(Guid projectId, string phone, CancellationToken ct = default)
-        {
-            if (!ValidateApiKey()) return Unauthorized("Invalid API Key");
 
-            var conversation = await _conversationRepo.GetLatestByPhoneAsync(projectId, phone, ct);
-            if (conversation == null) return NotFound("Conversation not found");
-
-            conversation.SetBotType("reception");
-            await _conversationRepo.UpdateAsync(conversation, ct);
-            
-            return Ok(new { Status = "Bot Reactivated", BotType = "reception" });
-        }
     }
 
     namespace Api.DTOs 
