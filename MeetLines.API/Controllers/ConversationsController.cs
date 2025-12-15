@@ -158,5 +158,15 @@ namespace MeetLines.API.Controllers
             await _service.UpdateAsync(id, request, ct);
             return Ok(new { success = true });
         }
+
+        /// <summary>
+        /// Returns conversation control to the bot (creates a reset record)
+        /// </summary>
+        [HttpPost("phone/{phone}/return-to-bot")]
+        public async Task<ActionResult> ReturnToBot(Guid projectId, string phone, CancellationToken ct = default)
+        {
+            await _service.ReturnToBotAsync(projectId, phone, ct);
+            return Ok(new { success = true });
+        }
     }
 }
