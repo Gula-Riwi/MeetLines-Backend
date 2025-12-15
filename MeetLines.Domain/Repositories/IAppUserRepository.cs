@@ -12,5 +12,6 @@ namespace MeetLines.Domain.Repositories
         Task<AppUser?> GetByPhoneAsync(string phone, CancellationToken ct = default);
         Task AddAsync(AppUser appUser, CancellationToken ct = default);
         Task UpdateAsync(AppUser appUser, CancellationToken ct = default);
+        Task<AppUser?> GetByExternalProviderIdAsync(string providerId, CancellationToken ct = default);
     }
 }

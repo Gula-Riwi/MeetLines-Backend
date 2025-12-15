@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using MeetLines.Application.DTOs.AiInsights;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Repositories;
-using Microsoft.Extensions.Logging;
 
 namespace MeetLines.Application.Services
 {
@@ -16,50 +15,39 @@ namespace MeetLines.Application.Services
         private readonly ICustomerFeedbackRepository _feedbackRepo;
         private readonly IConversationRepository _conversationRepo;
         private readonly IBotMetricsRepository _botMetricsRepo;
-        private readonly ILogger<AiInsightsService> _logger;
 
         public AiInsightsService(
             IAppointmentRepository appointmentRepo,
             ICustomerFeedbackRepository feedbackRepo,
             IConversationRepository conversationRepo,
-            IBotMetricsRepository botMetricsRepo,
-            ILogger<AiInsightsService> logger)
+            IBotMetricsRepository botMetricsRepo)
         {
             _appointmentRepo = appointmentRepo;
             _feedbackRepo = feedbackRepo;
             _conversationRepo = conversationRepo;
             _botMetricsRepo = botMetricsRepo;
-            _logger = logger;
         }
 
         public async Task<AiInsightsDto> GetProjectInsightsAsync(Guid projectId, CancellationToken ct = default)
         {
-            try 
+            var now = DateTimeOffset.UtcNow;
+            var thirtyDaysAgo = now.AddDays(-30);
+
+            // Parallel execution for performance
+            var staffingTask = CalculateStaffingRecommendationsAsync(projectId, thirtyDaysAgo, now, ct);
+            var churnTask = CalculateChurnRiskAsync(projectId, thirtyDaysAgo, now, ct);
+            var revenueTask = CalculateRevenueOpportunityAsync(projectId, thirtyDaysAgo, now, ct);
+            var goldenHourTask = CalculateGoldenHourAsync(projectId, thirtyDaysAgo, now, ct);
+
+            await Task.WhenAll(staffingTask, churnTask, revenueTask, goldenHourTask);
+
+            return new AiInsightsDto
             {
-                var now = DateTimeOffset.UtcNow;
-                var thirtyDaysAgo = now.AddDays(-30);
-
-                // Sequential execution to avoid DbContext threading issues
-                var staffing = await CalculateStaffingRecommendationsAsync(projectId, thirtyDaysAgo, now, ct);
-                var churnRisks = await CalculateChurnRiskAsync(projectId, thirtyDaysAgo, now, ct);
-                var revenue = await CalculateRevenueOpportunityAsync(projectId, thirtyDaysAgo, now, ct);
-                var goldenHour = await CalculateGoldenHourAsync(projectId, thirtyDaysAgo, now, ct);
-
-                return new AiInsightsDto
-                {
-                    Staffing = staffing,
-                    ChurnRisks = churnRisks,
-                    Revenue = revenue,
-                    Optimization = goldenHour
-                };
-
-
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error calculating AI Insights for ProjectId: {ProjectId}", projectId);
-                throw; // Re-throw to maintain 500 response, but now we have logs
-            }
+                Staffing = await staffingTask,
+                ChurnRisks = await churnTask,
+                Revenue = await revenueTask,
+                Optimization = await goldenHourTask
+            };
         }
 
         private async Task<StaffingRecommendationDto> CalculateStaffingRecommendationsAsync(Guid projectId, DateTimeOffset start, DateTimeOffset end, CancellationToken ct)
@@ -68,12 +56,8 @@ namespace MeetLines.Application.Services
             if (!appointments.Any()) return new StaffingRecommendationDto { Message = "No hay suficientes datos de citas." };
 
             // Logic: Find busiest hour block across all days
-            // Fix: Convert to Project Timezone (-05:00) BEFORE grouping
-            var projectOffset = TimeSpan.FromHours(-5);
-            
             var groupedByDayHour = appointments
-                .Select(a => a.StartTime.ToOffset(projectOffset))
-                .GroupBy(dt => new { dt.DayOfWeek, dt.Hour })
+                .GroupBy(a => new { a.StartTime.DayOfWeek, Hour = a.StartTime.Hour })
                 .Select(g => new { g.Key.DayOfWeek, g.Key.Hour, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .FirstOrDefault();
@@ -169,11 +153,8 @@ namespace MeetLines.Application.Services
             
             if (!conversations.Any()) return new GoldenHourDto { Suggestion = "Faltan datos de conversaciones." };
 
-            // Fix: Use fixed offset for Colombia (-05:00) instead of Server Local Time
-            var projectOffset = TimeSpan.FromHours(-5);
-
             var busiestSlot = conversations
-                .GroupBy(c => c.CreatedAt.ToOffset(projectOffset).Hour) 
+                .GroupBy(c => c.CreatedAt.ToLocalTime().Hour) // Group by local hour (simplified) - ideal needs Project Timezone
                 .Select(g => new { Hour = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .FirstOrDefault();
