@@ -314,8 +314,8 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.UpdatedAt).HasDefaultValueSql("now()");
                 b.HasOne<Project>().WithMany().HasForeignKey(e => e.ProjectId).OnDelete(DeleteBehavior.Cascade);
                 b.HasIndex(x => x.ProjectId).HasDatabaseName("idx_employees_project");
-                b.HasIndex(x => x.Username).IsUnique().HasDatabaseName("idx_employees_username");
-                b.HasIndex(x => x.Email).IsUnique().HasDatabaseName("idx_employees_email"); // Ensure unique email
+                b.HasIndex(x => new { x.ProjectId, x.Username }).IsUnique().HasDatabaseName("idx_employees_project_username");
+                b.HasIndex(x => new { x.ProjectId, x.Email }).IsUnique().HasDatabaseName("idx_employees_project_email"); // Unique per project
                 b.HasIndex(x => x.Area).HasDatabaseName("idx_employees_area"); // Index for Area lookups
             });
 

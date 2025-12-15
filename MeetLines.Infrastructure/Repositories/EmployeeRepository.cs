@@ -34,7 +34,7 @@ namespace MeetLines.Infrastructure.Repositories
         public async Task<Employee?> GetByUsernameAsync(string username, CancellationToken ct = default)
         {
             var tenantId = _tenantFilter.GetCurrentTenantId();
-            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Username == username, ct);
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.ProjectId == tenantId && e.Username == username, ct);
             if (employee == null) return null;
             if (tenantId.HasValue && employee.ProjectId != tenantId.Value) return null;
             return employee;
@@ -43,7 +43,7 @@ namespace MeetLines.Infrastructure.Repositories
         public async Task<Employee?> GetByEmailAsync(string email, CancellationToken ct = default)
         {
             var tenantId = _tenantFilter.GetCurrentTenantId();
-            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.Email == email, ct);
+            var employee = await _context.Employees.FirstOrDefaultAsync(e => e.ProjectId == tenantId && e.Email == email, ct);
             if (employee == null) return null;
             if (tenantId.HasValue && employee.ProjectId != tenantId.Value) return null;
             return employee;
