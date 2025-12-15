@@ -20,6 +20,11 @@ namespace MeetLines.Domain.Repositories
         /// Returns the latest appointment for each inactive customer.
         /// </summary>
         Task<IEnumerable<Appointment>> GetInactiveCustomersAsync(Guid projectId, DateTimeOffset sinceDate, CancellationToken ct = default);
+
+        /// <summary>
+        /// Gets appointments within a date range (for stats/insights)
+        /// </summary>
+        Task<IEnumerable<Appointment>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default);
         
         // Dashboard Stats
         Task<decimal> GetTotalSalesAsync(Guid projectId, DateTimeOffset starDate, DateTimeOffset endDate, CancellationToken ct = default);
