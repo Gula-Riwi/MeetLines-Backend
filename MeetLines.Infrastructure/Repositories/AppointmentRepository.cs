@@ -45,7 +45,7 @@ namespace MeetLines.Infrastructure.Repositories
                 .AsNoTracking()
                 .Where(x => x.ProjectId == projectId && 
                             x.AppUserId == appUserId && 
-                            x.StartTime == startTime && 
+                            x.StartTime == startTime.ToUniversalTime() && 
                             x.Status != "cancelled")
                 .FirstOrDefaultAsync(ct);
         }
@@ -82,31 +82,45 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task AddAsync(Appointment appointment, CancellationToken ct = default)
         {
+            // Ensure stored time is UTC
+            appointment.StartTime = appointment.StartTime.ToUniversalTime();
+            appointment.EndTime = appointment.EndTime.ToUniversalTime();
+            
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync(ct);
         }
 
         public async Task UpdateAsync(Appointment appointment, CancellationToken ct = default)
         {
+            // Ensure stored time is UTC
+            appointment.StartTime = appointment.StartTime.ToUniversalTime();
+            appointment.EndTime = appointment.EndTime.ToUniversalTime();
+
             _context.Appointments.Update(appointment);
             await _context.SaveChangesAsync(ct);
         }
 
         public async Task<IEnumerable<Appointment>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default)
         {
+            var startUtc = startDate.ToUniversalTime();
+            var endUtc = endDate.ToUniversalTime();
+
             return await _context.Appointments
-                .Where(a => a.ProjectId == projectId && a.StartTime >= startDate && a.StartTime <= endDate)
+                .Where(a => a.ProjectId == projectId && a.StartTime >= startUtc && a.StartTime <= endUtc)
                 .OrderBy(a => a.StartTime)
                 .ToListAsync(ct);
         }
 
         public async Task<decimal> GetTotalSalesAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default)
         {
+            var startUtc = startDate.ToUniversalTime();
+            var endUtc = endDate.ToUniversalTime();
+
             return await _context.Appointments
                 .Where(x => x.ProjectId == projectId && 
                             x.Status == "completed" && 
-                            x.StartTime >= startDate && 
-                            x.StartTime <= endDate)
+                            x.StartTime >= startUtc && 
+                            x.StartTime <= endUtc)
                 .SumAsync(x => x.PriceSnapshot, ct);
         }
 
@@ -133,8 +147,8 @@ namespace MeetLines.Infrastructure.Repositories
 
             if (fromDate.HasValue)
             {
-                query = query.Where(x => x.StartTime >= fromDate.Value);
-                query = query.Where(x => x.StartTime >= fromDate.Value);
+                var fromUtc = fromDate.Value.ToUniversalTime();
+                query = query.Where(x => x.StartTime >= fromUtc);
             }
 
             return await query
@@ -144,9 +158,11 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task<IEnumerable<Appointment>> GetDashboardAppointmentsAsync(Guid projectId, Guid? employeeId, DateTimeOffset minDate, CancellationToken ct = default)
         {
+            var minDateUtc = minDate.ToUniversalTime();
+
             var query = _context.Appointments
                 .AsNoTracking()
-                .Where(x => x.ProjectId == projectId && x.StartTime >= minDate);
+                .Where(x => x.ProjectId == projectId && x.StartTime >= minDateUtc);
 
             if (employeeId.HasValue)
             {
@@ -161,6 +177,7 @@ namespace MeetLines.Infrastructure.Repositories
         public async Task<IEnumerable<Appointment>> GetInactiveCustomersAsync(Guid projectId, DateTimeOffset sinceDate, CancellationToken ct = default)
         {
             var now = DateTimeOffset.UtcNow;
+            var sinceDateUtc = sinceDate.ToUniversalTime();
             
             // Logic: 
             // 1. Group by AppUser
@@ -180,7 +197,7 @@ namespace MeetLines.Infrastructure.Repositories
                     LastDate = g.Max(x => x.StartTime),
                     FutureCount = g.Count(x => x.StartTime > now)
                 })
-                .Where(x => x.LastDate < sinceDate && x.FutureCount == 0)
+                .Where(x => x.LastDate < sinceDateUtc && x.FutureCount == 0)
                 .ToListAsync(ct);
 
             // Now hydrate the actual appointment objects (the latest one)
@@ -199,7 +216,7 @@ namespace MeetLines.Infrastructure.Repositories
             return appointments
                 .GroupBy(a => a.AppUserId)
                 .Select(g => g.OrderByDescending(x => x.StartTime).First())
-                .Where(x => x.StartTime < sinceDate) // Double check
+                .Where(x => x.StartTime < sinceDateUtc) // Double check
                 .ToList();
         }
     }
