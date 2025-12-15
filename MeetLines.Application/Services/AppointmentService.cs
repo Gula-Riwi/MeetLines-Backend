@@ -450,8 +450,8 @@ namespace MeetLines.Application.Services
             Guid? filterEmployeeId = isOwnerOrAdmin ? null : userId;
             
             // "Las que ya pasaron no" -> From Now onwards.
-            // Using Local Time Offset logic (-5)
-            var minDate = DateTimeOffset.UtcNow.ToOffset(TimeSpan.FromHours(-5));
+            // Using UTC to match Database storage
+            var minDate = DateTimeOffset.UtcNow;
 
             var appointments = await _appointmentRepository.GetDashboardAppointmentsAsync(projectId, filterEmployeeId, minDate, ct);
             

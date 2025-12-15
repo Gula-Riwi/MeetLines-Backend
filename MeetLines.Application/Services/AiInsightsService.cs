@@ -56,8 +56,12 @@ namespace MeetLines.Application.Services
             if (!appointments.Any()) return new StaffingRecommendationDto { Message = "No hay suficientes datos de citas." };
 
             // Logic: Find busiest hour block across all days
+            // Fix: Convert to Project Timezone (-05:00) BEFORE grouping
+            var projectOffset = TimeSpan.FromHours(-5);
+            
             var groupedByDayHour = appointments
-                .GroupBy(a => new { a.StartTime.DayOfWeek, Hour = a.StartTime.Hour })
+                .Select(a => a.StartTime.ToOffset(projectOffset))
+                .GroupBy(dt => new { dt.DayOfWeek, dt.Hour })
                 .Select(g => new { g.Key.DayOfWeek, g.Key.Hour, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .FirstOrDefault();
@@ -153,8 +157,11 @@ namespace MeetLines.Application.Services
             
             if (!conversations.Any()) return new GoldenHourDto { Suggestion = "Faltan datos de conversaciones." };
 
+            // Fix: Use fixed offset for Colombia (-05:00) instead of Server Local Time
+            var projectOffset = TimeSpan.FromHours(-5);
+
             var busiestSlot = conversations
-                .GroupBy(c => c.CreatedAt.ToLocalTime().Hour) // Group by local hour (simplified) - ideal needs Project Timezone
+                .GroupBy(c => c.CreatedAt.ToOffset(projectOffset).Hour) 
                 .Select(g => new { Hour = g.Key, Count = g.Count() })
                 .OrderByDescending(x => x.Count)
                 .FirstOrDefault();
