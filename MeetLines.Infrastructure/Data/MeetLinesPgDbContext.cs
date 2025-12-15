@@ -9,7 +9,7 @@ namespace MeetLines.Infrastructure.Data
         public MeetLinesPgDbContext(DbContextOptions<MeetLinesPgDbContext> options) : base(options) { }
 
         public DbSet<SaasUser> SaasUsers { get; set; }
-        public DbSet<Subscription> Subscriptions { get; set; }
+        // public DbSet<Subscription> Subscriptions { get; set; } // DISABLED - Schema mismatch
         public DbSet<Project> Projects { get; set; }
         public DbSet<Channel> Channels { get; set; }
         public DbSet<Appointment> Appointments { get; set; }
@@ -61,16 +61,16 @@ namespace MeetLines.Infrastructure.Data
                 b.Property(x => x.TwoFactorSecret).HasColumnName("two_factor_secret").HasMaxLength(255);
             });
 
-            // Subscriptions
-            modelBuilder.Entity<Subscription>(b =>
-            {
-                b.ToTable("subscriptions");
-                b.HasKey(x => x.Id);
-                b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
-                b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
-                b.HasOne<SaasUser>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
-                b.HasIndex(x => x.UserId).HasDatabaseName("idx_subscriptions_user");
-            });
+            // Subscriptions (DISABLED - Schema mismatch)
+            // modelBuilder.Entity<Subscription>(b =>
+            // {
+            //     b.ToTable("subscriptions");
+            //     b.HasKey(x => x.Id);
+            //     b.Property(x => x.Id).HasDefaultValueSql("uuid_generate_v4()");
+            //     b.Property(x => x.CreatedAt).HasDefaultValueSql("now()");
+            //     b.HasOne<SaasUser>().WithMany().HasForeignKey(s => s.UserId).OnDelete(DeleteBehavior.Cascade);
+            //     b.HasIndex(x => x.UserId).HasDatabaseName("idx_subscriptions_user");
+            // });
 
             // Projects
             modelBuilder.Entity<Project>(b =>
