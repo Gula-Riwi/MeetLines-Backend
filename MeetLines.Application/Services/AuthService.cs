@@ -89,13 +89,12 @@ namespace MeetLines.Application.Services
 
                 await _userRepository.AddAsync(user, ct);
                 
-                // ===== CREAR SUSCRIPCIÓN GRATUITA =====
-                var freeSubscription = new Subscription(
-                    userId: user.Id,
-                    plan: "beginner",
-                    price: 0m
-                );
-                await _subscriptionRepository.AddAsync(freeSubscription, ct);
+                // ===== CREAR SUSCRIPCIÓN GRATUITA ===== (DISABLED - Schema mismatch)
+                // var freeSubscription = new Subscription(
+                //     userId: user.Id,
+                //     plan: "beginner"
+                // );
+                // await _subscriptionRepository.AddAsync(freeSubscription, ct);
 
                 // Crear token de verificación de email
                 var verificationToken = Guid.NewGuid().ToString("N");
@@ -317,13 +316,12 @@ namespace MeetLines.Application.Services
                     );
                     await _userRepository.AddAsync(user, ct);
                     
-                    // ===== CREAR SUSCRIPCIÓN GRATUITA PARA OAUTH
-                    var freeSubscription = new Subscription(
-                        userId: user.Id,
-                        plan: "beginner",
-                        price: 0m
-                    );
-                    await _subscriptionRepository.AddAsync(freeSubscription, ct);
+                    // ===== CREAR SUSCRIPCIÓN GRATUITA PARA OAUTH ===== (DISABLED - Schema mismatch)
+                    // var freeSubscription = new Subscription(
+                    //     userId: user.Id,
+                    //     plan: "beginner"
+                    // );
+                    // await _subscriptionRepository.AddAsync(freeSubscription, ct);
                     
                     // Enviar email de bienvenida
                     await _emailService.SendWelcomeEmailAsync(user.Email, user.Name);
