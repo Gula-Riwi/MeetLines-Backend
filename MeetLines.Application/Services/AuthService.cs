@@ -137,7 +137,7 @@ namespace MeetLines.Application.Services
                 var employee = await _employeeRepository.GetByUsernameAsync(request.Username, ct);
                 if (employee == null)
                 {
-                    return Result<LoginResponse>.Fail("Usuario o contraseña incorrectos");
+                    return Result<LoginResponse>.Fail("El usuario no existe"); // Specific error
                 }
 
                 // ✅ VALIDACIÓN: Verificar que el empleado pertenezca al tenant actual
@@ -147,17 +147,17 @@ namespace MeetLines.Application.Services
                 if (currentTenantId.HasValue && currentTenantId.Value != Guid.Empty && employee.ProjectId != currentTenantId.Value)
                 {
                     // El empleado no pertenece a este tenant/proyecto
-                    return Result<LoginResponse>.Fail("Usuario o contraseña incorrectos");
+                    return Result<LoginResponse>.Fail("El usuario no pertenece a este proyecto");
                 }
 
                 if (!employee.IsActive)
                 {
-                    return Result<LoginResponse>.Fail("Cuenta desactivada");
+                    return Result<LoginResponse>.Fail("La cuenta está desactivada");
                 }
 
                 if (!_passwordHasher.VerifyPassword(request.Password, employee.PasswordHash))
                 {
-                    return Result<LoginResponse>.Fail("Usuario o contraseña incorrectos");
+                    return Result<LoginResponse>.Fail("Contraseña incorrecta"); // Specific error
                 }
 
                 // Generar tokens para Empleado

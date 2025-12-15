@@ -31,6 +31,11 @@ namespace MeetLines.Domain.Repositories
         Task<IEnumerable<Appointment>> GetRecentAppointmentsAsync(Guid projectId, int limit, CancellationToken ct = default);
         Task<IEnumerable<Appointment>> GetEmployeeTasksAsync(Guid projectId, Guid? employeeId, DateTimeOffset? fromDate, CancellationToken ct = default);
         
+        /// <summary>
+        /// Gets future appointments for dashboard (filtered by employee if provided)
+        /// </summary>
+        Task<IEnumerable<Appointment>> GetDashboardAppointmentsAsync(Guid projectId, Guid? employeeId, DateTimeOffset minDate, CancellationToken ct = default);
+        
         Task AddAsync(Appointment appointment, CancellationToken ct = default);
         Task UpdateAsync(Appointment appointment, CancellationToken ct = default);
     }
