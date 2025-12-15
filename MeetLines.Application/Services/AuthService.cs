@@ -18,7 +18,7 @@ namespace MeetLines.Application.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IEmailService _emailService;
-        private readonly ISubscriptionRepository _subscriptionRepository;
+        // private readonly ISubscriptionRepository _subscriptionRepository; // DISABLED
         private readonly IDiscordWebhookService _discordService;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IEmployeePasswordResetTokenRepository _employeePasswordResetTokenRepository;
@@ -46,7 +46,7 @@ namespace MeetLines.Application.Services
             _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
             _jwtTokenService = jwtTokenService ?? throw new ArgumentNullException(nameof(jwtTokenService));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
-            _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
+            // _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository)); // DISABLED
             _discordService = discordService;
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _employeePasswordResetTokenRepository = employeePasswordResetTokenRepository ?? throw new ArgumentNullException(nameof(employeePasswordResetTokenRepository));
