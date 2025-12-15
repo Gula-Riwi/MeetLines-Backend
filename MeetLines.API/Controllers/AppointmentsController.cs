@@ -167,17 +167,37 @@ namespace MeetLines.API.Controllers
             Guid projectId,
             CancellationToken ct = default)
         {
-            var userId = Guid.Parse(User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value ?? throw new UnauthorizedAccessException());
-            var userRole = User.FindFirst("role")?.Value ?? "user";
-
-            var result = await _appointmentService.GetAppointmentsAsync(userId, userRole, projectId, ct);
-            
-            if (!result.IsSuccess)
+            try
             {
-                return BadRequest(new { error = result.Error });
-            }
+                var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) 
+                            ?? User.FindFirst("sub") 
+                            ?? User.FindFirst("userId");
 
-            return Ok(result.Value);
+                if (claim == null || !Guid.TryParse(claim.Value, out var userId))
+                {
+                   throw new UnauthorizedAccessException("User ID not found or invalid in token");
+                }
+
+                var userRole = User.FindFirst("role")?.Value ?? "user";
+
+                var result = await _appointmentService.GetAppointmentsAsync(userId, userRole, projectId, ct);
+                
+                if (!result.IsSuccess)
+                {
+                    return BadRequest(new { error = result.Error });
+                }
+
+                return Ok(result.Value);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { 
+                    error = "Internal Server Error in GetAppointments", 
+                    details = ex.Message, 
+                    innerException = ex.InnerException?.Message,
+                    stackTrace = ex.StackTrace 
+                });
+            }
         }
 
         [HttpPatch("appointments/{id}/status")]
