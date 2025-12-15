@@ -99,6 +99,8 @@ namespace MeetLines.Application.IoC
             // Registrar validadores de FluentValidation
             services.AddValidatorsFromAssemblyContaining<RegisterRequestValidator>();
             
+            services.AddScoped<ICustomerReactivationService, CustomerReactivationService>();
+
             return services;
         }
     }
