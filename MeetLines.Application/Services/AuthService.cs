@@ -93,7 +93,6 @@ namespace MeetLines.Application.Services
                 var freeSubscription = new Subscription(
                     userId: user.Id,
                     plan: "beginner",
-                    cycle: "monthly",
                     price: 0m
                 );
                 await _subscriptionRepository.AddAsync(freeSubscription, ct);
@@ -322,7 +321,6 @@ namespace MeetLines.Application.Services
                     var freeSubscription = new Subscription(
                         userId: user.Id,
                         plan: "beginner",
-                        cycle: "monthly",
                         price: 0m
                     );
                     await _subscriptionRepository.AddAsync(freeSubscription, ct);
