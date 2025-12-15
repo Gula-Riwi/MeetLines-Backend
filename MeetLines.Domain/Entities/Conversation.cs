@@ -104,6 +104,11 @@ namespace MeetLines.Domain.Entities
             HandledByEmployeeId = employeeId;
         }
 
+        public void MarkAsHandledByHuman()
+        {
+            HandledByHuman = true;
+        }
+
         public void UpdateIntent(string intent, double confidence)
         {
             Intent = intent;

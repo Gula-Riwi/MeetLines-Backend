@@ -18,15 +18,18 @@ namespace MeetLines.API.Controllers
         private readonly IConversationRepository _conversationRepository;
         private readonly INotificationService _notificationService;
         private readonly IProjectRepository _projectRepository;
+        private readonly IEmployeeRepository _employeeRepository;
 
         public CustomerChatController(
             IConversationRepository conversationRepository,
             INotificationService notificationService,
-            IProjectRepository projectRepository)
+            IProjectRepository projectRepository,
+            IEmployeeRepository employeeRepository)
         {
             _conversationRepository = conversationRepository;
             _notificationService = notificationService;
             _projectRepository = projectRepository;
+            _employeeRepository = employeeRepository;
         }
 
         /// <summary>
@@ -64,41 +67,62 @@ namespace MeetLines.API.Controllers
         [HttpPost("{phone}/send")]
         public async Task<IActionResult> SendMessage(Guid projectId, string phone, [FromBody] CustomerSendMessageRequest request, CancellationToken ct = default)
         {
-            if (string.IsNullOrWhiteSpace(request.Message))
-                return BadRequest("Message cannot be empty");
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Message))
+                    return BadRequest("Message cannot be empty");
 
-            // 1. Send via WhatsApp API
-            var success = await _notificationService.SendWhatsAppMessageAsync(projectId, phone, request.Message, ct);
-            
-            if (!success)
-                return StatusCode(500, "Failed to send message to WhatsApp API");
+                // 1. Send via WhatsApp API
+                var success = await _notificationService.SendWhatsAppMessageAsync(projectId, phone, request.Message, ct);
+                
+                if (!success)
+                    return StatusCode(500, "Failed to send message to WhatsApp API");
 
-            // 2. Log to Database (Create a Conversation record representing this outbound message)
-            // We store it as a conversation where CustomerMessage is potentially empty/system or we use a specific convention?
-            // Actually, Conversation entity structure is Customer Says -> Bot Responds.
-            // For Human -> Customer, it's slightly different. 
-            // We can treat Employee as "Bot" in the schema context or we need a Message entity.
-            // Given current schema constraints, we will create a Conversation record where:
-            // CustomerMessage = "(Employee Reply)" or similar marker
-            // BotResponse = Actual Employee Message
-            // BotType = "human_agent"
-            
-            var employeeId = Guid.Parse(User.FindFirst("sub")?.Value ?? User.FindFirst("userId")?.Value ?? throw new UnauthorizedAccessException());
+                // 2. Log to Database
+                var claim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier) 
+                            ?? User.FindFirst("sub") 
+                            ?? User.FindFirst("userId");
 
-            var conv = new Conversation(
-                projectId: projectId,
-                customerPhone: phone,
-                customerMessage: "(Human Reply)", // Marker
-                botResponse: request.Message,
-                botType: "human_agent",
-                customerName: null // Optional
-            );
-            
-            conv.AssignToEmployee(employeeId);
-            
-            await _conversationRepository.CreateAsync(conv);
+                if (claim == null || !Guid.TryParse(claim.Value, out var userId))
+                {
+                    throw new UnauthorizedAccessException("User ID not found or invalid in token");
+                }
 
-            return Ok(new { success = true, conversationId = conv.Id });
+                var conv = new Conversation(
+                    projectId: projectId,
+                    customerPhone: phone,
+                    customerMessage: "(Human Reply)", 
+                    botResponse: request.Message,
+                    botType: "human_agent",
+                    customerName: null
+                );
+                
+                // Check if User is Employee to avoid FK constraint violation
+                var isEmployee = await _employeeRepository.GetByIdAsync(userId, ct) != null;
+                
+                if (isEmployee)
+                {
+                    conv.AssignToEmployee(userId);
+                }
+                else
+                {
+                    // For Admins/Owners who are not in Employees table
+                    conv.MarkAsHandledByHuman();
+                }
+                
+                await _conversationRepository.CreateAsync(conv);
+
+                return Ok(new { success = true, conversationId = conv.Id });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new 
+                { 
+                    error = "Internal Server Error in SendMessage", 
+                    details = ex.Message,
+                    stackTrace = ex.StackTrace 
+                });
+            }
         }
     }
 
