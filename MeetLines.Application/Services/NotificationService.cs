@@ -19,6 +19,8 @@ namespace MeetLines.Application.Services
         private readonly ILogger<NotificationService> _logger;
         private readonly IConfiguration _configuration;
         private readonly IConversationRepository _conversationRepository;
+        private readonly IEmployeeRepository _employeeRepository;
+        private readonly IProjectRepository _projectRepository;
 
         public NotificationService(
             IAppointmentRepository appointmentRepository,
@@ -26,7 +28,9 @@ namespace MeetLines.Application.Services
             IHttpClientFactory httpClientFactory,
             ILogger<NotificationService> logger,
             IConfiguration configuration,
-            IConversationRepository conversationRepository)
+            IConversationRepository conversationRepository,
+            IEmployeeRepository employeeRepository,
+            IProjectRepository projectRepository)
         {
             _appointmentRepository = appointmentRepository;
             _botConfigRepository = botConfigRepository;
@@ -34,6 +38,8 @@ namespace MeetLines.Application.Services
             _logger = logger;
             _configuration = configuration;
             _conversationRepository = conversationRepository;
+            _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
+            _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
         }
 
         public async Task SendAppointmentReminderAsync(int appointmentId)
@@ -331,13 +337,38 @@ namespace MeetLines.Application.Services
         {
             try
             {
-                // In V1, we just log it or maybe send email if Email is configured.
-                // Ideally this sends a WhatsApp Template to the Employee's phone.
-                _logger.LogInformation("🔔 NOTIFICATION: Employee {EmployeeId} assigned to chat with {CustomerPhone}", employeeId, customerPhone);
+                // 1. Get Employee to check Phone
+                var employee = await _employeeRepository.GetByIdAsync(employeeId, ct);
+                if (employee == null || string.IsNullOrEmpty(employee.Phone))
+                {
+                    _logger.LogWarning("NotificationSkipped: Employee {EmployeeId} has no phone configured.", employeeId);
+                    return;
+                }
+
+                // 2. Get Project for Credentials
+                var project = await _projectRepository.GetAsync(projectId, ct);
+                if (project == null || string.IsNullOrEmpty(project.WhatsappPhoneNumberId) || string.IsNullOrEmpty(project.WhatsappAccessToken))
+                {
+                    _logger.LogWarning("NotificationSkipped: Project {ProjectId} missing WhatsApp credentials.", projectId);
+                    return;
+                }
+
+                // 3. Prepare Alert Message
+                // "🔔 *NUEVO CHAT ASIGNADO* 🔔\n\nEl cliente +57301... requiere atención.\nPor favor revisa el Dashboard."
+                var message = $"🔔 *NUEVO CHAT ASIGNADO* 🔔\n\nEl cliente +{customerPhone} requiere atención.\nPor favor revisa el Dashboard.";
+
+                // 4. Send
+                var targetPhone = employee.Phone.Replace("+", "").Trim();
+                // Ensure country code if missing (assuming 57 for now or logic from SendToMeta)
+                if (targetPhone.Length == 10 && !targetPhone.StartsWith("57")) targetPhone = "57" + targetPhone;
+
+                var success = await SendToMetaAsync(project.WhatsappPhoneNumberId, project.WhatsappAccessToken, targetPhone, message);
                 
-                // TODO: Retrieve employee email/phone and send actual alert
-                // For now, this placeholder ensures the service call succeeds.
-                await Task.CompletedTask;
+                if (success)
+                    _logger.LogInformation("✅ Alert sent to Employee {Name} ({Phone})", employee.Name, targetPhone);
+                else
+                    _logger.LogWarning("❌ Failed to send alert to Employee {Name}", employee.Name);
+
             }
             catch (Exception ex)
             {
