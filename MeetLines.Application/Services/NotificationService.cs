@@ -230,9 +230,38 @@ namespace MeetLines.Application.Services
                     await _conversationRepository.CreateAsync(conversationState);
                 }
 
-                // 5. Determine Channel and Trigger Webhook
-                var userEmail = appointment.AppUser?.Email ?? "";
-                bool isTelegram = userEmail.EndsWith("@telegram.temp");
+                // 5. Determine Channel
+                // Lógica de detección basada en configuración y formato de número
+                bool isTelegram = false;
+                var phone = appointment.AppUser?.Phone?.Replace("+", "").Trim();
+                
+                // Si hay token de Telegram y el webhook de telegram
+                bool hasTelegramConfig = !string.IsNullOrEmpty(appointment.Project?.TelegramBotToken) && 
+                                         !string.IsNullOrEmpty(appointment.Project?.TelegramForwardWebhook);
+                                         
+                // Si hay configuración de WhatsApp
+                bool hasWhatsappConfig = !string.IsNullOrEmpty(appointment.Project?.WhatsappPhoneNumberId) &&
+                                         !string.IsNullOrEmpty(appointment.Project?.WhatsappForwardWebhook);
+
+                if (hasTelegramConfig && !hasWhatsappConfig)
+                {
+                    // Solo existe Telegram
+                    isTelegram = true;
+                }
+                else if (hasTelegramConfig && hasWhatsappConfig)
+                {
+                    // Ambos existen, decidir por formato del número
+                    // WhatsApp suele ser largo (11+ dígitos c/ país) o empezar por country code.
+                    // Telegram ChatID suele ser numérico simple, a veces negativo para grupos, pero para usuarios es positivo.
+                    // Asumimos que si mide 10 dígitos o menos y no empieza por 57 (Colombia), podría ser Telegram ID.
+                    // O si el email explícitamente es telegram.temp (por si acaso se usa en el futuro)
+                    
+                    if ((appointment.AppUser?.Email?.EndsWith("@telegram.temp") == true) || 
+                        (phone?.Length <= 10 && !phone.StartsWith("57"))) 
+                    {
+                        isTelegram = true;
+                    }
+                }
                 
                 string? webhookUrl;
                 string? botToken = null;
@@ -244,7 +273,7 @@ namespace MeetLines.Application.Services
                     
                     if (string.IsNullOrEmpty(webhookUrl))
                     {
-                        _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no TelegramForwardWebhook configured.");
+                        _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has Telegram Config but no TelegramForwardWebhook.");
                         return;
                     }
                 }
@@ -254,7 +283,8 @@ namespace MeetLines.Application.Services
                     
                     if (string.IsNullOrEmpty(webhookUrl))
                     {
-                        _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no WhatsappForwardWebhook configured.");
+                        // Fallback si no hay WA webhook
+                         _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no WhatsappForwardWebhook configured.");
                         return;
                     }
                 }
@@ -265,7 +295,7 @@ namespace MeetLines.Application.Services
                      projectId = appointment.ProjectId,
                      appointmentId = appointment.Id,
                      clientName = appointment.AppUser?.FullName,
-                     clientPhone = appointment.AppUser?.Phone,
+                     clientPhone = appointment.AppUser?.Phone, // Envía el formato original
                      employeeName = appointment.Employee?.Name,
                      serviceName = appointment.Service?.Name,
                      date = appointment.StartTime.ToString("yyyy-MM-ddTHH:mm:ssZ"),
