@@ -82,5 +82,20 @@ namespace MeetLines.Domain.Entities
             TwoFactorSecret = null;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
+
+        public void SetExternalProviderId(string providerId)
+        {
+            if (string.IsNullOrWhiteSpace(providerId)) throw new ArgumentException("ProviderId cannot be empty", nameof(providerId));
+            ExternalProviderId = providerId;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
+        public static AppUser CreateOAuthUser(string email, string fullName, string provider, string externalId)
+        {
+             var user = new AppUser(email, fullName, null, provider);
+             user.SetExternalProviderId(externalId);
+             user.VerifyEmail(); // OAuth users are verified by definition
+             return user;
+        }
     }
 }

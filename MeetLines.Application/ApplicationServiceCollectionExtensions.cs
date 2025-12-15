@@ -103,6 +103,7 @@ namespace MeetLines.Application.IoC
             services.AddScoped<ICustomerReactivationService, CustomerReactivationService>();
             services.AddScoped<IAiInsightsService, AiInsightsService>();
             services.AddScoped<IEmployeeAssignmentService, EmployeeAssignmentService>();
+            services.AddScoped<ICustomerAuthService, CustomerAuthService>();
 
             return services;
         }
