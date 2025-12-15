@@ -32,13 +32,14 @@ namespace MeetLines.Application.UseCases.Dashboard
             Guid projectId, 
             Guid? employeeId = null, 
             DateTimeOffset? fromDate = null, 
+            DateTimeOffset? toDate = null,
             CancellationToken ct = default)
         {
             try
             {
                 var dateFilter = fromDate ?? DateTimeOffset.UtcNow.AddDays(-30);
 
-                var appointments = await _appointmentRepository.GetEmployeeTasksAsync(projectId, employeeId, dateFilter, ct);
+                var appointments = await _appointmentRepository.GetEmployeeTasksAsync(projectId, employeeId, dateFilter, toDate, ct);
                 
                 // Fetch Services (Dictionary for rapid lookup)
                 // We want all services (including inactive) to map historical appointments correctly

@@ -13,5 +13,6 @@ namespace MeetLines.Application.DTOs.Projects
         public string Country { get; set; } = string.Empty;
         public double? Latitude { get; set; }
         public double? Longitude { get; set; }
+        public string? ProfilePhotoUrl { get; set; }
     }
 }

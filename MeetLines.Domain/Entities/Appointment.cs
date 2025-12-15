@@ -66,6 +66,12 @@ namespace MeetLines.Domain.Entities
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 
+        public void Complete()
+        {
+            Status = "completed";
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+
         public void Cancel(string reason)
         {
             Status = "cancelled";

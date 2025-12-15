@@ -70,11 +70,15 @@ namespace MeetLines.Application.IoC
             services.AddScoped<IGetPublicProjectsUseCase, GetPublicProjectsUseCase>();
             services.AddScoped<IGetPublicProjectEmployeesUseCase, GetPublicProjectEmployeesUseCase>();
             services.AddScoped<IUploadProjectPhotoUseCase, UploadProjectPhotoUseCase>();
+            services.AddScoped<IUploadProjectProfilePhotoUseCase, UploadProjectProfilePhotoUseCase>();
+            services.AddScoped<IGetProjectPhotosUseCase, GetProjectPhotosUseCase>();
+            services.AddScoped<IDeleteProjectPhotoUseCase, DeleteProjectPhotoUseCase>();
             services.AddScoped<IConfigureTelegramUseCase, ConfigureTelegramUseCase>();
             
             // Dashboard Use Cases
             services.AddScoped<GetDashboardStatsUseCase>();
             services.AddScoped<GetDashboardTasksUseCase>();
+            services.AddScoped<UpdateTaskStatusUseCase>();
 
             // Channels Use Cases
             services.AddScoped<ICreateChannelUseCase, CreateChannelUseCase>();

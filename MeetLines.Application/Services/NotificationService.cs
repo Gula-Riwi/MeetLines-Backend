@@ -230,12 +230,63 @@ namespace MeetLines.Application.Services
                     await _conversationRepository.CreateAsync(conversationState);
                 }
 
-                // 5. Trigger Webhook
-                var webhookUrl = appointment.Project?.WhatsappForwardWebhook;
-                if (string.IsNullOrEmpty(webhookUrl))
+                // 5. Determine Channel
+                // Lógica de detección basada en configuración y formato de número
+                bool isTelegram = false;
+                var phone = appointment.AppUser?.Phone?.Replace("+", "").Trim();
+                
+                // Si hay token de Telegram y el webhook de telegram
+                bool hasTelegramConfig = !string.IsNullOrEmpty(appointment.Project?.TelegramBotToken) && 
+                                         !string.IsNullOrEmpty(appointment.Project?.TelegramForwardWebhook);
+                                         
+                // Si hay configuración de WhatsApp
+                bool hasWhatsappConfig = !string.IsNullOrEmpty(appointment.Project?.WhatsappPhoneNumberId) &&
+                                         !string.IsNullOrEmpty(appointment.Project?.WhatsappForwardWebhook);
+
+                if (hasTelegramConfig && !hasWhatsappConfig)
                 {
-                    _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no WhatsappForwardWebhook configured.");
-                    return;
+                    // Solo existe Telegram
+                    isTelegram = true;
+                }
+                else if (hasTelegramConfig && hasWhatsappConfig)
+                {
+                    // Ambos existen, decidir por formato del número
+                    // WhatsApp suele ser largo (11+ dígitos c/ país) o empezar por country code.
+                    // Telegram ChatID suele ser numérico simple, a veces negativo para grupos, pero para usuarios es positivo.
+                    // Asumimos que si mide 10 dígitos o menos y no empieza por 57 (Colombia), podría ser Telegram ID.
+                    // O si el email explícitamente es telegram.temp (por si acaso se usa en el futuro)
+                    
+                    if ((appointment.AppUser?.Email?.EndsWith("@telegram.temp") == true) || 
+                        (phone?.Length <= 10 && !phone.StartsWith("57"))) 
+                    {
+                        isTelegram = true;
+                    }
+                }
+                
+                string? webhookUrl;
+                string? botToken = null;
+                
+                if (isTelegram)
+                {
+                    webhookUrl = appointment.Project?.TelegramForwardWebhook;
+                    botToken = appointment.Project?.TelegramBotToken;
+                    
+                    if (string.IsNullOrEmpty(webhookUrl))
+                    {
+                        _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has Telegram Config but no TelegramForwardWebhook.");
+                        return;
+                    }
+                }
+                else
+                {
+                    webhookUrl = appointment.Project?.WhatsappForwardWebhook;
+                    
+                    if (string.IsNullOrEmpty(webhookUrl))
+                    {
+                        // Fallback si no hay WA webhook
+                         _logger.LogWarning($"FeedBackJob: Project {appointment.ProjectId} has no WhatsappForwardWebhook configured.");
+                        return;
+                    }
                 }
 
                 var payload = new 
@@ -244,11 +295,13 @@ namespace MeetLines.Application.Services
                      projectId = appointment.ProjectId,
                      appointmentId = appointment.Id,
                      clientName = appointment.AppUser?.FullName,
-                     clientPhone = appointment.AppUser?.Phone,
+                     clientPhone = appointment.AppUser?.Phone, // Envía el formato original
                      employeeName = appointment.Employee?.Name,
                      serviceName = appointment.Service?.Name,
                      date = appointment.StartTime.ToString("yyyy-MM-ddTHH:mm:ssZ"),
-                     ratingMessage = message 
+                     ratingMessage = message,
+                     channel = isTelegram ? "telegram" : "whatsapp",
+                     botToken = botToken // Solo presente para Telegram
                 };
                  
                 var client = _httpClientFactory.CreateClient();

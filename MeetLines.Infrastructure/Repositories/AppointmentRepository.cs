@@ -82,20 +82,12 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task AddAsync(Appointment appointment, CancellationToken ct = default)
         {
-            // Ensure stored time is UTC
-            appointment.StartTime = appointment.StartTime.ToUniversalTime();
-            appointment.EndTime = appointment.EndTime.ToUniversalTime();
-            
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync(ct);
         }
 
         public async Task UpdateAsync(Appointment appointment, CancellationToken ct = default)
         {
-            // Ensure stored time is UTC
-            appointment.StartTime = appointment.StartTime.ToUniversalTime();
-            appointment.EndTime = appointment.EndTime.ToUniversalTime();
-
             _context.Appointments.Update(appointment);
             await _context.SaveChangesAsync(ct);
         }
@@ -134,7 +126,7 @@ namespace MeetLines.Infrastructure.Repositories
                 .ToListAsync(ct);
         }
 
-        public async Task<IEnumerable<Appointment>> GetEmployeeTasksAsync(Guid projectId, Guid? employeeId, DateTimeOffset? fromDate, CancellationToken ct = default)
+        public async Task<IEnumerable<Appointment>> GetEmployeeTasksAsync(Guid projectId, Guid? employeeId, DateTimeOffset? fromDate, DateTimeOffset? toDate = null, CancellationToken ct = default)
         {
             var query = _context.Appointments
                 .AsNoTracking()
@@ -149,6 +141,11 @@ namespace MeetLines.Infrastructure.Repositories
             {
                 var fromUtc = fromDate.Value.ToUniversalTime();
                 query = query.Where(x => x.StartTime >= fromUtc);
+            }
+
+            if (toDate.HasValue)
+            {
+                query = query.Where(x => x.StartTime <= toDate.Value);
             }
 
             return await query
