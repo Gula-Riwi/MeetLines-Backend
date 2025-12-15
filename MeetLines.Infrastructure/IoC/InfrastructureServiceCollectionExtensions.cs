@@ -67,7 +67,7 @@ namespace MeetLines.Infrastructure.IoC
             services.AddScoped<IPasswordResetTokenRepository, PasswordResetTokenRepository>();
             services.AddScoped<ILoginSessionRepository, LoginSessionRepository>();
             services.AddScoped<IProjectRepository, ProjectRepository>();
-            // services.AddScoped<ISubscriptionRepository, SubscriptionRepository>(); // DISABLED - Schema mismatch
+            services.AddScoped<ISubscriptionRepository, SubscriptionRepository>();
             services.AddScoped<IEmployeeRepository, EmployeeRepository>();
             services.AddScoped<IChannelRepository, ChannelRepository>();
             services.AddScoped<IEmployeePasswordResetTokenRepository, EmployeePasswordResetTokenRepository>();

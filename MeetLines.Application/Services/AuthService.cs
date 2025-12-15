@@ -18,7 +18,7 @@ namespace MeetLines.Application.Services
         private readonly IPasswordHasher _passwordHasher;
         private readonly IJwtTokenService _jwtTokenService;
         private readonly IEmailService _emailService;
-        // private readonly ISubscriptionRepository _subscriptionRepository; // DISABLED
+        private readonly ISubscriptionRepository _subscriptionRepository;
         private readonly IDiscordWebhookService _discordService;
         private readonly IEmployeeRepository _employeeRepository;
         private readonly IEmployeePasswordResetTokenRepository _employeePasswordResetTokenRepository;
@@ -46,7 +46,7 @@ namespace MeetLines.Application.Services
             _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
             _jwtTokenService = jwtTokenService ?? throw new ArgumentNullException(nameof(jwtTokenService));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
-            // _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository)); // DISABLED
+            _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
             _discordService = discordService;
             _employeeRepository = employeeRepository ?? throw new ArgumentNullException(nameof(employeeRepository));
             _employeePasswordResetTokenRepository = employeePasswordResetTokenRepository ?? throw new ArgumentNullException(nameof(employeePasswordResetTokenRepository));
@@ -89,12 +89,14 @@ namespace MeetLines.Application.Services
 
                 await _userRepository.AddAsync(user, ct);
                 
-                // ===== CREAR SUSCRIPCIÓN GRATUITA ===== (DISABLED - Schema mismatch)
-                // var freeSubscription = new Subscription(
-                //     userId: user.Id,
-                //     plan: "beginner"
-                // );
-                // await _subscriptionRepository.AddAsync(freeSubscription, ct);
+                // ===== CREAR SUSCRIPCIÓN GRATUITA =====
+                var freeSubscription = new Subscription(
+                    userId: user.Id,
+                    plan: "beginner",
+                    cycle: "monthly",
+                    price: 0m
+                );
+                await _subscriptionRepository.AddAsync(freeSubscription, ct);
 
                 // Crear token de verificación de email
                 var verificationToken = Guid.NewGuid().ToString("N");
@@ -316,12 +318,14 @@ namespace MeetLines.Application.Services
                     );
                     await _userRepository.AddAsync(user, ct);
                     
-                    // ===== CREAR SUSCRIPCIÓN GRATUITA PARA OAUTH ===== (DISABLED - Schema mismatch)
-                    // var freeSubscription = new Subscription(
-                    //     userId: user.Id,
-                    //     plan: "beginner"
-                    // );
-                    // await _subscriptionRepository.AddAsync(freeSubscription, ct);
+                    // ===== CREAR SUSCRIPCIÓN GRATUITA PARA OAUTH
+                    var freeSubscription = new Subscription(
+                        userId: user.Id,
+                        plan: "beginner",
+                        cycle: "monthly",
+                        price: 0m
+                    );
+                    await _subscriptionRepository.AddAsync(freeSubscription, ct);
                     
                     // Enviar email de bienvenida
                     await _emailService.SendWelcomeEmailAsync(user.Email, user.Name);
