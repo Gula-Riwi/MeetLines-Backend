@@ -28,7 +28,7 @@ namespace MeetLines.Application.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<Employee?> AssignConversationToEmployeeAsync(Guid projectId, Guid conversationId, CancellationToken ct = default)
+        public async Task<Employee?> AssignConversationToEmployeeAsync(Guid projectId, Guid conversationId, string customerPhone, CancellationToken ct = default)
         {
             // 1. Get Active Employees
             var employees = await _employeeRepo.GetActiveByProjectIdAsync(projectId, ct);
@@ -47,7 +47,7 @@ namespace MeetLines.Application.Services
             
             // Note: We don't update the conversation here to avoid tracking conflicts
             // The controller will handle the update after calling this method
-            await _notificationService.NotifyEmployeeOfNewChatAsync(projectId, selectedEmployee.Id, "N/A");
+            await _notificationService.NotifyEmployeeOfNewChatAsync(projectId, selectedEmployee.Id, customerPhone, ct);
 
             return selectedEmployee;
         }

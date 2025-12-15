@@ -60,7 +60,7 @@ namespace MeetLines.API.Controllers
             Api.DTOs.EmployeeDto? assignedEmployeeDto = null;
 
             // 4. Assign to Employee
-            var assignedEmployee = await _assignmentService.AssignConversationToEmployeeAsync(projectId, conversation.Id, ct);
+            var assignedEmployee = await _assignmentService.AssignConversationToEmployeeAsync(projectId, conversation.Id, phone, ct);
             
             if (assignedEmployee != null)
             {
