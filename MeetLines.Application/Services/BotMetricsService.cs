@@ -7,6 +7,7 @@ using MeetLines.Application.DTOs.BotSystem;
 using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Entities;
 using MeetLines.Domain.Repositories;
+using Microsoft.Extensions.Logging;
 
 namespace MeetLines.Application.Services
 {
@@ -16,17 +17,26 @@ namespace MeetLines.Application.Services
         private readonly IConversationRepository _conversationRepo;
         private readonly ICustomerFeedbackRepository _feedbackRepo;
         private readonly ICustomerReactivationRepository _reactivationRepo;
+        private readonly IProjectRepository _projectRepo;
+        private readonly IAppointmentRepository _appointmentRepo;
+        private readonly Microsoft.Extensions.Logging.ILogger<BotMetricsService> _logger;
 
         public BotMetricsService(
             IBotMetricsRepository metricsRepo,
             IConversationRepository conversationRepo,
             ICustomerFeedbackRepository feedbackRepo,
-            ICustomerReactivationRepository reactivationRepo)
+            ICustomerReactivationRepository reactivationRepo,
+            IProjectRepository projectRepo,
+            IAppointmentRepository appointmentRepo,
+            Microsoft.Extensions.Logging.ILogger<BotMetricsService> logger)
         {
             _metricsRepo = metricsRepo ?? throw new ArgumentNullException(nameof(metricsRepo));
             _conversationRepo = conversationRepo ?? throw new ArgumentNullException(nameof(conversationRepo));
             _feedbackRepo = feedbackRepo ?? throw new ArgumentNullException(nameof(feedbackRepo));
             _reactivationRepo = reactivationRepo ?? throw new ArgumentNullException(nameof(reactivationRepo));
+            _projectRepo = projectRepo ?? throw new ArgumentNullException(nameof(projectRepo));
+            _appointmentRepo = appointmentRepo ?? throw new ArgumentNullException(nameof(appointmentRepo));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<IEnumerable<BotMetricsDto>> GetMetricsAsync(GetMetricsRequest request, CancellationToken ct = default)
@@ -83,6 +93,17 @@ namespace MeetLines.Application.Services
             var avgFeedbackRating = await _feedbackRepo.GetAverageRatingAsync(projectId, startOfDay, ct);
             var reactivations = await _reactivationRepo.GetSuccessfulReactivationsAsync(projectId, startOfDay, ct);
             var reactivationsList = reactivations.ToList();
+            
+            // Calculate appointments created on this day
+            var createdAppointments = await _appointmentRepo.GetByDateRangeAsync(projectId, startOfDay, endOfDay, ct);
+            var appointmentsBooked = createdAppointments.Count(); // New appointments created today
+
+            // Calculation of Conversion Rate (Appointments / Total Conversations)
+            double conversionRate = 0;
+            if (totalConversations > 0)
+            {
+                conversionRate = (double)appointmentsBooked / totalConversations * 100;
+            }
 
             var metrics = new BotMetrics(
                 projectId: projectId,
@@ -90,17 +111,38 @@ namespace MeetLines.Application.Services
                 totalConversations: totalConversations,
                 botConversations: botConversations,
                 humanConversations: humanConversations,
-                appointmentsBooked: 0,
-                conversionRate: 0,
+                appointmentsBooked: appointmentsBooked, // Real count
+                conversionRate: conversionRate,
                 customersReactivated: reactivationsList.Count,
-                reactivationRate: 0,
+                reactivationRate: 0, // Need total inactive pool to calculate true rate, leaving 0 for now
                 averageResponseTime: 0,
                 customerSatisfactionScore: avgFeedbackRating ?? 0,
                 averageFeedbackRating: avgFeedbackRating
-            );
+             );
 
             var upserted = await _metricsRepo.UpsertAsync(metrics, ct);
             return MapToDto(upserted);
+        }
+
+        public async Task ProcessDailyMetricsForAllProjectsAsync(CancellationToken ct = default)
+        {
+            var projects = await _projectRepo.GetAllAsync(ct);
+            // Calculate for Yesterday (assuming job runs at midnight or later)
+            var dateToProcess = DateTimeOffset.UtcNow.AddDays(-1);
+
+            foreach (var project in projects)
+            {
+                try 
+                {
+                    await UpsertMetricsAsync(project.Id, dateToProcess, ct);
+                    _logger.LogInformation("Processed daily metrics for Project {ProjectId} on {Date}", project.Id, dateToProcess.Date);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Failed to process metrics for Project {ProjectId}", project.Id);
+                    // Continue to next project even if one fails
+                }
+            }
         }
 
         private BotMetricsDto MapToDto(BotMetrics entity)
