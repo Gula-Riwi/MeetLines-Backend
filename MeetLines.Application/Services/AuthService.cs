@@ -191,7 +191,8 @@ namespace MeetLines.Application.Services
                     Email = employee.Username, // Reuse Email field for username
                     Name = employee.Name,
                     IsEmailVerified = true,
-                    ExpiresAt = session.ExpiresAt!.Value
+                    ExpiresAt = session.ExpiresAt!.Value,
+                    ProjectId = employee.ProjectId
                 });
             }
             catch (Exception ex)
