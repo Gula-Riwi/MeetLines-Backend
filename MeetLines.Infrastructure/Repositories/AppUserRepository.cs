@@ -76,5 +76,12 @@ namespace MeetLines.Infrastructure.Repositories
             _context.AppUsers.Update(appUser);
             await _context.SaveChangesAsync(ct);
         }
+
+        public async Task<AppUser?> GetByExternalProviderIdAsync(string providerId, CancellationToken ct = default)
+        {
+            return await _context.AppUsers
+                .AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ExternalProviderId == providerId, ct);
+        }
     }
 }
