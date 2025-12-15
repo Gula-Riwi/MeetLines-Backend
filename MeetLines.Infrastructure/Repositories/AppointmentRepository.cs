@@ -82,20 +82,12 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task AddAsync(Appointment appointment, CancellationToken ct = default)
         {
-            // Ensure stored time is UTC
-            appointment.StartTime = appointment.StartTime.ToUniversalTime();
-            appointment.EndTime = appointment.EndTime.ToUniversalTime();
-            
             _context.Appointments.Add(appointment);
             await _context.SaveChangesAsync(ct);
         }
 
         public async Task UpdateAsync(Appointment appointment, CancellationToken ct = default)
         {
-            // Ensure stored time is UTC
-            appointment.StartTime = appointment.StartTime.ToUniversalTime();
-            appointment.EndTime = appointment.EndTime.ToUniversalTime();
-
             _context.Appointments.Update(appointment);
             await _context.SaveChangesAsync(ct);
         }
