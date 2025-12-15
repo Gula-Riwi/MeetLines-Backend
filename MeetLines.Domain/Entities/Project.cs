@@ -30,6 +30,10 @@ namespace MeetLines.Domain.Entities
         public double? Longitude { get; private set; }
         public DateTimeOffset CreatedAt { get; private set; }
         public DateTimeOffset UpdatedAt { get; private set; }
+        
+        // Profile Photo
+        public string? ProfilePhotoUrl { get; private set; }
+        public string? ProfilePhotoPublicId { get; private set; }
 
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public double? Distance { get; set; }
@@ -104,6 +108,13 @@ namespace MeetLines.Domain.Entities
         {
             WorkingHours = workingHours;
             Config = config;
+            UpdatedAt = DateTimeOffset.UtcNow;
+        }
+        
+        public void UpdateProfilePhoto(string url, string publicId)
+        {
+            ProfilePhotoUrl = url;
+            ProfilePhotoPublicId = publicId;
             UpdatedAt = DateTimeOffset.UtcNow;
         }
 

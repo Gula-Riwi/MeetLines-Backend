@@ -159,7 +159,8 @@ namespace MeetLines.Application.UseCases.Projects
                 Longitude = project.Longitude,
                 Status = project.Status,
                 CreatedAt = project.CreatedAt,
-                UpdatedAt = project.UpdatedAt
+                UpdatedAt = project.UpdatedAt,
+                ProfilePhotoUrl = project.ProfilePhotoUrl
                 , WhatsappPhoneNumberId = project.WhatsappPhoneNumberId
                 , WhatsappForwardWebhook = project.WhatsappForwardWebhook
             };

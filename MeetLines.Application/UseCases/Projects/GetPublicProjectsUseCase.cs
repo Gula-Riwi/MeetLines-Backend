@@ -41,7 +41,8 @@ namespace MeetLines.Application.UseCases.Projects
                 Country = project.Country,
                 Latitude = project.Latitude,
                 Longitude = project.Longitude,
-                DistanceKm = project.Distance
+                DistanceKm = project.Distance,
+                ProfilePhotoUrl = project.ProfilePhotoUrl
             };
         }
     }
