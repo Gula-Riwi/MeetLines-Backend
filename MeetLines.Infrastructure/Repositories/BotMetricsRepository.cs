@@ -31,20 +31,23 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task<BotMetrics?> GetByProjectAndDateAsync(Guid projectId, DateTimeOffset date, CancellationToken ct = default)
         {
-            var dateOnly = date.Date;
+            // Create range for "that day" in UTC/Offset to be safe
+            // Assuming Date in DB is stored as midnight UTC for that date.
+            // Better to compare exact match if we trust the storage, or range.
+            // Let's rely on how we store it: Date = date.Date (Unspecified or Local -> UTC conversion)
+            // Safer: x.Date >= date.Date && x.Date < date.Date.AddDays(1)
+            
+            // However, assuming stored exact:
             return await _context.BotMetrics
                 .AsNoTracking()
-                .FirstOrDefaultAsync(x => x.ProjectId == projectId && x.Date == dateOnly, ct);
+                .FirstOrDefaultAsync(x => x.ProjectId == projectId && x.Date == date, ct);
         }
 
         public async Task<IEnumerable<BotMetrics>> GetByDateRangeAsync(Guid projectId, DateTimeOffset startDate, DateTimeOffset endDate, CancellationToken ct = default)
         {
-            var startDateOnly = startDate.Date;
-            var endDateOnly = endDate.Date;
-            
             return await _context.BotMetrics
                 .AsNoTracking()
-                .Where(x => x.ProjectId == projectId && x.Date >= startDateOnly && x.Date <= endDateOnly)
+                .Where(x => x.ProjectId == projectId && x.Date >= startDate && x.Date <= endDate)
                 .OrderBy(x => x.Date)
                 .ToListAsync(ct);
         }
@@ -60,7 +63,7 @@ namespace MeetLines.Infrastructure.Repositories
 
         public async Task<IEnumerable<BotMetrics>> GetLastNDaysAsync(Guid projectId, int days, CancellationToken ct = default)
         {
-            var startDate = DateTimeOffset.UtcNow.Date.AddDays(-days);
+            var startDate = DateTimeOffset.UtcNow.AddDays(-days);
             
             return await _context.BotMetrics
                 .AsNoTracking()
@@ -76,7 +79,6 @@ namespace MeetLines.Infrastructure.Repositories
             
             if (existing != null)
             {
-                // Update existing using domain method
                 existing.UpdateMetrics(
                     totalConversations: metrics.TotalConversations,
                     botConversations: metrics.BotConversations,
@@ -94,7 +96,6 @@ namespace MeetLines.Infrastructure.Repositories
             }
             else
             {
-                // Create new
                 _context.BotMetrics.Add(metrics);
                 await _context.SaveChangesAsync(ct);
                 return metrics;
@@ -131,12 +132,12 @@ namespace MeetLines.Infrastructure.Repositories
 
             if (startDate.HasValue)
             {
-                query = query.Where(x => x.Date >= startDate.Value.Date);
+                query = query.Where(x => x.Date >= startDate.Value);
             }
 
             if (endDate.HasValue)
             {
-                query = query.Where(x => x.Date <= endDate.Value.Date);
+                query = query.Where(x => x.Date <= endDate.Value);
             }
 
             var metrics = await query.ToListAsync(ct);
