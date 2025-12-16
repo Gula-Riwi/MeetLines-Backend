@@ -162,6 +162,9 @@ namespace MeetLines.Infrastructure.Repositories
             _logger.LogInformation($"[Repo] GetDashboardAppointments. Project: {projectId}, Employee: {employeeId}, MinDate: {minDate} (UTC: {minDateUtc})");
 
             var query = _context.Appointments
+                .Include(a => a.AppUser)
+                .Include(a => a.Service)
+                .Include(a => a.Employee)
                 .AsNoTracking()
                 .Where(x => x.ProjectId == projectId && x.StartTime >= minDateUtc);
 
