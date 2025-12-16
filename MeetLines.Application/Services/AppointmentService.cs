@@ -460,6 +460,7 @@ namespace MeetLines.Application.Services
                 Id = a.Id,
                 ProjectId = a.ProjectId,
                 ServiceId = a.ServiceId,
+                ServiceName = a.Service?.Name, // Include ServiceName
                 EmployeeId = a.EmployeeId,
                 EmployeeName = a.Employee?.Name, // Include Name if available
                 StartTime = a.StartTime.ToOffset(TimeSpan.FromHours(-5)),
