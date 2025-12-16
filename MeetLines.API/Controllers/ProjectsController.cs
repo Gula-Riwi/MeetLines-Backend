@@ -169,13 +169,56 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
-        /// Actualiza un proyecto existente
+        /// Actualiza un proyecto existente con foto de perfil opcional
         /// </summary>
         [HttpPut("{projectId}")]
-        public async Task<IActionResult> UpdateProject(Guid projectId, [FromBody] UpdateProjectRequest request, CancellationToken ct)
+        public async Task<IActionResult> UpdateProject(Guid projectId, [FromForm] MeetLines.API.DTOs.UpdateProjectWithPhotoRequest formRequest, CancellationToken ct)
         {
             var userId = GetUserId();
-            var result = await _updateProjectUseCase.ExecuteAsync(userId, projectId, request, ct);
+            
+            // Mapear el request del formulario al DTO de la aplicación
+            var request = new UpdateProjectRequest
+            {
+                Name = formRequest.Name,
+                Subdomain = formRequest.Subdomain,
+                Industry = formRequest.Industry,
+                Description = formRequest.Description,
+                Address = formRequest.Address,
+                City = formRequest.City,
+                Country = formRequest.Country,
+                Latitude = formRequest.Latitude,
+                Longitude = formRequest.Longitude,
+                WhatsappVerifyToken = formRequest.WhatsappVerifyToken,
+                WhatsappPhoneNumberId = formRequest.WhatsappPhoneNumberId,
+                WhatsappAccessToken = formRequest.WhatsappAccessToken,
+                WhatsappForwardWebhook = formRequest.WhatsappForwardWebhook
+            };
+
+            // Validar archivo si se proporciona
+            if (formRequest.ProfilePhoto != null)
+            {
+                if (formRequest.ProfilePhoto.Length == 0)
+                {
+                    return BadRequest(new { error = "Profile photo file is empty" });
+                }
+
+                if (!formRequest.ProfilePhoto.ContentType.StartsWith("image/"))
+                {
+                    return BadRequest(new { error = "Profile photo must be an image" });
+                }
+            }
+
+            // Ejecutar el use case con el archivo opcional
+            Result<ProjectResponse> result;
+            if (formRequest.ProfilePhoto != null)
+            {
+                using var stream = formRequest.ProfilePhoto.OpenReadStream();
+                result = await _updateProjectUseCase.ExecuteAsync(userId, projectId, request, stream, formRequest.ProfilePhoto.FileName, ct);
+            }
+            else
+            {
+                result = await _updateProjectUseCase.ExecuteAsync(userId, projectId, request, null, null, ct);
+            }
 
             if (!result.IsSuccess)
                 return BadRequest(new { error = result.Error });
