@@ -68,6 +68,8 @@ namespace MeetLines.Domain.Repositories
     public class BotMetricsSummary
     {
         public int TotalConversations { get; set; }
+        public int BotConversations { get; set; }
+        public int HumanConversations { get; set; }
         public int TotalAppointments { get; set; }
         public double AverageConversionRate { get; set; }
         public double AverageFeedbackRating { get; set; }
