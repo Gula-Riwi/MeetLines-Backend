@@ -218,6 +218,11 @@ namespace MeetLines.Application.Services
                     return Result<LoginResponse>.Fail("Usuario desactivado");
                 }
 
+                if (!user.IsEmailVerified)
+                {
+                    return Result<LoginResponse>.Fail("Debes verificar tu email antes de iniciar sesión. Revisa tu correo.");
+                }
+
                 // Verificar contraseña
                 if (!user.RequiresPassword() || user.PasswordHash == null)
                 {
