@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MeetLines.Application.Common;
@@ -14,6 +15,8 @@ namespace MeetLines.Application.UseCases.Projects
         Task<Result<ProjectResponse>> ExecuteAsync(
             Guid userId,
             CreateProjectRequest request,
+            Stream? profilePhotoStream = null,
+            string? profilePhotoFileName = null,
             CancellationToken ct = default);
     }
 }

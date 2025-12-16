@@ -1,9 +1,11 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using MeetLines.Application.Common;
 using MeetLines.Application.DTOs.Projects;
+using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Repositories;
 using MeetLines.Domain.ValueObjects;
 using SharedKernel.Utilities;
@@ -22,24 +24,29 @@ namespace MeetLines.Application.UseCases.Projects
         private readonly IConfiguration _configuration;
         private readonly MeetLines.Application.Services.Interfaces.IEmailService _emailService;
         private readonly ISaasUserRepository _userRepository;
+        private readonly ICloudinaryService _cloudinaryService;
 
         public CreateProjectUseCase(
             IProjectRepository projectRepository,
             ISubscriptionRepository subscriptionRepository,
             IConfiguration configuration,
             MeetLines.Application.Services.Interfaces.IEmailService emailService,
-            ISaasUserRepository userRepository)
+            ISaasUserRepository userRepository,
+            ICloudinaryService cloudinaryService)
         {
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
             _subscriptionRepository = subscriptionRepository ?? throw new ArgumentNullException(nameof(subscriptionRepository));
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _emailService = emailService ?? throw new ArgumentNullException(nameof(emailService));
             _userRepository = userRepository ?? throw new ArgumentNullException(nameof(userRepository));
+            _cloudinaryService = cloudinaryService ?? throw new ArgumentNullException(nameof(cloudinaryService));
         }
 
         public async Task<Result<ProjectResponse>> ExecuteAsync(
             Guid userId,
             CreateProjectRequest request,
+            Stream? profilePhotoStream = null,
+            string? profilePhotoFileName = null,
             CancellationToken ct = default)
         {
             if (userId == Guid.Empty)
@@ -105,7 +112,14 @@ namespace MeetLines.Application.UseCases.Projects
                     request.Latitude,
                     request.Longitude);
 
-                if (!string.IsNullOrWhiteSpace(request.ProfilePhotoUrl))
+                // Subir foto de perfil si se proporciona
+                if (profilePhotoStream != null && !string.IsNullOrWhiteSpace(profilePhotoFileName))
+                {
+                    var (url, publicId) = await _cloudinaryService.UploadPhotoAsync(profilePhotoStream, profilePhotoFileName);
+                    project.UpdateProfilePhoto(url, publicId);
+                }
+                // Mantener compatibilidad con el campo ProfilePhotoUrl si se proporciona (legacy)
+                else if (!string.IsNullOrWhiteSpace(request.ProfilePhotoUrl))
                 {
                     project.UpdateProfilePhoto(request.ProfilePhotoUrl, request.ProfilePhotoPublicId ?? string.Empty);
                 }
