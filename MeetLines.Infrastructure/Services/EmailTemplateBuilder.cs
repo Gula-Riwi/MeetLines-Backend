@@ -141,6 +141,17 @@ namespace MeetLines.Infrastructure.Services
                 </div>";
         }
 
+        private string BuildFallbackLink(string url)
+        {
+            return $@"
+                <p style='margin-top: 20px; font-size: 14px; color: {TextColor};'>
+                    Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:
+                </p>
+                <p style='font-size: 12px; color: {PrimaryColor}; word-break: break-all; margin: 0;'>
+                    <a href='{url}' style='color: {PrimaryColor}; text-decoration: none;'>{url}</a>
+                </p>";
+        }
+
         public string BuildEmailVerification(string userName, string verificationUrl)
         {
             var content = $@"
@@ -149,8 +160,7 @@ namespace MeetLines.Infrastructure.Services
                 
                 {BuildButton("Verificar Email", verificationUrl)}
                 
-                <p style='font-size: 14px; margin-bottom: 5px;'>O copia este enlace:</p>
-                <p style='font-size: 12px; color: {PrimaryColor}; word-break: break-all; margin: 0;'>{verificationUrl}</p>";
+                {BuildFallbackLink(verificationUrl)}";
 
             return BuildBaseHtml(content, "Verifica tu correo");
         }
@@ -163,7 +173,9 @@ namespace MeetLines.Infrastructure.Services
                 
                 {BuildButton("Restablecer Contraseña", resetUrl)}
                 
-                <p style='color: #8892b0; font-size: 14px;'>El enlace expira en 1 hora.</p>";
+                <p style='color: #8892b0; font-size: 14px;'>El enlace expira en 1 hora.</p>
+                
+                {BuildFallbackLink(resetUrl)}";
 
             return BuildBaseHtml(content, "Recuperar contraseña");
         }
@@ -174,7 +186,9 @@ namespace MeetLines.Infrastructure.Services
                 <h2 style='color: {HeadingColor}; margin: 0 0 20px 0;'>¡Bienvenido a MeetLines!</h2>
                 <p>Tu cuenta ha sido verificada exitosamente.</p>
                 
-                {BuildButton("Ir a mi Dashboard", loginUrl)}";
+                {BuildButton("Ir a mi Dashboard", loginUrl)}
+                
+                {BuildFallbackLink(loginUrl)}";
 
             return BuildBaseHtml(content, "Bienvenido");
         }
@@ -187,7 +201,9 @@ namespace MeetLines.Infrastructure.Services
                 
                 {BuildInfoBox($"<strong style='color:{HeadingColor}'>Fecha:</strong> {DateTimeOffset.UtcNow:yyyy-MM-dd HH:mm} UTC", "#28a745")}
                 
-                {BuildButton("Iniciar Sesión", loginUrl)}";
+                {BuildButton("Iniciar Sesión", loginUrl)}
+                
+                {BuildFallbackLink(loginUrl)}";
 
             return BuildBaseHtml(content, "Contraseña cambiada");
         }
@@ -198,7 +214,9 @@ namespace MeetLines.Infrastructure.Services
                 <h2 style='color: {HeadingColor}; margin: 0 0 20px 0;'>¡Cuenta Verificada!</h2>
                 <p>Hola {userName}, tu correo ha sido confirmado.</p>
                 
-                {BuildButton("Comenzar Ahora", dashboardUrl)}";
+                {BuildButton("Comenzar Ahora", dashboardUrl)}
+                
+                {BuildFallbackLink(dashboardUrl)}";
 
             return BuildBaseHtml(content, "Cuenta verificada");
         }
