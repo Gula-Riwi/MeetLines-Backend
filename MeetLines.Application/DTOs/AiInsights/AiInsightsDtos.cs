@@ -9,6 +9,7 @@ namespace MeetLines.Application.DTOs.AiInsights
         public List<ChurnRiskDto> ChurnRisks { get; set; } = new();
         public RevenueOpportunityDto Revenue { get; set; } = new();
         public GoldenHourDto Optimization { get; set; } = new();
+        public BotPerformanceDto BotPerformance { get; set; } = new();
     }
 
     public class StaffingRecommendationDto
@@ -41,5 +42,16 @@ namespace MeetLines.Application.DTOs.AiInsights
         public string BestTime { get; set; } = string.Empty; // "19:00"
         public double ResponseRate { get; set; }
         public string Suggestion { get; set; } = string.Empty;
+    }
+
+    public class BotPerformanceDto
+    {
+        public int TotalConversations { get; set; }
+        public int BotConversations { get; set; }
+        public int HumanConversations { get; set; }
+        public int AppointmentsBooked { get; set; }
+        public double ConversionRate { get; set; }
+        public double AverageResponseTime { get; set; }
+        public double CustomerSatisfactionScore { get; set; }
     }
 }
