@@ -25,18 +25,36 @@ namespace MeetLines.Infrastructure.Services
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _templateBuilder = templateBuilder ?? throw new ArgumentNullException(nameof(templateBuilder));
             
-            _smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
+            _smtpHost = ResolveConfigValue(_configuration["Email:SmtpHost"], "smtp.gmail.com");
             
-            if (!int.TryParse(_configuration["Email:SmtpPort"], out _smtpPort))
+            var portStr = ResolveConfigValue(_configuration["Email:SmtpPort"], "587");
+            if (!int.TryParse(portStr, out _smtpPort))
             {
                 _smtpPort = 587;
             }
 
-            _smtpUser = _configuration["Email:SmtpUser"] ?? throw new ArgumentException("Email:SmtpUser is missing");
-            _smtpPassword = _configuration["Email:SmtpPassword"] ?? throw new ArgumentException("Email:SmtpPassword is missing");
-            _fromEmail = _configuration["Email:FromEmail"] ?? _smtpUser;
-            _fromName = _configuration["Email:FromName"] ?? "MeetLines";
-            _frontendUrl = _configuration["Frontend:Url"] ?? "http://localhost:3000";
+            _smtpUser = ResolveConfigValue(_configuration["Email:SmtpUser"]) ?? throw new ArgumentException("Email:SmtpUser is missing");
+            _smtpPassword = ResolveConfigValue(_configuration["Email:SmtpPassword"]) ?? throw new ArgumentException("Email:SmtpPassword is missing");
+            _fromEmail = ResolveConfigValue(_configuration["Email:FromEmail"]) ?? _smtpUser;
+            _fromName = ResolveConfigValue(_configuration["Email:FromName"]) ?? "MeetLines";
+            _frontendUrl = ResolveConfigValue(_configuration["Frontend:Url"], "http://localhost:3000");
+
+            // Trim trailing slash for consistency
+            if (_frontendUrl.EndsWith("/")) _frontendUrl = _frontendUrl.TrimEnd('/');
+        }
+
+        private string ResolveConfigValue(string? value, string defaultValue = "")
+        {
+            if (string.IsNullOrEmpty(value)) return defaultValue;
+
+            if (value.StartsWith("${") && value.EndsWith("}"))
+            {
+                var envVar = value.Substring(2, value.Length - 3);
+                var envValue = Environment.GetEnvironmentVariable(envVar);
+                return !string.IsNullOrEmpty(envValue) ? envValue : defaultValue;
+            }
+
+            return value;
         }
 
         public async Task SendEmailVerificationAsync(string toEmail, string userName, string verificationToken)
