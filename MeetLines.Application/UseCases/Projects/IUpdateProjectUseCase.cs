@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MeetLines.Application.Common;
@@ -15,6 +16,8 @@ namespace MeetLines.Application.UseCases.Projects
             Guid userId,
             Guid projectId,
             UpdateProjectRequest request,
+            Stream? profilePhotoStream = null,
+            string? profilePhotoFileName = null,
             CancellationToken ct = default);
     }
 }
