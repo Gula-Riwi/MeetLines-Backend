@@ -121,14 +121,16 @@ namespace MeetLines.Application.Services
 
             // 3. Calculate Average Ticket
             var totalSales = await _appointmentRepo.GetTotalSalesAsync(projectId, start, end, ct);
-            var totalAppointments = metricsSummary.TotalAppointments > 0 ? metricsSummary.TotalAppointments : 1; 
+            var totalAppointments = metricsSummary.TotalAppointments; 
             
             // Fallback: If no metrics, try counting appointments directly
-            if (metricsSummary.TotalAppointments == 0)
+            if (totalAppointments == 0)
             {
                  var appts = await _appointmentRepo.GetByDateRangeAsync(projectId, start, end, ct);
-                 totalAppointments = appts.Count() > 0 ? appts.Count() : 1;
+                 totalAppointments = appts.Count();
             }
+
+            if (totalAppointments <= 0) totalAppointments = 1;
 
             var avgTicket = totalSales / totalAppointments;
             if (avgTicket == 0) avgTicket = 20000; // Default fallback (e.g. 20k COP)

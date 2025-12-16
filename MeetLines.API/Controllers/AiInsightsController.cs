@@ -21,9 +21,23 @@ namespace MeetLines.API.Controllers
         [HttpGet]
         public async Task<ActionResult<AiInsightsDto>> GetInputs(Guid projectId, CancellationToken ct)
         {
-            // Optional: Add Project ownership validation here via Authorization filter or Service layer
-            var result = await _aiInsightsService.GetProjectInsightsAsync(projectId, ct);
-            return Ok(result);
+            try
+            {
+                var result = await _aiInsightsService.GetProjectInsightsAsync(projectId, ct);
+                return Ok(new MeetLines.API.DTOs.ApiResponse<AiInsightsDto> 
+                { 
+                    Success = true, 
+                    Data = result 
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new MeetLines.API.DTOs.ApiResponse 
+                { 
+                    Success = false, 
+                    Message = $"Internal Server Error: {ex.Message}" 
+                });
+            }
         }
     }
 }
