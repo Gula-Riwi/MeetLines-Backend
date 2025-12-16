@@ -1,8 +1,10 @@
 using System;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using MeetLines.Application.Common;
 using MeetLines.Application.DTOs.Projects;
+using MeetLines.Application.Services.Interfaces;
 using MeetLines.Domain.Repositories;
 
 namespace MeetLines.Application.UseCases.Projects
@@ -13,16 +15,22 @@ namespace MeetLines.Application.UseCases.Projects
     public class UpdateProjectUseCase : IUpdateProjectUseCase
     {
         private readonly IProjectRepository _projectRepository;
+        private readonly ICloudinaryService _cloudinaryService;
 
-        public UpdateProjectUseCase(IProjectRepository projectRepository)
+        public UpdateProjectUseCase(
+            IProjectRepository projectRepository,
+            ICloudinaryService cloudinaryService)
         {
             _projectRepository = projectRepository ?? throw new ArgumentNullException(nameof(projectRepository));
+            _cloudinaryService = cloudinaryService ?? throw new ArgumentNullException(nameof(cloudinaryService));
         }
 
         public async Task<Result<ProjectResponse>> ExecuteAsync(
             Guid userId,
             Guid projectId,
             UpdateProjectRequest request,
+            Stream? profilePhotoStream = null,
+            string? profilePhotoFileName = null,
             CancellationToken ct = default)
         {
             if (userId == Guid.Empty)
@@ -62,7 +70,21 @@ namespace MeetLines.Application.UseCases.Projects
 
                 project.UpdateDetails(request.Name, request.Industry, request.Description, request.Address, request.City, request.Country, request.Latitude, request.Longitude);
 
-                if (!string.IsNullOrWhiteSpace(request.ProfilePhotoUrl))
+                // Subir foto de perfil si se proporciona
+                if (profilePhotoStream != null && !string.IsNullOrWhiteSpace(profilePhotoFileName))
+                {
+                    // Eliminar foto anterior si existe
+                    if (!string.IsNullOrEmpty(project.ProfilePhotoPublicId))
+                    {
+                        await _cloudinaryService.DeletePhotoAsync(project.ProfilePhotoPublicId);
+                    }
+
+                    // Subir nueva foto
+                    var (url, publicId) = await _cloudinaryService.UploadPhotoAsync(profilePhotoStream, profilePhotoFileName);
+                    project.UpdateProfilePhoto(url, publicId);
+                }
+                // Mantener compatibilidad con el campo ProfilePhotoUrl si se proporciona (legacy)
+                else if (!string.IsNullOrWhiteSpace(request.ProfilePhotoUrl))
                 {
                     project.UpdateProfilePhoto(request.ProfilePhotoUrl, request.ProfilePhotoPublicId ?? string.Empty);
                 }
