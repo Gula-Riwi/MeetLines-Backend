@@ -150,6 +150,8 @@ namespace MeetLines.Infrastructure.Repositories
             return new BotMetricsSummary
             {
                 TotalConversations = metrics.Sum(x => x.TotalConversations),
+                BotConversations = metrics.Sum(x => x.BotConversations),
+                HumanConversations = metrics.Sum(x => x.HumanConversations),
                 TotalAppointments = metrics.Sum(x => x.AppointmentsBooked),
                 AverageConversionRate = metrics.Average(x => (double)x.ConversionRate),
                 AverageFeedbackRating = metrics.Where(x => x.AverageFeedbackRating.HasValue)

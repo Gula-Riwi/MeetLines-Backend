@@ -33,18 +33,36 @@ namespace MeetLines.Application.Services
             var now = DateTimeOffset.UtcNow;
             var thirtyDaysAgo = now.AddDays(-30);
 
-            // Sequential execution to avoid DbContext concurrency issues (Scoped DbContext is not thread-safe)
+            // Sequential execution to avoid DbContext concurrency issues
+            
+            // 1. Get Metrics Summary (Used for Revenue and BotPerformance)
+            var metricsSummary = await _botMetricsRepo.GetSummaryAsync(projectId, thirtyDaysAgo, now, ct);
+
+            // 2. Run Calculations
             var staffing = await CalculateStaffingRecommendationsAsync(projectId, thirtyDaysAgo, now, ct);
             var churnForRisk = await CalculateChurnRiskAsync(projectId, thirtyDaysAgo, now, ct);
-            var revenue = await CalculateRevenueOpportunityAsync(projectId, thirtyDaysAgo, now, ct);
+            var revenue = await CalculateRevenueOpportunityAsync(projectId, thirtyDaysAgo, now, metricsSummary, ct);
             var goldenHour = await CalculateGoldenHourAsync(projectId, thirtyDaysAgo, now, ct);
+
+            // 3. Map Bot Performance
+            var botPerformance = new BotPerformanceDto
+            {
+                TotalConversations = metricsSummary.TotalConversations,
+                BotConversations = metricsSummary.BotConversations,
+                HumanConversations = metricsSummary.HumanConversations,
+                AppointmentsBooked = metricsSummary.TotalAppointments,
+                ConversionRate = metricsSummary.AverageConversionRate,
+                AverageResponseTime = metricsSummary.AverageResponseTime,
+                CustomerSatisfactionScore = metricsSummary.AverageCustomerSatisfaction
+            };
 
             return new AiInsightsDto
             {
                 Staffing = staffing,
                 ChurnRisks = churnForRisk,
                 Revenue = revenue,
-                Optimization = goldenHour
+                Optimization = goldenHour,
+                BotPerformance = botPerformance
             };
         }
 
@@ -60,68 +78,51 @@ namespace MeetLines.Application.Services
                 .OrderByDescending(x => x.Count)
                 .FirstOrDefault();
 
-            if (groupedByDayHour != null && groupedByDayHour.Count > 3) // Threshold: > 3 appointments starting in same hour block is "busy"
+            if (groupedByDayHour != null && groupedByDayHour.Count > 3) // Threshold
             {
-                 // Spanish day translation
                 var culture = new System.Globalization.CultureInfo("es-ES");
                 var dayName = culture.DateTimeFormat.GetDayName(groupedByDayHour.DayOfWeek);
+                dayName = char.ToUpper(dayName[0]) + dayName.Substring(1);
 
                 return new StaffingRecommendationDto
                 {
                     ActionRequired = true,
                     DayOfWeek = dayName,
                     TimeBlock = $"{groupedByDayHour.Hour}:00 - {groupedByDayHour.Hour + 1}:00",
-                    ProjectedLostAppointments = (int)(groupedByDayHour.Count * 0.2), // Simple heuristic: 20% overflow
-                    Message = $"Alta demanda detectada los {dayName} a las {groupedByDayHour.Hour}:00. Recomendamos refuerzo de personal."
+                    ProjectedLostAppointments = (int)(groupedByDayHour.Count * 0.2), 
+                    Message = $"Alta demanda los {dayName} a las {groupedByDayHour.Hour}:00. Refuerza tu equipo para no perder ventas."
                 };
             }
 
-            return new StaffingRecommendationDto { ActionRequired = false, Message = "Carga de trabajo equilibrada." };
+            return new StaffingRecommendationDto { ActionRequired = false, Message = "Tu equipo cubre perfectamente la demanda actual." };
         }
 
+        // ChurnRisk kept same...
         private async Task<List<ChurnRiskDto>> CalculateChurnRiskAsync(Guid projectId, DateTimeOffset start, DateTimeOffset end, CancellationToken ct)
         {
-            // Logic: Analyze feedback ratings from last 30 days
             var feedbacks = await _feedbackRepo.GetByDateRangeAsync(projectId, start, end, ct);
-            
             var risks = new List<ChurnRiskDto>();
 
-            // Segment: High Risk (Rating <= 2)
             var highRisk = feedbacks.Where(f => f.Rating <= 2).ToList();
-            risks.Add(new ChurnRiskDto 
-            { 
-                RiskLevel = "Alto", 
-                Count = highRisk.Count, 
-                AverageSentiment = highRisk.Any() ? highRisk.Average(f => f.Sentiment ?? 0) : 0 
-            });
+            if (highRisk.Any())
+                risks.Add(new ChurnRiskDto { RiskLevel = "Alto", Count = highRisk.Count, AverageSentiment = highRisk.Average(f => f.Sentiment ?? 0) });
 
-             // Segment: Medium Risk (Rating == 3)
             var medRisk = feedbacks.Where(f => f.Rating == 3).ToList();
-            risks.Add(new ChurnRiskDto 
-            { 
-                RiskLevel = "Medio", 
-                Count = medRisk.Count, 
-                AverageSentiment = medRisk.Any() ? medRisk.Average(f => f.Sentiment ?? 0) : 0 
-            });
+            if (medRisk.Any())
+                risks.Add(new ChurnRiskDto { RiskLevel = "Medio", Count = medRisk.Count, AverageSentiment = medRisk.Average(f => f.Sentiment ?? 0) });
 
             return risks;
         }
 
-        private async Task<RevenueOpportunityDto> CalculateRevenueOpportunityAsync(Guid projectId, DateTimeOffset start, DateTimeOffset end, CancellationToken ct)
+        private async Task<RevenueOpportunityDto> CalculateRevenueOpportunityAsync(Guid projectId, DateTimeOffset start, DateTimeOffset end, MeetLines.Domain.Repositories.BotMetricsSummary metricsSummary, CancellationToken ct)
         {
-            // 1. Get Conversation Metrics
-            var metricsSummary = await _botMetricsRepo.GetSummaryAsync(projectId, start, end, ct);
-            
-            // 2. Calculate Unconverted (Total - Booked)
-            // Note: BotMetricsSummary might not be fully populated if jobs haven't run, so fallback logic is needed.
-            // Or use raw counts if summary returns 0. For now rely on summary.
+            // 2. Calculate Unconverted
             var unconverted = Math.Max(0, metricsSummary.TotalConversations - metricsSummary.TotalAppointments);
 
             // 3. Calculate Average Ticket
             var totalSales = await _appointmentRepo.GetTotalSalesAsync(projectId, start, end, ct);
             var totalAppointments = metricsSummary.TotalAppointments; 
             
-            // Fallback: If no metrics, try counting appointments directly
             if (totalAppointments == 0)
             {
                  var appts = await _appointmentRepo.GetByDateRangeAsync(projectId, start, end, ct);
@@ -131,18 +132,29 @@ namespace MeetLines.Application.Services
             if (totalAppointments <= 0) totalAppointments = 1;
 
             var avgTicket = totalSales / totalAppointments;
-            if (avgTicket == 0) avgTicket = 20000; // Default fallback (e.g. 20k COP)
+            if (avgTicket == 0) avgTicket = 20000; 
 
-            var lostRevenue = unconverted * avgTicket * 0.1m; // Assumption: we could close 10% of unconverted
+            var lostRevenue = unconverted * avgTicket * 0.1m; 
+
+            // Generar sugerencia "Chimba" basada en datos
+            string suggestion;
+            if (unconverted > 20)
+                suggestion = $"🚨 ¡Estás dejando perder plata! Tienes {unconverted} chats sin cerrar. Lanza una campaña de reactivación YA.";
+            else if (metricsSummary.AverageConversionRate < 2.0 && metricsSummary.TotalConversations > 10)
+                suggestion = "📉 Tu tasa de cierre está baja. Revisa cómo responde el bot y ajusta el 'Tone' en configuración.";
+            else if (metricsSummary.HumanConversations > metricsSummary.BotConversations && metricsSummary.TotalConversations > 10)
+                suggestion = "🤖 El bot está pasando demasiados clientes a humanos. Mejora tu Base de Conocimiento para automatizar más.";
+            else if (lostRevenue > 500000)
+                suggestion = $"💸 Podrías estar ganando ${lostRevenue:N0} extra. Contacta a esos {unconverted} clientes pasados.";
+            else
+                suggestion = "🚀 ¡Vas volando! Tu operación está optimizada. Sigue así.";
 
             return new RevenueOpportunityDto
             {
                 TotalLostRevenue = lostRevenue,
                 UnconvertedConversations = unconverted,
                 AverageTicket = avgTicket,
-                Suggestion = unconverted > 10 
-                    ? $"Tienes {unconverted} chats sin cerrar. Podrías generar ${lostRevenue:N0} extra activando descuentos de reactivación."
-                    : "Tasa de conversión saludable."
+                Suggestion = suggestion
             };
         }
 
