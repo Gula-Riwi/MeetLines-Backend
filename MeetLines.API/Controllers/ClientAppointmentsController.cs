@@ -27,7 +27,7 @@ namespace MeetLines.API.Controllers
             return BadRequest(result.Error);
         }
 
-        [HttpPost("{id}/cancel")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> CancelAppointment(int id)
         {
             var userId = GetUserId();
