@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
+using MeetLines.Application.Common;
 using MeetLines.Application.DTOs.Projects;
 using MeetLines.Application.UseCases.Projects;
 using MeetLines.Domain.Repositories;
@@ -115,13 +116,51 @@ namespace MeetLines.API.Controllers
         }
 
         /// <summary>
-        /// Crea un nuevo proyecto/empresa
+        /// Crea un nuevo proyecto/empresa con foto de perfil opcional
         /// </summary>
         [HttpPost]
-        public async Task<IActionResult> CreateProject([FromBody] CreateProjectRequest request, CancellationToken ct)
+        public async Task<IActionResult> CreateProject([FromForm] MeetLines.API.DTOs.CreateProjectWithPhotoRequest formRequest, CancellationToken ct)
         {
             var userId = GetUserId();
-            var result = await _createProjectUseCase.ExecuteAsync(userId, request, ct);
+            
+            // Mapear el request del formulario al DTO de la aplicación
+            var request = new CreateProjectRequest
+            {
+                Name = formRequest.Name,
+                Industry = formRequest.Industry,
+                Description = formRequest.Description,
+                Address = formRequest.Address,
+                City = formRequest.City,
+                Country = formRequest.Country,
+                Latitude = formRequest.Latitude,
+                Longitude = formRequest.Longitude
+            };
+
+            // Validar archivo si se proporciona
+            if (formRequest.ProfilePhoto != null)
+            {
+                if (formRequest.ProfilePhoto.Length == 0)
+                {
+                    return BadRequest(new { error = "Profile photo file is empty" });
+                }
+
+                if (!formRequest.ProfilePhoto.ContentType.StartsWith("image/"))
+                {
+                    return BadRequest(new { error = "Profile photo must be an image" });
+                }
+            }
+
+            // Ejecutar el use case con el archivo opcional
+            Result<ProjectResponse> result;
+            if (formRequest.ProfilePhoto != null)
+            {
+                using var stream = formRequest.ProfilePhoto.OpenReadStream();
+                result = await _createProjectUseCase.ExecuteAsync(userId, request, stream, formRequest.ProfilePhoto.FileName, ct);
+            }
+            else
+            {
+                result = await _createProjectUseCase.ExecuteAsync(userId, request, null, null, ct);
+            }
 
             if (!result.IsSuccess)
                 return BadRequest(new { error = result.Error });
