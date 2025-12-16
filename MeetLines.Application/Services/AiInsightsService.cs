@@ -33,20 +33,18 @@ namespace MeetLines.Application.Services
             var now = DateTimeOffset.UtcNow;
             var thirtyDaysAgo = now.AddDays(-30);
 
-            // Parallel execution for performance
-            var staffingTask = CalculateStaffingRecommendationsAsync(projectId, thirtyDaysAgo, now, ct);
-            var churnTask = CalculateChurnRiskAsync(projectId, thirtyDaysAgo, now, ct);
-            var revenueTask = CalculateRevenueOpportunityAsync(projectId, thirtyDaysAgo, now, ct);
-            var goldenHourTask = CalculateGoldenHourAsync(projectId, thirtyDaysAgo, now, ct);
-
-            await Task.WhenAll(staffingTask, churnTask, revenueTask, goldenHourTask);
+            // Sequential execution to avoid DbContext concurrency issues (Scoped DbContext is not thread-safe)
+            var staffing = await CalculateStaffingRecommendationsAsync(projectId, thirtyDaysAgo, now, ct);
+            var churnForRisk = await CalculateChurnRiskAsync(projectId, thirtyDaysAgo, now, ct);
+            var revenue = await CalculateRevenueOpportunityAsync(projectId, thirtyDaysAgo, now, ct);
+            var goldenHour = await CalculateGoldenHourAsync(projectId, thirtyDaysAgo, now, ct);
 
             return new AiInsightsDto
             {
-                Staffing = await staffingTask,
-                ChurnRisks = await churnTask,
-                Revenue = await revenueTask,
-                Optimization = await goldenHourTask
+                Staffing = staffing,
+                ChurnRisks = churnForRisk,
+                Revenue = revenue,
+                Optimization = goldenHour
             };
         }
 
