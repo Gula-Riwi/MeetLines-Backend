@@ -82,7 +82,7 @@ namespace MeetLines.API.Controllers
 
         /// <summary>
         /// Gets available appointment slots for a specific date
-        /// Used by n8n - requires API key authentication
+        /// Accepts API key (n8n) OR JWT token (customers)
         /// </summary>
         [HttpGet("appointments/available-slots")]
         [AllowAnonymous]
@@ -94,10 +94,13 @@ namespace MeetLines.API.Controllers
         {
             try
             {
-                // Validate API key for n8n integration
-                if (!ValidateApiKey())
+                // Security Check: Allow if API Key is valid OR User is Authenticated (JWT)
+                bool isApiKeyValid = ValidateApiKey();
+                bool isUserAuthenticated = User.Identity?.IsAuthenticated == true;
+
+                if (!isApiKeyValid && !isUserAuthenticated)
                 {
-                    return Unauthorized(new { error = "Invalid or missing API key" });
+                    return Unauthorized(new { error = "Unauthorized: Missing valid API Key or JWT Token" });
                 }
 
                 if (!DateTime.TryParse(date, out var parsedDate))
