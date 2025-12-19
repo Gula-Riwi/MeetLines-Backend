@@ -19,7 +19,7 @@ services:
       - Email__SmtpPassword=${EMAIL_SMTP_PASSWORD}
       - Email__FromEmail=${EMAIL_FROM}
       - Authentication__Google__ClientId=${GOOGLE_CLIENT_ID}
-      - Authentication__Google__ClientSecret=${VITE_GOOGLE_CLIENT_SECRET}
+      - Authentication__Google__ClientSecret=${GOOGLE_CLIENT_SECRET}
       - Authentication__Facebook__AppId=${FB_APP_ID}
       - Authentication__Facebook__AppSecret=${FB_APP_SECRET}
     deploy:
