@@ -141,16 +141,7 @@ namespace MeetLines.Infrastructure.Services
                 </div>";
         }
 
-        private string BuildFallbackLink(string url)
-        {
-            return $@"
-                <p style='margin-top: 20px; font-size: 14px; color: {TextColor};'>
-                    Si el botón no funciona, copia y pega el siguiente enlace en tu navegador:
-                </p>
-                <p style='font-size: 12px; color: {PrimaryColor}; word-break: break-all; margin: 0;'>
-                    <a href='{url}' style='color: {PrimaryColor}; text-decoration: none;'>{url}</a>
-                </p>";
-        }
+
 
         public string BuildEmailVerification(string userName, string verificationUrl)
         {
@@ -160,7 +151,7 @@ namespace MeetLines.Infrastructure.Services
                 
                 {BuildButton("Verificar Email", verificationUrl)}
                 
-                {BuildFallbackLink(verificationUrl)}";
+                ";
 
             return BuildBaseHtml(content, "Verifica tu correo");
         }
@@ -175,7 +166,7 @@ namespace MeetLines.Infrastructure.Services
                 
                 <p style='color: #8892b0; font-size: 14px;'>El enlace expira en 1 hora.</p>
                 
-                {BuildFallbackLink(resetUrl)}";
+                ";
 
             return BuildBaseHtml(content, "Recuperar contraseña");
         }
@@ -188,7 +179,7 @@ namespace MeetLines.Infrastructure.Services
                 
                 {BuildButton("Ir a mi Dashboard", loginUrl)}
                 
-                {BuildFallbackLink(loginUrl)}";
+                ";
 
             return BuildBaseHtml(content, "Bienvenido");
         }
@@ -203,7 +194,7 @@ namespace MeetLines.Infrastructure.Services
                 
                 {BuildButton("Iniciar Sesión", loginUrl)}
                 
-                {BuildFallbackLink(loginUrl)}";
+                ";
 
             return BuildBaseHtml(content, "Contraseña cambiada");
         }
@@ -216,7 +207,7 @@ namespace MeetLines.Infrastructure.Services
                 
                 {BuildButton("Comenzar Ahora", dashboardUrl)}
                 
-                {BuildFallbackLink(dashboardUrl)}";
+                ";
 
             return BuildBaseHtml(content, "Cuenta verificada");
         }
