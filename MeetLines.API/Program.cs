@@ -81,7 +81,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 if (connectionString != null)
 {
     builder.Configuration["ConnectionStrings:DefaultConnection"] = ExpandVariables(connectionString);
-    Console.WriteLine("📊 ConnectionString expandido");
+    var debugConn = builder.Configuration["ConnectionStrings:DefaultConnection"];
+    // Mask password for safety in logs
+    var safeLog = System.Text.RegularExpressions.Regex.Replace(debugConn, "Password=.*?;", "Password=******;");
+    Console.WriteLine($"📊 ConnectionString Debug: {safeLog}");
 }
 
 // 2. JWT

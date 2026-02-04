@@ -37,7 +37,7 @@ namespace MeetLines.Infrastructure.Services
             _smtpPassword = ResolveConfigValue(_configuration["Email:SmtpPassword"]) ?? throw new ArgumentException("Email:SmtpPassword is missing");
             _fromEmail = ResolveConfigValue(_configuration["Email:FromEmail"]) ?? _smtpUser;
             _fromName = ResolveConfigValue(_configuration["Email:FromName"]) ?? "MeetLines";
-            _frontendUrl = ResolveConfigValue(_configuration["Frontend:Url"], "http://localhost:3000");
+            _frontendUrl = ResolveConfigValue(_configuration["Frontend:Url"], "https://meet-lines.com");
 
             // Trim trailing slash for consistency
             if (_frontendUrl.EndsWith("/")) _frontendUrl = _frontendUrl.TrimEnd('/');
@@ -92,8 +92,8 @@ namespace MeetLines.Infrastructure.Services
         public async Task SendEmailVerifiedNotificationAsync(string toEmail, string userName)
         {
             var subject = "¡Tu cuenta ha sido verificada! - MeetLines";
-            var dashboardUrl = $"{_frontendUrl}/dashboard";
-            var body = _templateBuilder.BuildEmailVerified(userName, dashboardUrl);
+            var loginUrl = $"{_frontendUrl}/login";
+            var body = _templateBuilder.BuildEmailVerified(userName, loginUrl);
             await SendEmailAsync(toEmail, subject, body);
         }
 

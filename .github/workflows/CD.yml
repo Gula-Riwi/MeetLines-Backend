@@ -31,9 +31,12 @@ jobs:
       - name: Connect to VPS and deploy
         run: |
           ssh vps << 'EOF'
+            mkdir -p /var/www/MeetLines-Backend
             cd /var/www/MeetLines-Backend
             git fetch --all
             git reset --hard origin/main
             docker compose down
+            docker compose pull
             docker compose up -d --build
+            docker image prune -f
           EOF
